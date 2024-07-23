@@ -5,6 +5,7 @@ import { useStore as useMainStore } from '@/state/evalConfig';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import MenuIcon from '@mui/icons-material/Menu';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ShareIcon from '@mui/icons-material/Share';
 import EyeIcon from '@mui/icons-material/Visibility';
@@ -14,8 +15,12 @@ import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Drawer from '@mui/material/Drawer';
 import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
@@ -311,6 +316,8 @@ export default function ResultsView({
     }, 1000);
   };
 
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+
   return (
     <div style={{ marginLeft: '1rem', marginRight: '1rem' }}>
       <ResponsiveStack
@@ -416,7 +423,7 @@ export default function ResultsView({
           <TextField
             sx={{ minWidth: 180 }}
             size="small"
-            label="Search"
+            label="Search eval text..."
             placeholder="Text or regex"
             value={searchText}
             onChange={(e) => handleSearchTextChange(e.target.value)}
@@ -529,6 +536,36 @@ export default function ResultsView({
         shareUrl={shareUrl}
       />
       <SettingsModal open={viewSettingsModalOpen} onClose={() => setViewSettingsModalOpen(false)} />
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sx={{ width: 250 }}
+      >
+        <List>
+          <ListItem>
+            <Typography variant="h6">Recent Evals</Typography>
+          </ListItem>
+          {recentEvals.map((_eval) => (
+            <ListItem
+              key={_eval.evalId}
+              button
+              onClick={() => {
+                onRecentEvalSelected(_eval.evalId);
+                setDrawerOpen(false);
+              }}
+            >
+              <ListItemText
+                primary={_eval.description || _eval.evalId}
+                secondary={new Date(_eval.createdAt).toLocaleString()}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
+      <IconButton onClick={() => setDrawerOpen(true)} sx={{ position: 'fixed', left: 16, top: 16 }}>
+        <MenuIcon />
+      </IconButton>
     </div>
   );
 }
