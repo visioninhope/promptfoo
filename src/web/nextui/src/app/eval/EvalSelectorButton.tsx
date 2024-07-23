@@ -57,8 +57,8 @@ const EvalSelector: React.FC<EvalSelectorProps> = ({
         title="Open an Eval"
         open={open}
         onClose={handleClose}
-        recentEvals={recentEvals}
-        onRecentEvalSelected={onRecentEvalSelected}
+        evals={recentEvals}
+        onEvalSelected={onRecentEvalSelected}
       />
     </>
   );

@@ -2,13 +2,7 @@
 
 import * as React from 'react';
 import { REMOTE_API_BASE_URL } from '@/../../../constants';
-import type {
-  EvaluateSummary,
-  UnifiedConfig,
-  SharedResults,
-  ResultLightweightWithLabel,
-  ResultsFile,
-} from '@/../../../types';
+import type { EvaluateSummary, UnifiedConfig, SharedResults, ResultsFile } from '@/../../../types';
 import { getApiBaseUrl } from '@/api';
 import { ShiftKeyProvider } from '@/app/contexts/ShiftKeyContext';
 import { ToastProvider } from '@/app/contexts/ToastContext';
@@ -50,30 +44,28 @@ async function fetchEvalFromSupabase(
 interface EvalOptions {
   fetchId?: string;
   preloadedData?: SharedResults;
-  recentEvals?: ResultLightweightWithLabel[];
   defaultEvalId?: string;
 }
 
 export default function Eval({
   fetchId,
   preloadedData,
-  recentEvals: recentEvalsProp,
   defaultEvalId: defaultEvalIdProp,
 }: EvalOptions) {
   const router = useRouter();
-  const { table, setTable, setConfig, setEvalId, setAuthor, setInComparisonMode } = useStore();
+  const {
+    table,
+    setTable,
+    setConfig,
+    setEvalId,
+    setAuthor,
+    setInComparisonMode,
+    recentEvals,
+    setRecentEvals,
+    fetchRecentEvals,
+  } = useStore();
   const [loaded, setLoaded] = React.useState(false);
   const [failed, setFailed] = React.useState(false);
-  const [recentEvals, setRecentEvals] = React.useState<ResultLightweightWithLabel[]>(
-    recentEvalsProp || [],
-  );
-
-  const fetchRecentFileEvals = async () => {
-    const resp = await fetch(`${await getApiBaseUrl()}/api/results`, { cache: 'no-store' });
-    const body = (await resp.json()) as { data: ResultLightweightWithLabel[] };
-    setRecentEvals(body.data);
-    return body.data;
-  };
 
   const fetchEvalById = React.useCallback(
     async (id: string) => {
@@ -111,7 +103,7 @@ export default function Eval({
         setLoaded(true);
         setDefaultEvalId(evalId);
         // Load other recent eval runs
-        fetchRecentFileEvals();
+        await fetchRecentEvals();
       };
       run();
     } else if (preloadedData) {
@@ -148,7 +140,7 @@ export default function Eval({
           setTable(data?.results.table);
           setConfig(data?.config);
           setAuthor(data?.author || null);
-          fetchRecentFileEvals().then((newRecentEvals) => {
+          fetchRecentEvals().then((newRecentEvals) => {
             setDefaultEvalId(newRecentEvals[0]?.evalId);
             console.log('setting default eval id', newRecentEvals[0]?.evalId);
             setEvalId(newRecentEvals[0]?.evalId);
@@ -160,7 +152,7 @@ export default function Eval({
           setTable(data.results.table);
           setConfig(data.config);
           setAuthor(data.author || null);
-          fetchRecentFileEvals().then((newRecentEvals) => {
+          fetchRecentEvals().then((newRecentEvals) => {
             const newId = newRecentEvals[0]?.evalId;
             if (newId) {
               setDefaultEvalId(newId);
@@ -175,7 +167,7 @@ export default function Eval({
       });
     } else if (USE_SUPABASE) {
       console.log('Eval init: Using Supabase');
-      // TODO(ian): Move this to server
+      // TODO(ian): Move this to server, or into store.ts
       fetchEvalsFromSupabase().then((records) => {
         setRecentEvals(
           records.map((r) => ({
@@ -204,7 +196,7 @@ export default function Eval({
       console.log('Eval init: Fetching eval via recent');
       // Fetch from next.js server
       const run = async () => {
-        const evals = await fetchRecentFileEvals();
+        const evals = await fetchRecentEvals();
         if (evals.length > 0) {
           const apiBaseUrl = await getApiBaseUrl();
           const defaultEvalId = evals[0].evalId;

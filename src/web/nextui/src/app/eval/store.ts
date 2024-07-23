@@ -1,3 +1,5 @@
+import type { ResultLightweightWithLabel } from '@/../../../types';
+import { getApiBaseUrl } from '@/api';
 import { get, set, del } from 'idb-keyval';
 import { create } from 'zustand';
 import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
@@ -45,6 +47,10 @@ interface TableState {
 
   inComparisonMode: boolean;
   setInComparisonMode: (inComparisonMode: boolean) => void;
+
+  recentEvals: ResultLightweightWithLabel[];
+  setRecentEvals: (recentEvals: ResultLightweightWithLabel[]) => void;
+  fetchRecentEvals: () => Promise<ResultLightweightWithLabel[]>;
 }
 
 export const useStore = create<TableState>()(
@@ -79,6 +85,20 @@ export const useStore = create<TableState>()(
 
       inComparisonMode: false,
       setInComparisonMode: (inComparisonMode: boolean) => set(() => ({ inComparisonMode })),
+
+      recentEvals: [],
+      setRecentEvals: (recentEvals: ResultLightweightWithLabel[]) => set(() => ({ recentEvals })),
+      fetchRecentEvals: async () => {
+        const state = get();
+        if (state.recentEvals.length === 0) {
+          const apiBaseUrl = await getApiBaseUrl();
+          const resp = await fetch(`${apiBaseUrl}/api/results`, { cache: 'no-store' });
+          const body = (await resp.json()) as { data: ResultLightweightWithLabel[] };
+          set({ recentEvals: body.data });
+          return body.data;
+        }
+        return state.recentEvals;
+      },
     }),
     {
       name: 'ResultsViewStorage',

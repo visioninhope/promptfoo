@@ -20,8 +20,8 @@ import type { ResultLightweightWithLabel } from './types';
 interface EvalSelectorDialogProps {
   open: boolean;
   onClose: () => void;
-  recentEvals: ResultLightweightWithLabel[];
-  onRecentEvalSelected: (evalId: string) => void;
+  evals: ResultLightweightWithLabel[];
+  onEvalSelected: (evalId: string) => void;
   title?: string;
   description?: string;
 }
@@ -29,8 +29,8 @@ interface EvalSelectorDialogProps {
 const EvalSelectorDialog: React.FC<EvalSelectorDialogProps> = ({
   open,
   onClose,
-  recentEvals,
-  onRecentEvalSelected,
+  evals,
+  onEvalSelected,
   title,
   description,
 }) => {
@@ -45,7 +45,7 @@ const EvalSelectorDialog: React.FC<EvalSelectorDialogProps> = ({
     setFocusedIndex(-1);
   };
 
-  const filteredEvals = recentEvals.filter(
+  const filteredEvals = evals.filter(
     (_eval) =>
       fuzzysearch(searchText.toLowerCase(), _eval.label.toLowerCase()) ||
       (typeof _eval.description === 'string' &&
@@ -53,7 +53,7 @@ const EvalSelectorDialog: React.FC<EvalSelectorDialogProps> = ({
   );
 
   const handleSelectEval = (evalId: string) => {
-    onRecentEvalSelected(evalId);
+    onEvalSelected(evalId);
     handleClose();
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React from 'react';
 import { USE_SUPABASE } from '@/constants';
 import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
@@ -9,6 +9,7 @@ import TextField from '@mui/material/TextField';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import EvalSelectorDialog from '../eval/EvalSelectorDialog';
+import { useStore } from '../eval/store';
 import DarkMode from './DarkMode';
 import InfoModal from './InfoModal';
 import LoggedInAs from './LoggedInAs';
@@ -31,11 +32,16 @@ export default function Navigation({
   darkMode: boolean;
   onToggleDarkMode: () => void;
 }) {
-  const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
-  const [showEvalSelectorDialog, setShowEvalSelectorDialog] = useState<boolean>(false);
+  const { fetchRecentEvals, recentEvals } = useStore();
+  const [showInfoModal, setShowInfoModal] = React.useState<boolean>(false);
+  const [showEvalSelectorDialog, setShowEvalSelectorDialog] = React.useState<boolean>(false);
 
   const handleModalToggle = () => setShowInfoModal((prevState) => !prevState);
   const handleEvalSelectorToggle = () => setShowEvalSelectorDialog((prevState) => !prevState);
+
+  React.useEffect(() => {
+    fetchRecentEvals();
+  }, []);
 
   const navigationContent = (
     <>
@@ -77,8 +83,8 @@ export default function Navigation({
       <EvalSelectorDialog
         open={showEvalSelectorDialog}
         onClose={handleEvalSelectorToggle}
-        recentEvals={[]} // You'll need to provide the actual recent evals data here
-        onRecentEvalSelected={() => {}} // You'll need to implement this function
+        evals={recentEvals}
+        onEvalSelected={() => {}} // You'll need to implement this function
       />
       <Stack direction="row" spacing={2} className="nav">
         {navigationContent}

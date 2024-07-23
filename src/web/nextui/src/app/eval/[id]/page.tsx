@@ -94,7 +94,6 @@ export default async function Page({ params }: { params: { id: string } }) {
     // Next.js chokes on large evals, so the client will fetch them separately.
     return <Eval fetchId={params.id} />;
   }
-  return (
-    <Eval preloadedData={sharedResults} recentEvals={recentEvals} defaultEvalId={defaultEvalId} />
-  );
+  // FIXME(ian): No longer sending recent evals from supabase
+  return <Eval preloadedData={sharedResults} defaultEvalId={defaultEvalId} />;
 }
