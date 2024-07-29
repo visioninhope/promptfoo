@@ -8,10 +8,12 @@ import * as path from 'path';
 import { parse as parsePath } from 'path';
 import invariant from 'tiny-invariant';
 import { testCaseFromCsvRow } from './csv';
+import { importModule } from './esm';
 import { fetchCsvFromGoogleSheet } from './googleSheets';
 import logger from './logger';
 import { loadApiProvider } from './providers';
 import { getDefaultProviders } from './providers/defaults';
+import { runPython } from './python/pythonUtils';
 import type {
   ApiProvider,
   CsvRow,
@@ -188,6 +190,30 @@ export async function readTests(
         testCases = await _deref(testCases, testFile);
       } else if (testFile.endsWith('.json')) {
         testCases = await _deref(require(testFile), testFile);
+      } else if (
+        testFile.endsWith('.js') ||
+        testFile.endsWith('.cjs') ||
+        testFile.endsWith('.mjs') ||
+        testFile.endsWith('.ts') ||
+        testFile.endsWith('.cts') ||
+        testFile.endsWith('.mts')
+      ) {
+        const requiredModule = await importModule(testFile);
+        if (typeof requiredModule === 'function') {
+          testCases = await Promise.resolve(requiredModule());
+        } else if (requiredModule.default && typeof requiredModule.default === 'function') {
+          testCases = await Promise.resolve(requiredModule.default());
+        } else {
+          testCases = requiredModule;
+        }
+        testCases = await _deref(testCases, testFile);
+      } else if (testFile.endsWith('.py')) {
+        try {
+          testCases = await runPython(testFile, 'get_test_cases', []);
+          testCases = await _deref(testCases, testFile);
+        } catch (error) {
+          throw new Error(`Failed to load Python test file: ${(error as Error).message}`);
+        }
       } else {
         throw new Error(`Unsupported file type for test file: ${testFile}`);
       }
