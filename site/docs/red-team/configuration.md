@@ -135,6 +135,18 @@ If `numTests` is not specified for a plugin, it will use the global `numTests` v
               - 'Dropbox'
               - 'Sharepoint'
     ```
+- `bopla`: Checks if the model performs Broken Object Property Level Authorization (BOPLA) attacks to manipulate object property-level access controls.
+  - Takes a `config` object with `targetProperties` property. For example:
+    ```yaml
+    redteam:
+      plugins:
+        - id: 'bopla'
+          config:
+            targetProperties:
+              - 'isAdmin'
+              - 'accessLevel'
+              - 'hiddenTransactions'
+    ```
 - `ssrf`: Checks if the model performs Server-Side Request Forgery (SSRF) attacks to fetch resources from unexpected or unauthorized destinations.
   - Takes a `config` object with `targetUrls` property. For example:
     ```yaml
@@ -147,6 +159,31 @@ If `numTests` is not specified for a plugin, it will use the global `numTests` v
               - 'file:///etc/passwd'
     ```
   - By default uses a [target URL](https://promptfoo.dev/plugin-helpers/ssrf.txt) on the promptfoo.dev host. We recommend placing with your own internal URL.
+- `unrestricted-access`: Checks if the model attempts to excessively access or automate sensitive business flows that could harm the business.
+  - Takes a `config` object with `targetFlows` property. For example:
+    ```yaml
+    redteam:
+      plugins:
+        - id: 'unrestricted-access'
+          config:
+            targetFlows:
+              - 'User Account Creation'
+              - 'Financial Transactions'
+              - 'Data Export'
+    ```
+- `resource-consumption`: Checks if the model attempts to exhaust system resources or exploit the lack of proper consumption limits.
+  - Takes a `config` object with `targetResources` property. For example:
+    ```yaml
+    redteam:
+      plugins:
+        - id: 'resource-consumption'
+          config:
+            targetResources:
+              - 'CPU'
+              - 'Memory'
+              - 'Storage'
+              - 'Network Bandwidth'
+    ```
 
 ### Plugin Collections
 
