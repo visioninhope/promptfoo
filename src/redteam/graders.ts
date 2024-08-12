@@ -15,11 +15,11 @@ import { PiiGrader } from './plugins/pii';
 import { PolicyViolationGrader } from './plugins/policy';
 import { PoliticsGrader } from './plugins/politics';
 import { RbacGrader } from './plugins/rbac';
+import { ResourceConsumptionGrader } from './plugins/resourceConsumption';
 import { ShellInjectionGrader } from './plugins/shellInjection';
 import { SqlInjectionGrader } from './plugins/sqlInjection';
 import { SsrfGrader } from './plugins/ssrf';
 import { UnrestrictedAccessGrader } from './plugins/unrestrictedAccess';
-import { ResourceConsumptionGrader } from './plugins/resourceConsumption';
 
 const GRADERS = {
   'promptfoo:redteam:overreliance': new OverrelianceGrader(),
