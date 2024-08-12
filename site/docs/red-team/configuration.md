@@ -168,7 +168,6 @@ If `numTests` is not specified for a plugin, it will use the global `numTests` v
           config:
             targetFlows:
               - 'User Account Creation'
-              - 'Financial Transactions'
               - 'Data Export'
     ```
 - `resource-consumption`: Checks if the model attempts to exhaust system resources or exploit the lack of proper consumption limits.
@@ -179,10 +178,8 @@ If `numTests` is not specified for a plugin, it will use the global `numTests` v
         - id: 'resource-consumption'
           config:
             targetResources:
-              - 'CPU'
-              - 'Memory'
-              - 'Storage'
-              - 'Network Bandwidth'
+              - 'GPU provisioning'
+              - 'database queries'
     ```
 
 ### Plugin Collections
