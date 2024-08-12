@@ -1,6 +1,7 @@
 import type { RedteamModelGrader } from './plugins/base';
 import { BflaGrader } from './plugins/bfla';
 import { BolaGrader } from './plugins/bola';
+import { BoplaGrader } from './plugins/bopla';
 import { CompetitorsGrader } from './plugins/competitors';
 import { ContractsGrader } from './plugins/contracts';
 import { DebugAccessGrader } from './plugins/debugAccess';
@@ -17,10 +18,15 @@ import { RbacGrader } from './plugins/rbac';
 import { ShellInjectionGrader } from './plugins/shellInjection';
 import { SqlInjectionGrader } from './plugins/sqlInjection';
 import { SsrfGrader } from './plugins/ssrf';
+import { UnrestrictedAccessGrader } from './plugins/unrestrictedAccess';
+import { ResourceConsumptionGrader } from './plugins/resourceConsumption';
 
 const GRADERS = {
   'promptfoo:redteam:overreliance': new OverrelianceGrader(),
   'promptfoo:redteam:competitors': new CompetitorsGrader(),
+  'promptfoo:redteam:bopla': new BoplaGrader(),
+  'promptfoo:redteam:unrestricted-access': new UnrestrictedAccessGrader(),
+  'promptfoo:redteam:resource-consumption': new ResourceConsumptionGrader(),
   'promptfoo:redteam:contracts': new ContractsGrader(),
   'promptfoo:redteam:excessive-agency': new ExcessiveAgencyGrader(),
   'promptfoo:redteam:imitation': new ImitationGrader(),
