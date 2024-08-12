@@ -180,6 +180,9 @@ export const categoryAliasesReverse = Object.entries(categoryAliases).reduce(
 export const displayNameOverrides = {
   bola: 'Object-Level Authorization',
   bfla: 'Function-Level Authorization',
+  bopla: 'Object-Property-Level Authorization',
+  'unrestricted-access': 'Unrestricted Access',
+  'resource-consumption': 'Resource Consumption',
   ssrf: 'Server-Side Request Forgery',
   'excessive-agency': 'Excessive Agency',
   'prompt-injection': 'Prompt Injection',
