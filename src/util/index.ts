@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { stringify } from 'csv-stringify/sync';
 import dedent from 'dedent';
 import dotenv from 'dotenv';
-import { desc, eq, like, and } from 'drizzle-orm';
+import { desc, eq, like, and, sql } from 'drizzle-orm';
 import deepEqual from 'fast-deep-equal';
 import * as fs from 'fs';
 import { globSync } from 'glob';
@@ -11,6 +11,7 @@ import nunjucks from 'nunjucks';
 import * as path from 'path';
 import invariant from 'tiny-invariant';
 import { getAuthor } from '../accounts';
+import cliState from '../cliState';
 import { TERMINAL_MAX_WIDTH } from '../constants';
 import { getDbSignalPath, getDb } from '../database';
 import { datasets, evals, evalsToDatasets, evalsToPrompts, prompts } from '../database/tables';
@@ -289,13 +290,14 @@ export function listPreviousResults(
   datasetId?: string,
 ): ResultLightweight[] {
   const db = getDb();
+  const startTime = performance.now();
+
   const query = db
     .select({
       evalId: evals.id,
       createdAt: evals.createdAt,
       description: evals.description,
-      config: evals.config,
-      results: evals.results,
+      numTests: sql<number>`json_array_length(${evals.results}->'table'->'body')`,
       datasetId: evalsToDatasets.datasetId,
     })
     .from(evals)
@@ -308,17 +310,19 @@ export function listPreviousResults(
     );
 
   const results = query.orderBy(desc(evals.createdAt)).limit(limit).all();
+  const mappedResults = results.map((result) => ({
+    evalId: result.evalId,
+    createdAt: result.createdAt,
+    description: result.description,
+    numTests: result.numTests,
+    datasetId: result.datasetId,
+  }));
 
-  return results.map((result) => {
-    const numTests = result.results.table.body.length;
-    return {
-      evalId: result.evalId,
-      createdAt: result.createdAt,
-      description: result.description,
-      numTests,
-      datasetId: result.datasetId,
-    };
-  });
+  const endTime = performance.now();
+  const executionTime = endTime - startTime;
+  logger.debug(`listPreviousResults execution time: ${executionTime.toFixed(2)}ms`);
+
+  return mappedResults;
 }
 
 /**
@@ -577,9 +581,7 @@ export async function updateResult(
   }
 }
 
-export async function readLatestResults(
-  filterDescription?: string,
-): Promise<ResultsFile | undefined> {
+export async function getLatestEval(filterDescription?: string): Promise<ResultsFile | undefined> {
   const db = getDb();
   let latestResults = await db
     .select({
@@ -940,19 +942,20 @@ export function getStandaloneEvals(limit: number = DEFAULT_QUERY_LIMIT): Standal
     .limit(limit)
     .all();
 
-  const flatResults: StandaloneEval[] = [];
-  results.forEach((result) => {
-    const table = result.results.table;
-    table.head.prompts.forEach((col) => {
-      flatResults.push({
-        evalId: result.evalId,
-        promptId: result.promptId,
-        datasetId: result.datasetId,
-        ...col,
-      });
-    });
+  return results.flatMap((result) => {
+    const {
+      evalId,
+      promptId,
+      datasetId,
+      results: { table },
+    } = result;
+    return table.head.prompts.map((col) => ({
+      evalId,
+      promptId,
+      datasetId,
+      ...col,
+    }));
   });
-  return flatResults;
 }
 
 export function providerToIdentifier(provider: TestCase['provider']): string | undefined {
@@ -1087,4 +1090,46 @@ export function parsePathOrGlob(
     functionName,
     isPathPattern,
   };
+}
+
+/**
+ * Loads content from an external file if the input is a file path, otherwise
+ * returns the input as-is.
+ *
+ * @param filePath - The input to process. Can be a file path string starting with "file://",
+ * an array of file paths, or any other type of data.
+ * @returns The loaded content if the input was a file path, otherwise the original input.
+ * For JSON and YAML files, the content is parsed into an object.
+ * For other file types, the raw file content is returned as a string.
+ *
+ * @throws {Error} If the specified file does not exist.
+ */
+export function maybeLoadFromExternalFile(filePath: string | object | Function | undefined | null) {
+  if (Array.isArray(filePath)) {
+    return filePath.map((path) => {
+      const content: any = maybeLoadFromExternalFile(path);
+      return content;
+    });
+  }
+
+  if (typeof filePath !== 'string') {
+    return filePath;
+  }
+  if (!filePath.startsWith('file://')) {
+    return filePath;
+  }
+
+  const finalPath = path.resolve(cliState.basePath || '', filePath.slice('file://'.length));
+  if (!fs.existsSync(finalPath)) {
+    throw new Error(`File does not exist: ${finalPath}`);
+  }
+
+  const contents = fs.readFileSync(finalPath, 'utf8');
+  if (finalPath.endsWith('.json')) {
+    return JSON.parse(contents);
+  }
+  if (finalPath.endsWith('.yaml') || finalPath.endsWith('.yml')) {
+    return yaml.load(contents);
+  }
+  return contents;
 }

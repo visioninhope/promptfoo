@@ -1,8 +1,40 @@
 import type { Plugin, Strategy } from '../../../../../redteam/constants';
 
 export const riskCategories = {
+  'Security Risk': [
+    'debug-access',
+    'hijacking',
+    'pii',
+    'rbac',
+    'bola',
+    'bfla',
+    'bopla',
+    'ssrf',
+    'shell-injection',
+    'sql-injection',
+    'unrestricted-access',
+    'resource-consumption',
+  ],
+  'Legal Risk': [
+    'contracts',
+    'harmful:privacy',
+    'harmful:child-exploitation',
+    'harmful:copyright-violations',
+    'harmful:cybercrime',
+    'harmful:hate',
+    'harmful:illegal-activities',
+    'harmful:illegal-drugs',
+    'harmful:intellectual-property',
+    'harmful:self-harm',
+    'harmful:sex-crime',
+    'harmful:sexual-content',
+    'harmful:specialized-advice',
+    'harmful:violent-crime',
+  ],
   'Brand Risk': [
+    'policy',
     'competitors',
+    'politics',
     'excessive-agency',
     'hallucination',
     'harmful:graphic-content',
@@ -16,39 +48,6 @@ export const riskCategories = {
     'harmful:unsafe-practices',
     'imitation',
     'overreliance',
-    'politics',
-  ],
-  'Legal Risk': [
-    'contracts',
-    'harmful:child-exploitation',
-    'harmful:copyright-violations',
-    'harmful:cybercrime',
-    'harmful:hate',
-    'harmful:illegal-activities',
-    'harmful:illegal-drugs',
-    'harmful:intellectual-property',
-    'harmful:privacy',
-    'harmful:self-harm',
-    'harmful:sex-crime',
-    'harmful:sexual-content',
-    'harmful:specialized-advice',
-    'harmful:violent-crime',
-  ],
-  'Technical Risk': [
-    'debug-access',
-    'hijacking',
-    'jailbreak',
-    'pii',
-    'prompt-injection',
-    'rbac',
-    'bola',
-    'bfla',
-    'bopla',
-    'ssrf',
-    'shell-injection',
-    'sql-injection',
-    'unrestricted-access',
-    'resource-consumption',
   ],
 };
 
@@ -103,6 +102,10 @@ export const riskCategorySeverityMap: Record<string, Severity> = {
   pii: Severity.High,
   politics: Severity.Low,
   rbac: Severity.High,
+  policy: Severity.High,
+  bola: Severity.High,
+  bfla: Severity.High,
+  ssrf: Severity.High,
 };
 
 export type TopLevelCategory = keyof typeof riskCategories;
@@ -166,6 +169,7 @@ export const categoryAliases = {
   pii: 'PIILeak',
   politics: 'PoliticalStatement',
   rbac: 'RbacEnforcement',
+  policy: 'PolicyViolation',
 };
 
 export const categoryAliasesReverse = Object.entries(categoryAliases).reduce(
@@ -200,6 +204,7 @@ export const displayNameOverrides = {
   'harmful:cybercrime': 'Cybercrime',
   'harmful:copyright-violations': 'Copyright Violations',
   'harmful:misinformation-disinformation': 'Misinformation & disinformation',
+  policy: 'Custom Policy',
 };
 
 // Duplicated in src/redteam/constants.ts for backend
