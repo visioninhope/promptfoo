@@ -7,7 +7,6 @@ import path from 'path';
 import invariant from 'tiny-invariant';
 import { z } from 'zod';
 import { disableCache } from '../../cache';
-import cliState from '../../cliState';
 import { resolveConfigs } from '../../config';
 import logger from '../../logger';
 import { synthesize } from '../../redteam';
@@ -43,7 +42,6 @@ export async function doGenerateRedteam(options: RedteamGenerateOptions) {
       },
       options.defaultConfig,
     );
-    cliState.basePath = resolved.basePath;
     testSuite = resolved.testSuite;
     redteamConfig = resolved.config.redteam;
   } else if (options.purpose) {
@@ -112,8 +110,9 @@ export async function doGenerateRedteam(options: RedteamGenerateOptions) {
 
   const config = {
     injectVar: redteamConfig?.injectVar || options.injectVar,
-    numTests: redteamConfig?.numTests ?? options.numTests,
     language: redteamConfig?.language || options.language,
+    maxConcurrency: options.maxConcurrency,
+    numTests: redteamConfig?.numTests ?? options.numTests,
     plugins,
     provider: redteamConfig?.provider || options.provider,
     purpose: redteamConfig?.purpose || options.purpose,
@@ -135,6 +134,7 @@ export async function doGenerateRedteam(options: RedteamGenerateOptions) {
     language: config.language,
     numTests: config.numTests,
     prompts: testSuite.prompts.map((prompt) => prompt.raw),
+    maxConcurrency: config.maxConcurrency,
   } as SynthesizeOptions);
 
   const updatedRedteamConfig = {
@@ -257,7 +257,7 @@ export function generateRedteamCommand(
     .option(
       '-n, --num-tests <number>',
       'Number of test cases to generate per plugin',
-      (val) => (Number.isInteger(val) ? val : parseInt(val, 10)),
+      (val) => (Number.isInteger(val) ? val : Number.parseInt(val, 10)),
       undefined,
     )
     .option(
@@ -266,6 +266,12 @@ export function generateRedteamCommand(
     )
     .option('--no-cache', 'Do not read or write results to disk cache', false)
     .option('--env-file <path>', 'Path to .env file')
+    .option(
+      '-j, --max-concurrency <number>',
+      'Maximum number of concurrent API calls',
+      (val) => Number.parseInt(val, 10),
+      defaultConfig.evaluateOptions?.maxConcurrency,
+    )
     .action((opts: Partial<RedteamGenerateOptions>): void => {
       try {
         let overrides: Record<string, any> = {};

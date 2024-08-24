@@ -106,12 +106,15 @@ export type EnvOverrides = {
   ANTHROPIC_API_KEY?: string;
   BAM_API_KEY?: string;
   BAM_API_HOST?: string;
+  AI21_API_BASE_URL?: string;
+  AI21_API_KEY?: string;
   AZURE_OPENAI_API_HOST?: string;
   AZURE_OPENAI_API_KEY?: string;
   AZURE_OPENAI_API_BASE_URL?: string;
   AZURE_OPENAI_BASE_URL?: string;
   AWS_BEDROCK_REGION?: string;
   COHERE_API_KEY?: string;
+  GROQ_API_KEY?: string;
   OPENAI_API_KEY?: string;
   OPENAI_API_HOST?: string;
   OPENAI_API_BASE_URL?: string;

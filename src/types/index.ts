@@ -46,7 +46,6 @@ export const CommandLineOptionsSchema = z.object({
   share: z.boolean().optional(),
   progressBar: z.boolean().optional(),
   watch: z.boolean().optional(),
-  interactiveProviders: z.boolean().optional(),
   filterFailing: z.string().optional(),
   filterFirstN: z.string().optional(),
   filterPattern: z.string().optional(),
@@ -125,17 +124,22 @@ export interface RunEvalOptions {
 }
 
 const EvaluateOptionsSchema = z.object({
+  cache: z.boolean().optional(),
+  delay: z.number().optional(),
+  eventSource: z.string().optional(),
+  generateSuggestions: z.boolean().optional(),
+  /**
+   * @deprecated This option has been removed as of 2024-08-21.
+   * @description Use `maxConcurrency: 1` or the CLI option `-j 1` instead to run evaluations serially.
+   * @author mldangelo
+   */
+  interactiveProviders: z.boolean().optional(),
   maxConcurrency: z.number().optional(),
-  showProgressBar: z.boolean().optional(),
   progressCallback: z
     .function(z.tuple([z.number(), z.number(), z.number(), z.custom<RunEvalOptions>()]), z.void())
     .optional(),
-  generateSuggestions: z.boolean().optional(),
   repeat: z.number().optional(),
-  delay: z.number().optional(),
-  cache: z.boolean().optional(),
-  eventSource: z.string().optional(),
-  interactiveProviders: z.boolean().optional(),
+  showProgressBar: z.boolean().optional(),
 });
 export type EvaluateOptions = z.infer<typeof EvaluateOptionsSchema>;
 
@@ -560,21 +564,31 @@ export const TestSuiteConfigSchema = z.object({
   // Optional description of what you're trying to test
   description: z.string().optional(),
 
-  // One or more LLM APIs to use, for example: openai:gpt-3.5-turbo, openai:gpt-4, localai:chat:vicuna
+  // One or more LLM APIs to use, for example: openai:gpt-4o-mini, openai:gpt-4o, localai:chat:vicuna
   providers: ProvidersSchema,
 
   // One or more prompt files to load
   prompts: z.union([
     z.string(),
-    z.array(z.union([z.string(), PromptSchema])),
+    z.array(
+      z.union([
+        z.string(),
+        z.object({
+          id: z.string(),
+          label: z.string().optional(),
+          raw: z.string().optional(),
+        }),
+        PromptSchema,
+      ]),
+    ),
     z.record(z.string(), z.string()),
   ]),
 
   // Path to a test file, OR list of LLM prompt variations (aka "test case")
-  tests: z.union([z.string(), z.array(z.union([z.string(), TestCaseSchema]))]),
+  tests: z.union([z.string(), z.array(z.union([z.string(), TestCaseSchema]))]).optional(),
 
   // Scenarios, groupings of data and tests to be evaluated
-  scenarios: z.array(ScenarioSchema).optional(),
+  scenarios: z.array(z.union([z.string(), ScenarioSchema])).optional(),
 
   // Sets the default properties for each test case. Useful for setting an assertion, on all test cases, for example.
   defaultTest: TestCaseSchema.partial().omit({ description: true }).optional(),
@@ -596,7 +610,7 @@ export const TestSuiteConfigSchema = z.object({
   // Nunjucks filters
   nunjucksFilters: z.record(z.string(), z.string()).optional(),
 
-  // Envar overrides
+  // Envvar overrides
   env: ProviderEnvOverridesSchema.optional(),
 
   // Metrics to calculate after the eval has been completed

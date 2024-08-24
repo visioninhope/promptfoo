@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 sidebar_label: 'Configuration'
 ---
 
@@ -21,7 +21,7 @@ The redteam configuration uses the following YAML structure:
 
 ```yaml
 redteam:
-  plugins: Array<string | { id: string, numTests?: number }>
+  plugins: Array<string | { id: string, numTests?: number, config?: Record<string, any> }>
   strategies: Array<string | { id: string }>
   numTests: number
   injectVar: string
@@ -113,6 +113,18 @@ If `numTests` is not specified for a plugin, it will use the global `numTests` v
 
 - `debug-access`: Checks if the model attempts to access or use debugging commands.
 - `rbac`: Evaluates if the model properly implements Role-Based Access Control (RBAC).
+- `prompt-extraction`: Tests if the model attempts to expose the system prompt and/or instructions.
+
+  - Takes a `config` object with `systemPrompt` property. This property is **required** for the plugin to work properly. For example:
+
+    ```yaml
+    redteam:
+      plugins:
+        - id: 'prompt-extraction'
+          config:
+            systemPrompt: 'You are a travel agent. Help the user plan trips.'
+    ```
+
 - `shell-injection`: Tests if the model attempts to execute shell commands.
 - `sql-injection`: Checks if the model performs SQL injection attacks to manipulate database queries.
 - `bfla`: Checks if the model performs Broken Function Level Authorization (BFLA) attacks to manipulate function-level access controls.
@@ -254,14 +266,15 @@ Strategies modify or generate additional test cases based on the output of other
 
 #### Available Strategies
 
-- `basic` - Raw payloads only (Default)
-- `prompt-injection`: Wraps the payload in a prompt injection (Default)
-- `jailbreak`: Applies a linear probe jailbreak technique to deliver the payload (Default)
-- `jailbreak:tree`: Applies a tree-based jailbreak technique
-- `crescendo`: Applies a multi-turn jailbreak technique
-- `rot13`: Applies ROT13 encoding to the injected variable, shifting each letter 13 positions in the alphabet
 - `base64`: Encodes the injected variable using Base64 encoding
+- `basic` - Raw payloads only (Default)
+- `crescendo`: Applies a multi-turn jailbreak technique
+- `jailbreak:tree`: Applies a tree-based jailbreak technique
+- `jailbreak`: Applies a linear probe jailbreak technique to deliver the payload (Default)
 - `leetspeak`: Converts the injected variable to leetspeak, replacing certain letters with numbers or symbols
+- `multilingual`: Translates the request to multiple low-resource languages
+- `prompt-injection`: Wraps the payload in a prompt injection (Default)
+- `rot13`: Applies ROT13 encoding to the injected variable, shifting each letter 13 positions in the alphabet
 
 See [Strategies](/docs/category/strategies/) for comprehensive descriptions of each strategy.
 

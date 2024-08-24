@@ -247,7 +247,11 @@ class Evaluator {
       };
       if (response.error) {
         ret.error = response.error;
-      } else if (response.output != null) {
+      } else if (response.output == null) {
+        ret.success = false;
+        ret.score = 0;
+        ret.error = 'No output';
+      } else {
         // Create a copy of response so we can potentially mutate it.
         const processedResponse = { ...response };
         const transforms: string[] = [
@@ -286,10 +290,6 @@ class Evaluator {
         }
         ret.response = processedResponse;
         ret.gradingResult = checkResult;
-      } else {
-        ret.success = false;
-        ret.score = 0;
-        ret.error = 'No output';
       }
 
       // Update token usage stats
@@ -481,7 +481,7 @@ class Evaluator {
     }
 
     // Set up eval cases
-    let runEvalOptions: RunEvalOptions[] = [];
+    const runEvalOptions: RunEvalOptions[] = [];
     let rowIndex = 0;
     for (let index = 0; index < tests.length; index++) {
       const testCase = tests[index];
@@ -748,66 +748,10 @@ class Evaluator {
     };
 
     // Run the evals
-    if (this.options.interactiveProviders) {
-      runEvalOptions = runEvalOptions.sort((a, b) =>
-        a.provider.id().localeCompare(b.provider.id()),
-      );
-      logger.warn('Providers are running in serial with user input.');
-
-      // Group evalOptions by provider
-      const groupedEvalOptions = runEvalOptions.reduce<Record<string, RunEvalOptions[]>>(
-        (acc, evalOption) => {
-          const providerId = evalOption.provider.id();
-          if (!acc[providerId]) {
-            acc[providerId] = [];
-          }
-          acc[providerId].push(evalOption);
-          return acc;
-        },
-        {},
-      );
-
-      // Process each group
-      for (const [providerId, providerEvalOptions] of Object.entries(groupedEvalOptions)) {
-        logger.info(
-          `Running ${providerEvalOptions.length} evaluations for provider ${providerId} with concurrency=${concurrency}...`,
-        );
-
-        if (this.options.showProgressBar) {
-          await createMultiBars(providerEvalOptions);
-        }
-        await async.forEachOfLimit(providerEvalOptions, concurrency, processEvalStep);
-        if (multibar) {
-          multibar.stop();
-        }
-
-        // Prompt to continue to the next provider unless it's the last one
-        if (
-          Object.keys(groupedEvalOptions).indexOf(providerId) <
-          Object.keys(groupedEvalOptions).length - 1
-        ) {
-          await new Promise((resolve) => {
-            const rl = readline.createInterface({
-              input: process.stdin,
-              output: process.stdout,
-            });
-            rl.question(`\nReady to continue to the next provider? (Y/n) `, (answer) => {
-              rl.close();
-              if (answer.toLowerCase() === 'n') {
-                logger.info('Aborting evaluation.');
-                process.exit(1);
-              }
-              resolve(true);
-            });
-          });
-        }
-      }
-    } else {
-      if (this.options.showProgressBar) {
-        await createMultiBars(runEvalOptions);
-      }
-      await async.forEachOfLimit(runEvalOptions, concurrency, processEvalStep);
+    if (this.options.showProgressBar) {
+      await createMultiBars(runEvalOptions);
     }
+    await async.forEachOfLimit(runEvalOptions, concurrency, processEvalStep);
 
     // Do we have to run comparisons between row outputs?
     const compareRowsCount = table.body.reduce(
@@ -832,9 +776,7 @@ class Evaluator {
         const gradingResults = await runCompareAssertion(row.test, compareAssertion, outputs);
         row.outputs.forEach((output, index) => {
           const gradingResult = gradingResults[index];
-          if (!output.gradingResult) {
-            output.gradingResult = gradingResult;
-          } else {
+          if (output.gradingResult) {
             output.gradingResult.tokensUsed = output.gradingResult.tokensUsed || {
               total: 0,
               prompt: 0,
@@ -865,6 +807,8 @@ class Evaluator {
               output.gradingResult.componentResults = [];
             }
             output.gradingResult.componentResults.push(gradingResult);
+          } else {
+            output.gradingResult = gradingResult;
           }
         });
         if (progressBar) {

@@ -91,6 +91,7 @@ export const ADDITIONAL_PLUGINS = [
   'debug-access',
   'imitation',
   'rbac',
+  'prompt-extraction',
   'ssrf',
   'shell-injection',
   'sql-injection',
@@ -322,6 +323,7 @@ export const ADDITIONAL_STRATEGIES = [
   'base64',
   'leetspeak',
   'crescendo',
+  'multilingual',
 ] as const;
 export type AdditionalStrategy = (typeof ADDITIONAL_STRATEGIES)[number];
 
@@ -337,6 +339,7 @@ export type Strategy = (typeof ALL_STRATEGIES)[number];
 export const subCategoryDescriptions: Record<Plugin | Strategy, string> = {
   default: 'Includes common plugins',
   basic: 'Raw attacks without any special attack strategies',
+  multilingual: 'Translates the input into low-resource languages',
   bola: 'Broken Object Level Authorization (BOLA) tests',
   bfla: 'Broken Function Level Authorization (BFLA) tests',
   ssrf: 'Server-Side Request Forgery (SSRF) tests',
@@ -392,4 +395,5 @@ export const subCategoryDescriptions: Record<Plugin | Strategy, string> = {
   rbac: 'Tests whether the model properly implements Role-Based Access Control (RBAC)',
   rot13: 'Attempts to obfuscate malicious content using ROT13 encoding',
   crescendo: 'Conversational attack strategy (high cost)',
+  'prompt-extraction': 'Attempts to get the model to reveal its system prompt',
 };

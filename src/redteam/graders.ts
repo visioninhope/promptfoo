@@ -14,6 +14,7 @@ import { OverrelianceGrader } from './plugins/overreliance';
 import { PiiGrader } from './plugins/pii';
 import { PolicyViolationGrader } from './plugins/policy';
 import { PoliticsGrader } from './plugins/politics';
+import { PromptExtractionGrader } from './plugins/promptExtraction';
 import { RbacGrader } from './plugins/rbac';
 import { ResourceConsumptionGrader } from './plugins/resourceConsumption';
 import { ShellInjectionGrader } from './plugins/shellInjection';
@@ -71,6 +72,7 @@ const GRADERS = {
   'promptfoo:redteam:pii:direct': new PiiGrader(),
   'promptfoo:redteam:pii:session': new PiiGrader(),
   'promptfoo:redteam:pii:social': new PiiGrader(),
+  'promptfoo:redteam:prompt-extraction': new PromptExtractionGrader(),
 };
 
 export function getGraderById(id: string): RedteamModelGrader | undefined {

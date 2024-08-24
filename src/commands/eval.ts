@@ -5,7 +5,6 @@ import dedent from 'dedent';
 import * as path from 'path';
 import invariant from 'tiny-invariant';
 import { disableCache } from '../cache';
-import cliState from '../cliState';
 import { resolveConfigs } from '../config';
 import { getEnvFloat, getEnvInt } from '../envars';
 import { DEFAULT_MAX_CONCURRENCY, evaluate } from '../evaluator';
@@ -43,7 +42,7 @@ export async function doEval(
   setupEnv(cmdObj.envFile);
   let config: Partial<UnifiedConfig> | undefined = undefined;
   let testSuite: TestSuite | undefined = undefined;
-  let basePath: string | undefined = undefined;
+  let _basePath: string | undefined = undefined;
 
   const runEvaluation = async (initialization?: boolean) => {
     const startTime = Date.now();
@@ -57,18 +56,17 @@ export async function doEval(
     if (cmdObj.verbose) {
       setLogLevel('debug');
     }
-    const iterations = parseInt(cmdObj.repeat || '', 10);
-    const repeat = !isNaN(iterations) && iterations > 0 ? iterations : 1;
+    const iterations = Number.parseInt(cmdObj.repeat || '', 10);
+    const repeat = !Number.isNaN(iterations) && iterations > 0 ? iterations : 1;
     if (!cmdObj.cache || repeat > 1) {
       logger.info('Cache is disabled.');
       disableCache();
     }
 
-    ({ config, testSuite, basePath } = await resolveConfigs(cmdObj, defaultConfig));
-    cliState.basePath = basePath;
+    ({ config, testSuite, basePath: _basePath } = await resolveConfigs(cmdObj, defaultConfig));
 
-    let maxConcurrency = parseInt(cmdObj.maxConcurrency || '', 10);
-    const delay = parseInt(cmdObj.delay || '', 0);
+    let maxConcurrency = Number.parseInt(cmdObj.maxConcurrency || '', 10);
+    const delay = Number.parseInt(cmdObj.delay || '', 0);
 
     if (delay > 0) {
       maxConcurrency = 1;
@@ -87,10 +85,10 @@ export async function doEval(
 
     const options: EvaluateOptions = {
       showProgressBar: getLogLevel() === 'debug' ? false : cmdObj.progressBar,
-      maxConcurrency: !isNaN(maxConcurrency) && maxConcurrency > 0 ? maxConcurrency : undefined,
+      maxConcurrency:
+        !Number.isNaN(maxConcurrency) && maxConcurrency > 0 ? maxConcurrency : undefined,
       repeat,
-      delay: !isNaN(delay) && delay > 0 ? delay : undefined,
-      interactiveProviders: cmdObj.interactiveProviders,
+      delay: !Number.isNaN(delay) && delay > 0 ? delay : undefined,
       ...evaluateOptions,
     };
 
@@ -138,7 +136,7 @@ export async function doEval(
 
     if (cmdObj.table && getLogLevel() !== 'debug') {
       // Output CLI table
-      const table = generateTable(summary, parseInt(cmdObj.tableCellMaxLength || '', 10));
+      const table = generateTable(summary, Number.parseInt(cmdObj.tableCellMaxLength || '', 10));
 
       logger.info('\n' + table.toString());
       if (summary.table.body.length > 25) {
@@ -174,9 +172,7 @@ export async function doEval(
     telemetry.maybeShowNotice();
 
     printBorder();
-    if (!cmdObj.write) {
-      logger.info(`${chalk.green('✔')} Evaluation complete`);
-    } else {
+    if (cmdObj.write) {
       if (shareableUrl) {
         logger.info(`${chalk.green('✔')} Evaluation complete: ${shareableUrl}`);
       } else {
@@ -191,6 +187,8 @@ export async function doEval(
           )}`,
         );
       }
+    } else {
+      logger.info(`${chalk.green('✔')} Evaluation complete`);
     }
     printBorder();
     const totalTests = summary.stats.successes + summary.stats.failures;
@@ -387,11 +385,6 @@ export function evalCommand(
     .option('--verbose', 'Show debug logs', defaultConfig?.commandLineOptions?.verbose)
     .option('-w, --watch', 'Watch for changes in config and re-run')
     .option('--env-file <path>', 'Path to .env file')
-    .option(
-      '--interactive-providers',
-      'Run providers interactively, one at a time',
-      defaultConfig?.evaluateOptions?.interactiveProviders,
-    )
     .option('-n, --filter-first-n <number>', 'Only run the first N tests')
     .option(
       '--filter-pattern <pattern>',
@@ -413,7 +406,24 @@ export function evalCommand(
       {},
     )
     .option('--description <description>', 'Description of the eval run')
+    .option(
+      '--interactive-providers',
+      'Run providers interactively, one at a time',
+      defaultConfig?.evaluateOptions?.interactiveProviders,
+    )
     .action((opts) => {
+      if (opts.interactiveProviders) {
+        logger.warn(
+          chalk.yellow(dedent`
+          Warning: The --interactive-providers option has been removed.
+
+          Instead, use -j 1 to run evaluations with a concurrency of 1:
+          ${chalk.green('promptfoo eval -j 1')}
+        `),
+        );
+        process.exit(2);
+      }
+
       for (const maybeFilePath of opts.output ?? []) {
         const { data: extension } = OutputFileExtension.safeParse(
           maybeFilePath.split('.').pop()?.toLowerCase(),

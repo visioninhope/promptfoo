@@ -4,6 +4,7 @@ import path from 'path';
 import invariant from 'tiny-invariant';
 import { importModule } from './esm';
 import logger from './logger';
+import { AI21ChatCompletionProvider } from './providers/ai21';
 import { AnthropicCompletionProvider, AnthropicMessagesProvider } from './providers/anthropic';
 import {
   AzureOpenAiAssistantProvider,
@@ -14,7 +15,8 @@ import {
 import { BAMChatProvider, BAMEmbeddingProvider } from './providers/bam';
 import { AwsBedrockCompletionProvider, AwsBedrockEmbeddingProvider } from './providers/bedrock';
 import * as CloudflareAiProviders from './providers/cloudflare-ai';
-import { CohereChatCompletionProvider } from './providers/cohere';
+import { CohereChatCompletionProvider, CohereEmbeddingProvider } from './providers/cohere';
+import { GroqProvider } from './providers/groq';
 import { HttpProvider } from './providers/http';
 import {
   HuggingfaceFeatureExtractionProvider,
@@ -335,8 +337,21 @@ export async function loadApiProvider(
     const modelName = providerPath.split(':')[1];
     ret = new MistralChatCompletionProvider(modelName, providerOptions);
   } else if (providerPath.startsWith('cohere:')) {
-    const modelName = providerPath.split(':')[1];
-    ret = new CohereChatCompletionProvider(modelName, providerOptions);
+    const splits = providerPath.split(':');
+    const modelType = splits[1];
+    const modelName = splits.slice(2).join(':');
+
+    if (modelType === 'embedding' || modelType === 'embeddings') {
+      ret = new CohereEmbeddingProvider(modelName, providerOptions);
+    } else if (modelType === 'chat' || modelType === undefined) {
+      ret = new CohereChatCompletionProvider(modelName || modelType, providerOptions);
+    } else {
+      // Default to chat provider for any other model type
+      ret = new CohereChatCompletionProvider(
+        providerPath.substring('cohere:'.length),
+        providerOptions,
+      );
+    }
   } else if (providerPath.startsWith('localai:')) {
     const splits = providerPath.split(':');
     const modelType = splits[1];
@@ -363,6 +378,12 @@ export async function loadApiProvider(
     ret = new RedteamCrescendoProvider(providerOptions.config);
   } else if (providerPath === 'promptfoo:manual-input') {
     ret = new ManualInputProvider(providerOptions);
+  } else if (providerPath.startsWith('groq:')) {
+    const modelName = providerPath.split(':')[1];
+    ret = new GroqProvider(modelName, providerOptions);
+  } else if (providerPath.startsWith('ai21:')) {
+    const modelName = providerPath.split(':')[1];
+    ret = new AI21ChatCompletionProvider(modelName, providerOptions);
   } else {
     if (providerPath.startsWith('file://')) {
       providerPath = providerPath.slice('file://'.length);
@@ -439,5 +460,6 @@ export default {
   LocalAiChatProvider,
   BAMChatProvider,
   BAMEmbeddingProvider,
+  GroqProvider,
   loadApiProvider,
 };

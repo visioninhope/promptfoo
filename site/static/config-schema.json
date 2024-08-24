@@ -183,6 +183,24 @@
                       "id": {
                         "type": "string"
                       },
+                      "label": {
+                        "type": "string"
+                      },
+                      "raw": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
                       "raw": {
                         "type": "string"
                       },
@@ -505,56 +523,63 @@
         "scenarios": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "description": {
+            "anyOf": [
+              {
                 "type": "string"
               },
-              "config": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "description": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/description"
-                    },
-                    "vars": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/vars"
-                    },
-                    "provider": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/provider"
-                    },
-                    "providerOutput": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/providerOutput"
-                    },
-                    "assert": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/assert"
-                    },
-                    "options": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/options"
-                    },
-                    "threshold": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/threshold"
-                    },
-                    "metadata": {
-                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/metadata"
+              {
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "config": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "description": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/description"
+                        },
+                        "vars": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/vars"
+                        },
+                        "provider": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/provider"
+                        },
+                        "providerOutput": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/providerOutput"
+                        },
+                        "assert": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/assert"
+                        },
+                        "options": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/options"
+                        },
+                        "threshold": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/threshold"
+                        },
+                        "metadata": {
+                          "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1/properties/metadata"
+                        }
+                      },
+                      "additionalProperties": false
                     }
                   },
-                  "additionalProperties": false
-                }
-              },
-              "tests": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1"
-                }
+                  "tests": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/PromptfooConfigSchema/properties/tests/anyOf/1/items/anyOf/1"
+                    }
+                  }
+                },
+                "required": [
+                  "config",
+                  "tests"
+                ],
+                "additionalProperties": false
               }
-            },
-            "required": [
-              "config",
-              "tests"
-            ],
-            "additionalProperties": false
+            ]
           }
         },
         "defaultTest": {
@@ -661,28 +686,28 @@
         "evaluateOptions": {
           "type": "object",
           "properties": {
-            "maxConcurrency": {
-              "type": "number"
-            },
-            "showProgressBar": {
+            "cache": {
               "type": "boolean"
-            },
-            "generateSuggestions": {
-              "type": "boolean"
-            },
-            "repeat": {
-              "type": "number"
             },
             "delay": {
               "type": "number"
             },
-            "cache": {
-              "type": "boolean"
-            },
             "eventSource": {
               "type": "string"
             },
+            "generateSuggestions": {
+              "type": "boolean"
+            },
             "interactiveProviders": {
+              "type": "boolean"
+            },
+            "maxConcurrency": {
+              "type": "number"
+            },
+            "repeat": {
+              "type": "number"
+            },
+            "showProgressBar": {
               "type": "boolean"
             }
           },
@@ -766,9 +791,6 @@
             "watch": {
               "type": "boolean"
             },
-            "interactiveProviders": {
-              "type": "boolean"
-            },
             "filterFailing": {
               "type": "string"
             },
@@ -805,8 +827,7 @@
       },
       "required": [
         "providers",
-        "prompts",
-        "tests"
+        "prompts"
       ],
       "additionalProperties": false
     }

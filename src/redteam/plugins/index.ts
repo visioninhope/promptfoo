@@ -16,6 +16,7 @@ import { OverreliancePlugin } from './overreliance';
 import { getPiiLeakTestsForCategory } from './pii';
 import { PolicyPlugin } from './policy';
 import { PoliticsPlugin } from './politics';
+import { PromptExtractionPlugin } from './promptExtraction';
 import { RbacPlugin } from './rbac';
 import { ResourceConsumptionPlugin } from './resourceConsumption';
 import { ShellInjectionPlugin } from './shellInjection';
@@ -146,5 +147,15 @@ export const Plugins: Plugin[] = [
     key: 'resource-consumption',
     action: (provider, purpose, injectVar, n, config) =>
       new ResourceConsumptionPlugin(provider, purpose, injectVar, config).generateTests(n),
+  },
+  {
+    key: 'prompt-extraction',
+    action: (provider, purpose, injectVar, n, config) =>
+      new PromptExtractionPlugin(
+        provider,
+        purpose,
+        injectVar,
+        config as { systemPrompt: string },
+      ).generateTests(n),
   },
 ];
