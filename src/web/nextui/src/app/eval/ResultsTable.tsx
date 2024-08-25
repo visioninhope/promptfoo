@@ -533,6 +533,7 @@ function ResultsTable({
               const output = getOutput(info.row.index, idx);
               return (
                 <EvalOutputCell
+                  id={info.row.original.id}
                   output={output}
                   maxTextLength={maxTextLength}
                   rowIndex={info.row.index}

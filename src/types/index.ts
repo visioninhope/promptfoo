@@ -178,6 +178,8 @@ export interface PromptWithMetadata {
 }
 
 export interface EvaluateResult {
+  // TODO(ian): id introduced 2024-08-24 and everything should have one. Optional for backwards compatibility.
+  id?: number;
   provider: Pick<ProviderOptions, 'id' | 'label'>;
   prompt: Prompt;
   vars: Record<string, string | object>;
@@ -207,6 +209,8 @@ export interface EvaluateTableOutput {
 }
 
 export interface EvaluateTableRow {
+  // TODO(ian): id introduced 2024-08-24 and everything should have one. Optional for backwards compatibility.
+  id?: number;
   description?: string;
   outputs: EvaluateTableOutput[];
   vars: string[];

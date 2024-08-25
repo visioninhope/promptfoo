@@ -27,6 +27,7 @@ interface EvalOutputCellProps {
   promptIndex: number;
   showStats: boolean;
   onRating: (isPass?: boolean, score?: number, comment?: string) => void;
+  id?: number;
 }
 
 function EvalOutputCell({
@@ -39,6 +40,7 @@ function EvalOutputCell({
   showDiffs,
   searchText,
   showStats,
+  id,
 }: EvalOutputCellProps & {
   firstOutput: EvaluateTableOutput;
   showDiffs: boolean;
@@ -446,7 +448,7 @@ function EvalOutputCell({
 
   const scoreString = scoreToString(output.score);
   return (
-    <div className="cell" style={cellStyle}>
+    <div className="cell" style={cellStyle} id={id?.toString()}>
       {showPassFail && (
         <>
           {output.pass ? (

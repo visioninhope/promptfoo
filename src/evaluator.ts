@@ -588,7 +588,10 @@ class Evaluator {
       });
       const row = await this.runEval(evalStep);
 
-      results.push(row);
+      results.push({
+        ...row,
+        id: index,
+      });
 
       numComplete++;
       if (options.progressCallback) {
@@ -617,6 +620,7 @@ class Evaluator {
       const { rowIndex, colIndex } = evalStep;
       if (!table.body[rowIndex]) {
         table.body[rowIndex] = {
+          id: index,
           description: evalStep.test.description,
           outputs: [],
           test: evalStep.test,
