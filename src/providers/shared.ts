@@ -1,5 +1,7 @@
 import yaml from 'js-yaml';
+import { fetchWithCache } from '../cache';
 import { getEnvBool, getEnvInt } from '../envars';
+import logger from '../logger';
 
 /**
  * The default timeout for API requests in milliseconds.
@@ -20,6 +22,42 @@ interface ProviderConfig {
   cost?: number;
 }
 
+interface ModelCostResponse {
+  modelName: string;
+  provider: string;
+  mode: string;
+  inputTokenCost: number;
+  outputTokenCost: number;
+}
+
+async function fetchModelCost(
+  modelName: string,
+  provider: string,
+  mode: string,
+): Promise<ModelCostResponse | null> {
+  // const url = 'https://api.promptfoo.dev/v1/model-cost';
+  const url = 'https://us-central1-promptfoo.cloudfunctions.net/generate/model-cost';
+  const params = new URLSearchParams({ provider, modelName, mode });
+
+  try {
+    const { data } = (await fetchWithCache(
+      `${url}?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+      30000, // 30 seconds timeout
+    )) as { data: ModelCostResponse };
+
+    return data;
+  } catch (error) {
+    logger.error('Error fetching model cost:', error);
+    return null;
+  }
+}
+
 /**
  * Calculates the cost of an API call based on the model and token usage.
  *
@@ -28,15 +66,19 @@ interface ProviderConfig {
  * @param {number | undefined} promptTokens The number of tokens in the prompt.
  * @param {number | undefined} completionTokens The number of tokens in the completion.
  * @param {ProviderModel[]} models An array of available models with their costs.
+ * @param {string} provider The provider name.
+ * @param {string} mode The mode of the model.
  * @returns {number | undefined} The calculated cost, or undefined if it can't be calculated.
  */
-export function calculateCost(
+export async function calculateCost(
   modelName: string,
   config: ProviderConfig,
   promptTokens: number | undefined,
   completionTokens: number | undefined,
   models: ProviderModel[],
-): number | undefined {
+  provider: string,
+  mode: string = 'chat',
+): Promise<number | undefined> {
   if (
     !Number.isFinite(promptTokens) ||
     !Number.isFinite(completionTokens) ||
@@ -48,12 +90,19 @@ export function calculateCost(
 
   const model = models.find((m) => m.id === modelName);
   if (!model || !model.cost) {
+    // Fetch cost from API if not available locally
+    const apiCost = await fetchModelCost(modelName, provider, mode);
+    if (apiCost) {
+      const inputCost = config.cost ?? apiCost.inputTokenCost;
+      const outputCost = config.cost ?? apiCost.outputTokenCost;
+      return inputCost * promptTokens + outputCost * completionTokens;
+    }
     return undefined;
   }
 
   const inputCost = config.cost ?? model.cost.input;
   const outputCost = config.cost ?? model.cost.output;
-  return inputCost * promptTokens + outputCost * completionTokens || undefined;
+  return inputCost * promptTokens + outputCost * completionTokens;
 }
 
 /**

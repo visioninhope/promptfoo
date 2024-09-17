@@ -83,29 +83,45 @@ describe('Shared Provider Functions', () => {
       { id: 'model2', cost: { input: 0.003, output: 0.004 } },
     ];
 
-    it('should calculate cost correctly', () => {
-      const cost = calculateCost('model1', {}, 1000, 500, models);
+    it('should calculate cost correctly', async () => {
+      const cost = await calculateCost('model1', {}, 1000, 500, models, 'provider', 'chat');
       expect(cost).toBe(2); // (0.001 * 1000) + (0.002 * 500)
     });
 
-    it('should use config cost if provided', () => {
-      const cost = calculateCost('model1', { cost: 0.005 }, 1000, 500, models);
+    it('should use config cost if provided', async () => {
+      const cost = await calculateCost(
+        'model1',
+        { cost: 0.005 },
+        1000,
+        500,
+        models,
+        'provider',
+        'chat',
+      );
       expect(cost).toBe(7.5); // (0.005 * 1000) + (0.005 * 500)
     });
 
-    it('should return undefined if model not found', () => {
-      const cost = calculateCost('nonexistent', {}, 1000, 500, models);
+    it('should return undefined if model not found', async () => {
+      const cost = await calculateCost('nonexistent', {}, 1000, 500, models, 'provider', 'chat');
       expect(cost).toBeUndefined();
     });
 
-    it('should return undefined if tokens are not finite', () => {
-      expect(calculateCost('model1', {}, Number.NaN, 500, models)).toBeUndefined();
-      expect(calculateCost('model1', {}, 1000, Infinity, models)).toBeUndefined();
+    it('should return undefined if tokens are not finite', async () => {
+      await expect(
+        calculateCost('model1', {}, Number.NaN, 500, models, 'provider', 'chat'),
+      ).resolves.toBeUndefined();
+      await expect(
+        calculateCost('model1', {}, 1000, Infinity, models, 'provider', 'chat'),
+      ).resolves.toBeUndefined();
     });
 
-    it('should return undefined if tokens are undefined', () => {
-      expect(calculateCost('model1', {}, undefined, 500, models)).toBeUndefined();
-      expect(calculateCost('model1', {}, 1000, undefined, models)).toBeUndefined();
+    it('should return undefined if tokens are undefined', async () => {
+      await expect(
+        calculateCost('model1', {}, undefined, 500, models, 'provider', 'chat'),
+      ).resolves.toBeUndefined();
+      await expect(
+        calculateCost('model1', {}, 1000, undefined, models, 'provider', 'chat'),
+      ).resolves.toBeUndefined();
     });
   });
 });

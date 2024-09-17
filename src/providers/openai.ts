@@ -337,16 +337,20 @@ function formatOpenAiError(data: {
   return errorMessage;
 }
 
-export function calculateOpenAICost(
+export async function calculateOpenAICost(
   modelName: string,
   config: OpenAiSharedOptions,
   promptTokens?: number,
   completionTokens?: number,
-): number | undefined {
-  return calculateCost(modelName, config, promptTokens, completionTokens, [
-    ...OPENAI_CHAT_MODELS,
-    ...OPENAI_COMPLETION_MODELS,
-  ]);
+): Promise<number | undefined> {
+  return calculateCost(
+    modelName,
+    config,
+    promptTokens,
+    completionTokens,
+    [...OPENAI_CHAT_MODELS, ...OPENAI_COMPLETION_MODELS],
+    'openai',
+  );
 }
 
 export class OpenAiCompletionProvider extends OpenAiGenericProvider {
@@ -438,7 +442,7 @@ export class OpenAiCompletionProvider extends OpenAiGenericProvider {
         output: data.choices[0].text,
         tokenUsage: getTokenUsage(data, cached),
         cached,
-        cost: calculateOpenAICost(
+        cost: await calculateOpenAICost(
           this.modelName,
           this.config,
           data.usage?.prompt_tokens,
@@ -611,7 +615,7 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
             tokenUsage: getTokenUsage(data, cached),
             cached,
             logProbs,
-            cost: calculateOpenAICost(
+            cost: await calculateOpenAICost(
               this.modelName,
               this.config,
               data.usage?.prompt_tokens,
@@ -626,7 +630,7 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
         tokenUsage: getTokenUsage(data, cached),
         cached,
         logProbs,
-        cost: calculateOpenAICost(
+        cost: await calculateOpenAICost(
           this.modelName,
           this.config,
           data.usage?.prompt_tokens,

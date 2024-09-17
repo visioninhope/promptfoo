@@ -177,18 +177,19 @@ const AZURE_OPENAI_MODELS = [
   },
 ];
 
-export function calculateAzureOpenAICost(
+export async function calculateAzureOpenAICost(
   modelName: string,
   config: AzureOpenAiCompletionOptions,
   promptTokens?: number,
   completionTokens?: number,
-): number | undefined {
+): Promise<number | undefined> {
   return calculateCost(
     modelName,
     { cost: undefined },
     promptTokens,
     completionTokens,
     AZURE_OPENAI_MODELS,
+    'azureopenai',
   );
 }
 
@@ -443,7 +444,7 @@ export class AzureOpenAiCompletionProvider extends AzureOpenAiGenericProvider {
               prompt: data.usage.prompt_tokens,
               completion: data.usage.completion_tokens,
             },
-        cost: calculateAzureOpenAICost(
+        cost: await calculateAzureOpenAICost(
           this.deploymentName,
           this.config,
           data.usage?.prompt_tokens,
@@ -580,7 +581,7 @@ export class AzureOpenAiChatCompletionProvider extends AzureOpenAiGenericProvide
             },
         cached,
         logProbs,
-        cost: calculateAzureOpenAICost(
+        cost: await calculateAzureOpenAICost(
           this.deploymentName,
           this.config,
           data.usage?.prompt_tokens,

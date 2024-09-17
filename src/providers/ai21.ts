@@ -47,13 +47,13 @@ function getTokenUsage(data: any, cached: boolean): Partial<TokenUsage> {
   return {};
 }
 
-function calculateAI21Cost(
+export async function calculateAI21Cost(
   modelName: string,
   config: AI21ChatCompletionOptions,
   promptTokens?: number,
   completionTokens?: number,
-): number | undefined {
-  return calculateCost(modelName, config, promptTokens, completionTokens, AI21_CHAT_MODELS);
+): Promise<number | undefined> {
+  return calculateCost(modelName, config, promptTokens, completionTokens, AI21_CHAT_MODELS, 'ai21');
 }
 
 export class AI21ChatCompletionProvider implements ApiProvider {
@@ -174,7 +174,7 @@ export class AI21ChatCompletionProvider implements ApiProvider {
       output: data.choices[0].message.content,
       tokenUsage: getTokenUsage(data, cached),
       cached,
-      cost: calculateAI21Cost(
+      cost: await calculateAI21Cost(
         this.modelName,
         this.config,
         data.usage?.prompt_tokens,

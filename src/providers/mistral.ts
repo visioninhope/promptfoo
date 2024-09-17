@@ -127,16 +127,20 @@ function getTokenUsage(data: any, cached: boolean): Partial<TokenUsage> {
   return {};
 }
 
-function calculateMistralCost(
+async function calculateMistralCost(
   modelName: string,
   config: MistralChatCompletionOptions,
   promptTokens?: number,
   completionTokens?: number,
-): number | undefined {
-  return calculateCost(modelName, config, promptTokens, completionTokens, [
-    ...MISTRAL_CHAT_MODELS,
-    ...MISTRAL_EMBEDDING_MODELS,
-  ]);
+): Promise<number | undefined> {
+  return calculateCost(
+    modelName,
+    config,
+    promptTokens,
+    completionTokens,
+    [...MISTRAL_CHAT_MODELS, ...MISTRAL_EMBEDDING_MODELS],
+    'mistral',
+  );
 }
 
 export class MistralChatCompletionProvider implements ApiProvider {
@@ -281,7 +285,7 @@ export class MistralChatCompletionProvider implements ApiProvider {
       output: data.choices[0].message.content,
       tokenUsage: getTokenUsage(data, cached),
       cached,
-      cost: calculateMistralCost(
+      cost: await calculateMistralCost(
         this.modelName,
         this.config,
         data.usage?.prompt_tokens,
@@ -419,7 +423,12 @@ export class MistralEmbeddingProvider implements ApiProvider {
           ...tokenUsage,
           completion: completionTokens,
         },
-        cost: calculateMistralCost(this.modelName, this.config, promptTokens, completionTokens),
+        cost: await calculateMistralCost(
+          this.modelName,
+          this.config,
+          promptTokens,
+          completionTokens,
+        ),
       };
     } catch (err) {
       logger.error(data.error?.message || 'Unknown error');

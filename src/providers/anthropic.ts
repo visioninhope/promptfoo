@@ -161,13 +161,20 @@ export function parseMessages(messages: string): {
   return { system, extractedMessages };
 }
 
-export function calculateAnthropicCost(
+export async function calculateAnthropicCost(
   modelName: string,
   config: AnthropicMessageOptions,
   promptTokens?: number,
   completionTokens?: number,
-): number | undefined {
-  return calculateCost(modelName, config, promptTokens, completionTokens, ANTHROPIC_MODELS);
+): Promise<number | undefined> {
+  return calculateCost(
+    modelName,
+    config,
+    promptTokens,
+    completionTokens,
+    ANTHROPIC_MODELS,
+    'anthropic',
+  );
 }
 
 export class AnthropicMessagesProvider implements ApiProvider {
@@ -268,7 +275,7 @@ export class AnthropicMessagesProvider implements ApiProvider {
       return {
         output: outputFromMessage(response),
         tokenUsage: getTokenUsage(response, false),
-        cost: calculateAnthropicCost(
+        cost: await calculateAnthropicCost(
           this.modelName,
           this.config,
           response.usage?.input_tokens,
