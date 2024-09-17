@@ -1,3 +1,5 @@
+description: '"Corporate chatbot configuration testing accuracy of response based on contextual queries."'
+
 prompts:
   - |
     You are an internal corporate chatbot.

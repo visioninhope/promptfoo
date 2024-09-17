@@ -1,3 +1,5 @@
+description: '"Tweet Generator using GPT-4o-mini"'
+
 prompts:
   - 'Write a {{sentence}}'
 

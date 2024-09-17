@@ -1,3 +1,5 @@
+description: GPT-4 based three-word description generator for various fruit related topics
+
 prompts:
   - 'Tell me about {{topic}} in three words'
 

@@ -1,3 +1,5 @@
+description: '"Chat prompt testing using multiple AI models including GPT 4o, GPT 4o-mini, and Llama with a variety of assertions."'
+
 prompts:
   - file://prompts/chat_prompt.json
 

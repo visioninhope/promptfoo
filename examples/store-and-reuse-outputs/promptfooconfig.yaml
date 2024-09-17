@@ -1,3 +1,5 @@
+description: '"Interactive conversation configuration using GPT-4 with message responses and output transformation."'
+
 prompts:
   - 'Respond to the user: {{message}}'
 

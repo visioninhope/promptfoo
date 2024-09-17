@@ -1,3 +1,5 @@
+description: Testing OpenAI's GPT-4o-mini model on various prompts in different years
+
 prompts:
   - file://prompt1.json
   - file://prompt2.json

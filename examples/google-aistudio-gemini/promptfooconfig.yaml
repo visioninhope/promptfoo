@@ -1,3 +1,5 @@
+description: Configuration for generating tweets about a specific topic using Google's Gemini-Pro provider
+
 prompts:
   - 'Write a tweet about {{topic}}'
   - 'Write a very concise, funny tweet about {{topic}}'

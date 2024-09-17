@@ -1,3 +1,5 @@
+description: '"Generating and testing funny and factual tweets with GPT-4"'
+
 prompts:
   - 'Write a tweet about {{topic}}'
   - 'Write a very concise, funny tweet about {{topic}}'

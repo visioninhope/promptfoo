@@ -1,3 +1,5 @@
+description: Configuration for processing prompts using OpenAI's GPT-4o-mini model with specified tests
+
 prompts:
   - file://prompts.txt
 providers:

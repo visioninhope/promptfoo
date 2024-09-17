@@ -1,3 +1,5 @@
+description: Tweet Generation using Cohere AI with Web Search
+
 prompts:
   - 'Write a tweet about {{topic}}'
 

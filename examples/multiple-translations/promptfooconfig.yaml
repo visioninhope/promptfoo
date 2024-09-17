@@ -1,3 +1,5 @@
+description: '"Multilingual testing of responses from OpenAI GPT-4o and GPT-4o-mini to specific prompts"'
+
 prompts:
   - 'file://prompts.txt'
 providers:

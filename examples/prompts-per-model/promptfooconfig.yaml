@@ -1,3 +1,5 @@
+description: '"Configuration for testing AI models on diverse topic prompts"'
+
 prompts:
   - id: file://prompt1.txt
     label: My first prompt

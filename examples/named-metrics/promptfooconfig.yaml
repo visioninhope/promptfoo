@@ -1,3 +1,5 @@
+description: '"Pirate-themed speech transformation tests and metrics for an AI model."'
+
 prompts:
   - 'Say this as though you are a pirate: {{body}}'
   - 'Say this as though you are a seafarer from the 17th century: {{body}}'

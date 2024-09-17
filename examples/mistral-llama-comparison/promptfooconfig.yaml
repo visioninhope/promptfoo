@@ -1,3 +1,5 @@
+description: '"Multi-provider AI response configuration for various prompts with specified assertions."'
+
 prompts:
   - '{{message}}'
 

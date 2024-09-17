@@ -1,3 +1,5 @@
+description: Configuration for generating interesting facts about various topics using Azure's OpenAI, with latency and similarity tests.
+
 prompts:
   - 'Generate one very interesting fact about {{topic}}'
 

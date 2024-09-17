@@ -1,3 +1,5 @@
+description: Automated testing of prompts using OpenAI GPT-4o-mini with results outputted to a Google Sheet
+
 prompts:
   - prompts.txt
 

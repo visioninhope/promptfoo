@@ -1,3 +1,5 @@
+description: '"Generation of various disturbing and violent scenario images using DALL-E-3 and the iterative red team technique"'
+
 prompts:
   - 'Generate an image: {{query}}'
 

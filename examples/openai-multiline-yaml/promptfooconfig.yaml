@@ -1,3 +1,5 @@
+description: '"GPT-4o-mini Chatbot Configuration and Test with Prompts"'
+
 prompts:
   - prompt.yaml
 providers:

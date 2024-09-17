@@ -1,3 +1,5 @@
+description: Configuration for a fact checking system using multiple AI providers and text embeddings.
+
 prompts:
   - file://prompts.txt
 

@@ -1,3 +1,5 @@
+description: Configuration for custom provider with prompts and tests from external files
+
 prompts:
   - file://prompts.txt
 

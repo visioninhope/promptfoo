@@ -1,3 +1,5 @@
+description: '"Capital naming test with GPT-4o-mini model"'
+
 prompts:
   - file://prompts/name_capitals_concise.txt
   - file://prompts/name_capitals_verbose.txt

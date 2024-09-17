@@ -1,3 +1,5 @@
+description: Testing GPT-4's object recognition in images
+
 prompts:
   - file://prompt.json
 providers:

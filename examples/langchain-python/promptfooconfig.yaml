@@ -1,3 +1,5 @@
+description: '"Mathematical Problem Solving using OpenAI and Python Script"'
+
 prompts:
   - prompt.txt
 providers:

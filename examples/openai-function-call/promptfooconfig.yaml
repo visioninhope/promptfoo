@@ -1,3 +1,5 @@
+description: '"Weather fetching configurator using OpenAI GPT-4o-mini"'
+
 prompts:
   - 'What is the weather like in {{city}}?'
 

@@ -1,3 +1,5 @@
+description: '"Configuration for AI response testing with Llama and OpenAI models using various prompts and assertions."'
+
 prompts:
   - id: file://prompts/openai_prompt.json
     label: openai_prompt

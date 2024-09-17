@@ -1,3 +1,5 @@
+description: Chatbot test configuration using OpenAI's GPT-4 and Llama-2 models with various prompts and assertions
+
 prompts:
   - 'Respond to the user concisely: {{message}}'
 

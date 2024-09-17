@@ -1,3 +1,5 @@
+description: Configuration for a multilingual translation service utilizing Amazon's Titan Text Lite AI model.
+
 prompts:
   - 'Convert this English to {{language}}: {{input}}'
   - 'Translate to {{language}}: {{input}}'

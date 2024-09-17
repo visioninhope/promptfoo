@@ -1,3 +1,5 @@
+description: '"Weather inquiry tool configuration for various cities"'
+
 prompts:
   - Tell me about the weather in {{city}}.
 

@@ -1,3 +1,5 @@
+description: '"Customer service chatbot testing for various eCommerce related queries"'
+
 prompts:
   - file://prompts.txt
 providers:

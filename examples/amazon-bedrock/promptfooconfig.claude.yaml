@@ -1,3 +1,5 @@
+description: AI-generated tweets on various topics using Claude Instant, Haiku, and Sonnet models.
+
 prompts:
   - 'Write a tweet about {{topic}}'
 

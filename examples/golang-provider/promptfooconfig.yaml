@@ -1,3 +1,5 @@
+description: Configuration for generating funny tweets about various topics using a Golang provider, with specific assert tests for each topic.
+
 prompts:
   - 'Write a very concise funny tweet about {{topic}}'
 

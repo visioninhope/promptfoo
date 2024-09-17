@@ -1,3 +1,5 @@
+description: Interactive prompt responses using GPT-4 with varying temperatures
+
 prompts:
   - 'Respond to the following instruction: {{message}}'
 

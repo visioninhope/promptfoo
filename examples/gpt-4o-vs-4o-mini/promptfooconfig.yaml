@@ -1,3 +1,5 @@
+description: '"Riddle-solving AI test using OpenAI models"'
+
 prompts:
   - 'Solve this riddle: {{riddle}}'
 

@@ -1,3 +1,5 @@
+description: '"Configuration for a riddle-solving AI using multiple models"'
+
 prompts:
   - '{{message}}'
 providers:

@@ -1,3 +1,5 @@
+description: '"Interactive Q&A session with GPT-4 about Mark Zuckerberg"'
+
 prompts:
   - file://prompt.json
 providers:

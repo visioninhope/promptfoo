@@ -1,3 +1,5 @@
+description: Weather inquiry tool using OpenAI GPT-4o-mini and the 'get_current_weather' function
+
 prompts:
   - 'What is the weather like in {{city}}?'
 

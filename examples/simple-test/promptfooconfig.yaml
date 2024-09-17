@@ -1,3 +1,5 @@
+description: '"Automated Testing for Text-based Responses with GPT-4 Mini"'
+
 prompts:
   - file://prompts.txt
 providers:

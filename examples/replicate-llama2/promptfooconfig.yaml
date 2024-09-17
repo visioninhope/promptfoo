@@ -1,3 +1,5 @@
+description: '"Chat model testing on various topics using Llama-2-70b"'
+
 prompts:
   - file://prompts.txt
 providers:

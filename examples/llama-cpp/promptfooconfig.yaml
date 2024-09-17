@@ -1,3 +1,5 @@
+description: '"AI configuration for generating funny tweets about a given topic"'
+
 prompts:
   - 'Write a funny tweet about {{topic}}'
   - "Human: Write a funny tweet about {{topic}}\nAI:"

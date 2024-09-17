@@ -1,3 +1,5 @@
+description: '"Configuration for testing an AI model using various prompts and test cases."'
+
 prompts:
   - file://prompt*.txt
 providers:

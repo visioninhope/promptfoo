@@ -1,3 +1,5 @@
+description: '"Discovery Inquiry Configuration with GPT-4o-mini and pplx-70b-online Models"'
+
 prompts:
   - 'Who discovered {{topic}}?'
 

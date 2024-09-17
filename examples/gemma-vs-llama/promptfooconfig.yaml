@@ -1,3 +1,5 @@
+description: '"Chatbot Configuration Testing with Llama and Gemma Models"'
+
 prompts:
   - '{{message}}'
 

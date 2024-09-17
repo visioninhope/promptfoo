@@ -1,3 +1,5 @@
+description: '"Weather information retrieval for different locations"'
+
 prompts:
   - Tell me about the weather in {{city}} in the default unit for the location.
 

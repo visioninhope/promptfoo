@@ -1,3 +1,5 @@
+description: '"Configuration for generating concise funny tweets about various topics"'
+
 prompts:
   - 'Write a very concise funny tweet about {{topic}}'
 

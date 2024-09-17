@@ -1,3 +1,5 @@
+description: Haiku generation test with Claude-3 model checking for 'New York City' mention
+
 prompts:
   - file://prompt.json
 providers:

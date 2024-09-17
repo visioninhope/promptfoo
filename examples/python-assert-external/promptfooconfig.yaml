@@ -1,3 +1,5 @@
+description: Three-word descriptions of various fruit topics using OpenAI's GPT-4o model
+
 prompts:
   - 'Tell me about {{topic}} in three words'
 providers:
