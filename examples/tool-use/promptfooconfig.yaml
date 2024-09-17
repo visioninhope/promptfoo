@@ -1,3 +1,6 @@
+prompts:
+  - Tell me about the weather in {{city}} in the default unit for the location.
+
 providers:
   - id: anthropic:messages:claude-3-5-sonnet-20240620
     config:
@@ -61,9 +64,6 @@ providers:
               required:
                 - 'location'
       tool_choice: auto
-
-prompts:
-  - Tell me about the weather in {{city}} in the default unit for the location.
 
 tests:
   - vars:

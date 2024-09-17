@@ -1,10 +1,5 @@
 prompts:
   - '{{message}}'
-
-defaultTest:
-  options:
-    transform: output.trim()
-
 providers:
   - id: replicate:mistralai/mistral-7b-instruct-v0.2
     config:
@@ -29,7 +24,9 @@ providers:
       prompt:
         prefix: "<start_of_turn>user\n"
         suffix: "<end_of_turn>\n<start_of_turn>model"
-
+defaultTest:
+  options:
+    transform: output.trim()
 tests:
   - vars:
       message: 'I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?'

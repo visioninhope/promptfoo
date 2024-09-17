@@ -1,8 +1,8 @@
-providers:
-  - openai:gpt-4o-mini
 prompts:
   - file://prompts/name_capitals_concise.txt
   - file://prompts/name_capitals_verbose.txt
+providers:
+  - openai:gpt-4o-mini
 tests:
   - vars:
       location: Sacramento

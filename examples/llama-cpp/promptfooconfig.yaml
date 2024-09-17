@@ -1,9 +1,3 @@
-providers:
-  - id: llama
-    label: llama3-8b
-    config:
-      baseUrl: http://localhost:8080
-
 prompts:
   - 'Write a funny tweet about {{topic}}'
   - "Human: Write a funny tweet about {{topic}}\nAI:"
@@ -15,6 +9,12 @@ prompts:
   - "<s>[INST] <<SYS>>\nYou're a comedy writer.\n<</SYS>>\nWrite a funny tweet about {{topic}} [/INST]"
   - "{'role': 'system', 'content': 'You specialize in viral tweets.'}\n{'role': 'user', 'content': 'Write a hilarious tweet about {{topic}}'}\n{'role': 'assistant', 'content':"
   - "# Context: You are a social media expert known for viral content.\n# Human: Create a funny tweet about {{topic}}\n# AI:"
+
+providers:
+  - id: llama
+    label: llama3.1-8b
+    config:
+      baseUrl: http://localhost:8080
 
 tests:
   - vars:

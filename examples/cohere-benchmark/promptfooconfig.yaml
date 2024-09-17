@@ -1,5 +1,10 @@
 description: 'Cohere benchmark'
+prompts:
+  - |
+    Extract the 3 most important clauses from this contract,
+    and explain each one in plain English:
 
+    {{contract}}
 providers:
   - id: cohere:command-r-plus
     config:
@@ -10,14 +15,6 @@ providers:
   - id: anthropic:messages:claude-3-5-sonnet-20240620
     config:
       temperature: 0
-
-prompts:
-  - |
-    Extract the 3 most important clauses from this contract,
-    and explain each one in plain English:
-
-    {{contract}}
-
 tests:
   - vars:
       contract: |
