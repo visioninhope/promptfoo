@@ -92,6 +92,14 @@ jest.mock('../src/database', () => ({
 }));
 jest.mock('../src/logger');
 
+jest.mock('../src/providers/shared', () => {
+  const originalModule = jest.requireActual('../src/providers/shared');
+  return {
+    ...originalModule,
+    fetchModelCost: jest.fn(),
+  };
+});
+
 const defaultMockResponse = {
   status: 200,
   statusText: 'OK',

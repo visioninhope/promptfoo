@@ -11,6 +11,13 @@ jest.mock('../src/cache', () => ({
 
 jest.mock('../src/util');
 jest.mock('../src/logger');
+jest.mock('../src/providers/shared', () => {
+  const originalModule = jest.requireActual('../src/providers/shared');
+  return {
+    ...originalModule,
+    fetchModelCost: jest.fn(),
+  };
+});
 
 describe('Mistral', () => {
   beforeEach(() => {
@@ -261,6 +268,7 @@ describe('Mistral', () => {
       const result = await provider.callEmbeddingApi('Test text');
 
       expect(result).toEqual({
+        cost: 0,
         embedding: [0.1, 0.2, 0.3],
         tokenUsage: {
           total: 5,
