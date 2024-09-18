@@ -1,4 +1,4 @@
-name: nexe build
+name: Nexe Build
 run-name: |
   ${{ github.event_name == 'release' && 'Release ' || 'Manual ' }}
   Nexe build for ${{ github.ref_name }}:
@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 180
     strategy:
       matrix:
-        os: [linux, macos, win]
+        os: [linux, macos, windows]
         arch: [x64, arm64]
     steps:
       - uses: actions/checkout@v4
@@ -57,17 +57,16 @@ jobs:
       - name: Build executable
         run: npx nexe --build -r drizzle/ -r package.json -r "dist/**/*" -i dist/src/main.js -o promptfoo-${{ matrix.os }}-${{ matrix.arch }}
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        if: github.event_name == 'release'
-        with:
-          files: ./promptfoo-${{ matrix.os }}-${{ matrix.arch }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Artifact
-        if: github.event_name != 'release'
+      - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
         with:
           name: promptfoo-${{ matrix.os }}-${{ matrix.arch }}
           path: ./promptfoo-${{ matrix.os }}-${{ matrix.arch }}
+
+      - name: Attach Executable to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./promptfoo-${{ matrix.os }}-${{ matrix.arch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
