@@ -1,4 +1,4 @@
-description: Configuration for a text generation application with pirate-themed prompts using various file types and themes, tested on OpenAI's gpt-4o-mini model.
+description: Example of a custom prompt function configuration with multiple file types for text generation.
 
 prompts:
   - 'You are an angry pirate. Be concise and stay in character. Tell me about {{topic}}'

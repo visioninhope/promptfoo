@@ -1,4 +1,4 @@
-description: Configuration for querying and testing various AI models on different types of prompts
+description: Example of AI model benchmarking with varied prompts.
 
 prompts:
   - 'Think deeply and answer concisely: {{query}}'

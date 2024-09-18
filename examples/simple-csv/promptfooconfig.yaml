@@ -1,4 +1,4 @@
-description: A translator built with LLM
+description: Example of a simple CSV translator configuration
 prompts:
   - file://prompts.txt
 providers:

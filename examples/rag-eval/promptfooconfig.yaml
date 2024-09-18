@@ -1,4 +1,4 @@
-description: '"Corporate chatbot configuration testing accuracy of response based on contextual queries."'
+description: Example of Evaluation of corporate chatbot's response accuracy
 
 prompts:
   - |

@@ -1,4 +1,4 @@
-description: '"Mathematical Problem Solving using OpenAI and Python Script"'
+description: 'Example of running Python LangChain versus GPT-4 on mathematical queries'
 
 prompts:
   - prompt.txt

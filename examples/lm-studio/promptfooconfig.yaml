@@ -1,4 +1,4 @@
-description: 'LM Studio Eval Example'
+description: Example of using Promptfoo with LM Studio for prompt evaluation
 prompts:
   - file://prompts.json
 providers:

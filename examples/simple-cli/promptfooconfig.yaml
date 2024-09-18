@@ -1,4 +1,4 @@
-description: 'Simple test'
+description: Example of a pre-configured simple CLI for language-specific rephrasing and translations.
 
 prompts:
   - 'Rephrase this in {{language}}: {{body}}'

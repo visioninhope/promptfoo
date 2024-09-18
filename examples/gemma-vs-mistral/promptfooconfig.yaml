@@ -1,4 +1,4 @@
-description: '"Configuration for a riddle-solving AI using multiple models"'
+description: Example of Riddle-solving AI setup with Mistral and Gemma models
 
 prompts:
   - '{{message}}'

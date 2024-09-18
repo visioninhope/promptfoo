@@ -1,4 +1,4 @@
-description: Text processing using OpenAI's gpt-4o-mini model with allcaps filter and French language tests
+description: Example of Text processing using a custom allcaps filter and French language tests.
 
 prompts:
   - file://prompts.txt

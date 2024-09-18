@@ -1,4 +1,4 @@
-description: '"Interactive conversation configuration using GPT-4 with message responses and output transformation."'
+description: Example of Interactive dialogues with output storage and transformation.
 
 prompts:
   - 'Respond to the user: {{message}}'

@@ -1,4 +1,4 @@
-description: '"Tweet Generator using GPT-4o-mini"'
+description: Example of nested variable references
 
 prompts:
   - 'Write a {{sentence}}'

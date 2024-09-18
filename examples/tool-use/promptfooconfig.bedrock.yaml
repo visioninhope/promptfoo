@@ -1,4 +1,4 @@
-description: '"Weather inquiry tool configuration for various cities"'
+description: "Example of using promptfoo with OpenAI and Anthropic's APIs for weather queries."
 
 prompts:
   - Tell me about the weather in {{city}}.

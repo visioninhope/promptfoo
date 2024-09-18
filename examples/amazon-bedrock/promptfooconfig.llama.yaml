@@ -1,4 +1,4 @@
-description: Multilingual Translation using Llama3 Instruct and Llama2 Chat Models
+description: Comparison of Meta Llama models on Amazon Bedrock
 
 prompts:
   - 'Convert this English to {{language}}: {{input}}'

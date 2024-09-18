@@ -1,4 +1,4 @@
-description: Configuration for custom provider with prompts and tests from external files
+description: Example using a custom API provider with external prompts and CSV tests.
 
 prompts:
   - file://prompts.txt

@@ -1,4 +1,4 @@
-description: Configuration for generating tweets about a specific topic using Google's Gemini-Pro provider
+description: Example of Tweet generation using Google's Gemini-Pro provider
 
 prompts:
   - 'Write a tweet about {{topic}}'

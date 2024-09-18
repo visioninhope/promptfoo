@@ -1,4 +1,4 @@
-description: 'Cohere benchmark'
+description: Example of AI model contract summarization benchmarking
 prompts:
   - |
     Extract the 3 most important clauses from this contract,

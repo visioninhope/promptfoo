@@ -1,4 +1,4 @@
-description: '"Chatbot Configuration Testing with Llama and Gemma Models"'
+description: 'Example of Gemma and Llama chatbot testing'
 
 prompts:
   - '{{message}}'

@@ -1,4 +1,4 @@
-description: Role-playing chat using GPT-4o, with a validation to ensure outputs are not personally identifiable information (PII).
+description: Example of Role-playing chat ensuring no PII in outputs.
 
 prompts:
   - 'Select a random {{person_type}} and introduce yourself as them'

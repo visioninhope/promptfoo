@@ -1,4 +1,4 @@
-description: '"Pirate-themed speech transformation tests and metrics for an AI model."'
+description: Example of Naming and visualizing metrics
 
 prompts:
   - 'Say this as though you are a pirate: {{body}}'

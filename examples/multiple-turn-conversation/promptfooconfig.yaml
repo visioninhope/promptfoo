@@ -1,4 +1,4 @@
-description: '"Interactive Q&A Session with GPT-4o-mini assistant"'
+description: 'Example of initiating multi-turn conversations with an AI assistant.'
 
 prompts:
   - file://prompt.json

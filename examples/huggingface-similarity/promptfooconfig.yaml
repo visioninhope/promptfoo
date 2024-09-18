@@ -1,4 +1,4 @@
-description: Multilingual translation testing using GPT models
+description: "Example of evaluates multilingual translation using similarity assertions with HuggingFace's Sentence Similarity module."
 
 prompts:
   - "You're a translator.  Translate this into {{language}}: {{input}}"

@@ -1,4 +1,4 @@
-description: 'Azure OpenAI assistant'
+description: Example of Configuration for OpenAI assistant-based tweeting about a topic using Azure.
 
 prompts:
   - 'Write a tweet about {{topic}}'

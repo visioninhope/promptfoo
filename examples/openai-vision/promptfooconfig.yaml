@@ -1,4 +1,4 @@
-description: Testing GPT-4's object recognition in images
+description: Example of Object recognition test with GPT-4
 
 prompts:
   - file://prompt.json

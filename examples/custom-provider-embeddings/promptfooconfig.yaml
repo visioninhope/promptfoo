@@ -1,4 +1,4 @@
-description: Translation to French using GPT-4o-mini with a custom similarity test
+description: Example of French translation using a custom similarity test provider
 
 prompts:
   - 'Translate this to French: {{message}}'

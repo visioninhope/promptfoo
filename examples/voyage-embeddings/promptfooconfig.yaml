@@ -1,4 +1,4 @@
-description: 'Similarity assertions with Voyage AI'
+description: Example of Voyage AI similarity assertions.
 
 prompts:
   - 'Output the color of {{item}}'

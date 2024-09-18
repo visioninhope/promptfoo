@@ -1,4 +1,4 @@
-description: 'HF private inference endpoint'
+description: Example of Setup for Huggingface private inference endpoint
 
 prompts:
   - 'Write a tweet about {{topic}}:'

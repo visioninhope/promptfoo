@@ -1,4 +1,4 @@
-description: Tweet Generation using Cohere AI with Web Search
+description: Example of Generates AI-composed, topic-specific tweets.
 
 prompts:
   - 'Write a tweet about {{topic}}'

@@ -1,4 +1,4 @@
-description: '"Generating and testing funny and factual tweets with GPT-4"'
+description: 'Example of Generating and testing humorous and factual GPT-4 tweets.'
 
 prompts:
   - 'Write a tweet about {{topic}}'

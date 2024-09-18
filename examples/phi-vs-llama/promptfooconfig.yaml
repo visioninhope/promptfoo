@@ -1,4 +1,4 @@
-description: Phi vs Llama
+description: Example of Comparison of Phi and Llama chatbot responses.
 prompts:
   - Write a tweet about {{topic}}
 providers:

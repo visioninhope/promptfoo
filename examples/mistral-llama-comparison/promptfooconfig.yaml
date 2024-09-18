@@ -1,4 +1,4 @@
-description: '"Multi-provider AI response configuration for various prompts with specified assertions."'
+description: Example of Comparing Mistral and Llama AI responses
 
 prompts:
   - '{{message}}'

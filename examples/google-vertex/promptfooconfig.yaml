@@ -1,4 +1,4 @@
-description: Configuration for an AI assistant that responds to various types of questions using different providers including Gemini Pro and Google AI Studio.
+description: Example of Vertex AI assistant configuration for question answering
 
 # This configuration runs each prompt through a series of example inputs and checks if they meet requirements.
 

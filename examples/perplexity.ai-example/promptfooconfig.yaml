@@ -1,4 +1,4 @@
-description: '"Discovery Inquiry Configuration with GPT-4o-mini and pplx-70b-online Models"'
+description: Example of topic discovery setup using GPT-4o-mini and pplx-70b-online models.
 
 prompts:
   - 'Who discovered {{topic}}?'

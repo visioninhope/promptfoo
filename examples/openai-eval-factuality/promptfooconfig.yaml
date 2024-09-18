@@ -1,4 +1,4 @@
-description: '"Capital naming test with GPT-4o-mini model"'
+description: 'Example of factuality and closed QA evaluation using OpenAI'
 
 prompts:
   - file://prompts/name_capitals_concise.txt

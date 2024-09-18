@@ -1,4 +1,4 @@
-description: 'IBM Granite vs Llama'
+description: Example of Comparing IBM Granite and Llama chat models
 
 prompts:
   - 'Be concise. Answer this riddle :{{riddle}}'

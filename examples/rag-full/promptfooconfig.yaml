@@ -1,4 +1,4 @@
-description: 'RAG - End to end test'
+description: Example of RAG system for interrogating SEC filings
 
 prompts:
   - '{{question}}'

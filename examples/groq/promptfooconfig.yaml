@@ -1,4 +1,4 @@
-description: 'Groq Provider Demo'
+description: 'Example of GROQ providers with calculation prompts and toolkit usage'
 
 prompts:
   - 'Answer this question as concisely as possible: {{calculation}}'

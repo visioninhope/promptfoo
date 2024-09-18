@@ -1,4 +1,4 @@
-description: '"Configuration for testing an AI model using various prompts and test cases."'
+description: 'Example of using paths and wildcards in AI model testing configuration.'
 
 prompts:
   - file://prompt*.txt

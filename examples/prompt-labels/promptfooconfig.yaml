@@ -1,4 +1,4 @@
-description: '"Configuration for content generation and knowledge base querying using different OpenAI GPT-4o models"'
+description: 'Example of using prompt labels for prompt and provider organization'
 
 prompts:
   - id: file://prompts1.txt

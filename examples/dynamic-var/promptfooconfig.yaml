@@ -1,4 +1,4 @@
-description: 'Dynamic var example'
+description: 'Example of dynamic variables in promptfoo workflow with OpenAI GPT model.'
 
 prompts:
   - "You are an office assistant. Using this context:\n\n<context>{{context}}</context>\n\nAnswer this question:\n\n<question>{{question}}</question>"

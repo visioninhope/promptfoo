@@ -1,4 +1,4 @@
-description: 'RAG - End to end test with comparison'
+description: Example of SEC filings analysis using RAG retrieval.
 
 prompts:
   - '{{question}}'

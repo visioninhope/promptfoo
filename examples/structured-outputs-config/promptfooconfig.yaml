@@ -1,4 +1,4 @@
-description: 'Structured prompts'
+description: Example of Math tutoring AI with detailed or simple solutions.
 
 prompts:
   # Schema output with `steps` array

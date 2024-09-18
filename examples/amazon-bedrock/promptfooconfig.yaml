@@ -1,4 +1,4 @@
-description: Configuration for a fact checking system using multiple AI providers and text embeddings.
+description: Example of various Amazon Bedrock models
 
 prompts:
   - file://prompts.txt

@@ -1,4 +1,4 @@
-description: '"Interactive Q&A session with GPT-4 about Mark Zuckerberg"'
+description: 'Example of an interactive Q&amp;A session with GPT-4 about Mark Zuckerberg'
 
 prompts:
   - file://prompt.json

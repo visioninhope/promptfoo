@@ -1,4 +1,4 @@
-description: '"Configuration for generating concise funny tweets about various topics"'
+description: Example of Python-based tweet generator setup
 
 prompts:
   - 'Write a very concise funny tweet about {{topic}}'

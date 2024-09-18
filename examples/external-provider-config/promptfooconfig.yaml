@@ -1,4 +1,4 @@
-description: Example using an external provider config file
+description: Example of external provider configuration with weather-related prompts
 
 prompts: 'Tell me about the weather in {{city}}.'
 providers:

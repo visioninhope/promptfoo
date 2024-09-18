@@ -1,4 +1,4 @@
-description: 'Moderation example'
+description: 'Example of content moderation using OpenAI and Replicate providers'
 
 prompts:
   - 'Write a tweet about {{topic}}'

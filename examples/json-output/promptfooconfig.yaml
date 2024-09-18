@@ -1,4 +1,4 @@
-description: 'JSON object evals'
+description: Example of a configuration evaluating JSON interpretations of objects using YAML and assert-tests.
 
 prompts:
   - 'Output a JSON object that contains the keys `color` and `countries`, describing the following object: {{item}}'

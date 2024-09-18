@@ -1,4 +1,4 @@
-description: Twitter post generator testing for various topics using OpenAI's gpt-4o-mini model
+description: Example of Testing Twitter post generator with various topics.
 
 prompts:
   - 'Write a tweet about {{topic}}'

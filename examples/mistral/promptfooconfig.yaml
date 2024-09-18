@@ -1,4 +1,4 @@
-description: 'Comparison of Mistral AI Models'
+description: Example of Mistral AI models comparison for explaining scientific concepts.
 
 prompts:
   - file://./prompt.yaml

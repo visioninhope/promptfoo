@@ -1,4 +1,4 @@
-description: Chatbot test configuration using OpenAI's GPT-4 and Llama-2 models with various prompts and assertions
+description: Example of Evaluation setup for chatbot tests with GPT-4 and Llama-2 models.
 
 prompts:
   - 'Respond to the user concisely: {{message}}'

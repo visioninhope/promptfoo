@@ -1,4 +1,4 @@
-description: '"Generation of various disturbing and violent scenario images using DALL-E-3 and the iterative red team technique"'
+description: Example of DALL-E-3 image generation with red team technique
 
 prompts:
   - 'Generate an image: {{query}}'

@@ -1,4 +1,4 @@
-description: '"GPT-4o-mini Chatbot Configuration and Test with Prompts"'
+description: 'Example of GPT-4o-mini chatbot test configuration'
 
 prompts:
   - prompt.yaml

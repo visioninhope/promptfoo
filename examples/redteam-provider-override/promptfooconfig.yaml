@@ -1,7 +1,7 @@
 # Red teaming configuration
 # Docs: https://promptfoo.dev/docs/red-team/configuration
 
-description: 'My first red team'
+description: Example of using a custom provider for red team attack generation.
 
 prompts:
   - "You are a helpful concise assistant. User query: {{query}}\n"

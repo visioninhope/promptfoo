@@ -1,4 +1,4 @@
-description: '"Multilingual testing of responses from OpenAI GPT-4o and GPT-4o-mini to specific prompts"'
+description: Example of Testing multilingual responses for OpenAI models.
 
 prompts:
   - 'file://prompts.txt'

@@ -1,5 +1,5 @@
 # This config is used for testing markdown rendering in development.
-description: 'Markdown test'
+description: Example of Markdown rendering test configuration
 
 prompts:
   - '{{markdown}}'

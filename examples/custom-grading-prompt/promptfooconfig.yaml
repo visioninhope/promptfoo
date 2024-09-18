@@ -1,4 +1,4 @@
-description: Automated grading system using OpenAI gpt-4o-mini model with custom grading rubric
+description: Example of Automated grading of prompt responses with a custom rubric.
 
 prompts:
   - file://prompts.txt

@@ -1,4 +1,4 @@
-description: 'OpenAI Structured Output Example'
+description: "Example of using OpenAI's Structured Outputs with JSON schemas for structured customer support query analysis."
 prompts:
   - 'Analyze the following customer support query: "{{query}}"'
 

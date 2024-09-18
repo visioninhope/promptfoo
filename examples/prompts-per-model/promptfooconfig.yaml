@@ -1,4 +1,4 @@
-description: '"Configuration for testing AI models on diverse topic prompts"'
+description: 'Example of custom prompt setup for specific AI models'
 
 prompts:
   - id: file://prompt1.txt

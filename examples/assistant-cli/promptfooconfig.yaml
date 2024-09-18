@@ -1,4 +1,4 @@
-description: Configuration for processing prompts using OpenAI's GPT-4o-mini model with specified tests
+description: Example of Evaluation of ecommerce chatbot prompts.
 
 prompts:
   - file://prompts.txt

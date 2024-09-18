@@ -1,4 +1,4 @@
-description: Interactive prompt responses using GPT-4 with varying temperatures
+description: Example of Comparison of GPT-4 responses at different temperatures.
 
 prompts:
   - 'Respond to the following instruction: {{message}}'

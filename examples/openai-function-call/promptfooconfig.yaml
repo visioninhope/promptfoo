@@ -1,4 +1,4 @@
-description: '"Weather fetching configurator using OpenAI GPT-4o-mini"'
+description: 'Example of using OpenAI function calls to query weather data.'
 
 prompts:
   - 'What is the weather like in {{city}}?'

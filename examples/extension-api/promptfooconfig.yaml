@@ -1,4 +1,4 @@
-description: Extension Hook Example
+description: Example of using custom extensions in promptfoo
 
 prompts:
   - 'Rephrase this in {{language}}: {{body}}'

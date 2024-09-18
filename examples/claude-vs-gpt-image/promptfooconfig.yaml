@@ -1,4 +1,4 @@
-description: 'Claude vs GPT Image Analysis'
+description: Example comparing image analysis using GPT-4o and Claude models.
 
 prompts:
   - ./prompt.py:format_image_prompt

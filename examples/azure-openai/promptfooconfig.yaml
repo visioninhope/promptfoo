@@ -1,4 +1,4 @@
-description: Configuration for generating interesting facts about various topics using Azure's OpenAI, with latency and similarity tests.
+description: Example of Side-by-side evaluation of GPT3 and GPT4 using Azure's OpenAI.
 
 prompts:
   - 'Generate one very interesting fact about {{topic}}'

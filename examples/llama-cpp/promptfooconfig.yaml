@@ -1,4 +1,4 @@
-description: '"AI configuration for generating funny tweets about a given topic"'
+description: 'Example configurations and instructions for using llama.cpp with Promptfoo for crafting humorous tweets.'
 
 prompts:
   - 'Write a funny tweet about {{topic}}'

@@ -1,4 +1,4 @@
-description: 'Is-SQL example'
+description: Example of SQL query generation and validation for monthly product sales.
 
 prompts:
   - |

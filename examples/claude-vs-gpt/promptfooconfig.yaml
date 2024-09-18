@@ -1,4 +1,4 @@
-description: 'Claude 3.5 vs GPT 4o'
+description: Example of Claude and GPT-4 analysis on riddles
 
 prompts:
   - file://prompt.yaml

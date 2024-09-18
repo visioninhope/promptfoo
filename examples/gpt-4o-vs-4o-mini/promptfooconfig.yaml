@@ -1,4 +1,4 @@
-description: '"Riddle-solving AI test using OpenAI models"'
+description: Example of Comparative evaluation of GPT-4o and GPT-4o-mini using riddles.
 
 prompts:
   - 'Solve this riddle: {{riddle}}'

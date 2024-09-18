@@ -1,4 +1,4 @@
-description: Haiku generation test with Claude-3 model checking for 'New York City' mention
+description: 'Example of Claude-3 usage for haiku generation on Anthropic and AWS Bedrock.'
 
 prompts:
   - file://prompt.json

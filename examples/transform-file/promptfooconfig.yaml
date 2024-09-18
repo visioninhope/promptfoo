@@ -1,4 +1,4 @@
-description: 'Transform with external function'
+description: Example of transform defined in an external file
 
 prompts:
   - 'Write a tweet about {{topic}}'

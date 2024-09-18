@@ -1,4 +1,4 @@
-description: '"Dall-E Image Generation in the Style of Van Gogh and Dali"'
+description: Example of Generation of Dall-E images in Van Gogh and Dali styles.
 
 prompts:
   - 'In the style of Van Gogh: {{subject}}'

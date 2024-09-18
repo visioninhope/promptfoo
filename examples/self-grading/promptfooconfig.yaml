@@ -1,4 +1,4 @@
-description: '"Customer service chatbot testing for various eCommerce related queries"'
+description: 'Example of a self-grading language model testing e-commerce customer service interactions'
 
 prompts:
   - file://prompts.txt

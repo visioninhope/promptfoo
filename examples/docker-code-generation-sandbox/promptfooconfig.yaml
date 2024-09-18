@@ -1,4 +1,4 @@
-description: Code generation with sandboxed verification
+description: Example of Docker sandboxed code generation testing
 
 prompts: code_generation_prompt.txt
 

@@ -1,4 +1,4 @@
-description: 'HTTP provider test'
+description: Example of HTTP provider webhook test configuration
 
 prompts:
   - 'Write a tweet about {{topic}}'

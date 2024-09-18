@@ -1,4 +1,4 @@
-description: Testing OpenAI's GPT-4o-mini model on various prompts in different years
+description: Example of testing GPT-4o-mini across various prompts and years.
 
 prompts:
   - file://prompt1.json

@@ -1,4 +1,4 @@
-description: '"Multilingual translation tests for phrases using OpenAI GPT models"'
+description: 'Example of testing multilingual phrase translations with GPT models.'
 
 prompts:
   - file://prompts.txt

@@ -1,4 +1,4 @@
-description: Image Classification Example of Fashion MNIST dataset
+description: Example of using Promptfoo for image classification with Fashion MNIST dataset.
 prompts:
   - id: file://prompt.js
     label: Image Classification

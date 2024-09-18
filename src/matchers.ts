@@ -400,7 +400,6 @@ export async function matchesLlmRubric(
   }
 
   const rubricPrompt = grading?.rubricPrompt || DEFAULT_GRADING_PROMPT;
-  invariant(typeof rubricPrompt === 'string', 'rubricPrompt must be a string');
   const prompt = renderLlmRubricPrompt(rubric, llmOutput, grading, vars);
 
   const defaultProviders = await getDefaultProviders();

@@ -1,4 +1,4 @@
-description: 'Summarization'
+description: Example of Summarization of articles with quality checks.
 
 prompts:
   - 'Summarize this article concisely: {{article}}'

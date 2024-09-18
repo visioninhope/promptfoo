@@ -1,4 +1,4 @@
-description: Configuration for generating funny tweets about various topics using a Golang provider, with specific assert tests for each topic.
+description: Example of Go client library setup for custom prompt testing
 
 prompts:
   - 'Write a very concise funny tweet about {{topic}}'
