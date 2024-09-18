@@ -336,7 +336,7 @@ See the full example [here](https://github.com/promptfoo/promptfoo/tree/main/exa
 
 Requires Node.js 18 or newer.
 
-You can install promptfoo using npm, npx, Homebrew, or by cloning the repository.
+You can install `promptfoo` using `pip`, `npm`, `npx`, Homebrew, or by cloning the repository.
 
 ### npm (recommended)
 
@@ -354,7 +354,7 @@ npm install promptfoo
 
 ### npx
 
-Run promptfoo without installing it:
+Run `promptfoo` without installing it:
 
 ```sh
 npx promptfoo@latest init
@@ -362,15 +362,25 @@ npx promptfoo@latest init
 
 This will create a `promptfooconfig.yaml` placeholder in your current directory.
 
+### Python Package (PyPI)
+
+We offer `promptfoo` as a Python package available on PyPI. It's compiled as a binary using nexe, ensuring easy installation and usage. You can install it using `pip`:
+
+```sh
+pip install promptfoo
+```
+
+This will install the `promptfoo` CLI tool and make it available in your Python environment.
+
 ### Homebrew
 
-If you prefer using Homebrew, you can install promptfoo with:
+If you prefer using Homebrew, you can install `promptfoo` with:
 
 ```sh
 brew install promptfoo
 ```
 
-### From source
+### From Source
 
 For the latest development version:
 
@@ -382,15 +392,15 @@ npm run build
 npm link
 ```
 
-### Verify installation
+### Verify Installation
 
-To verify that promptfoo is installed correctly, run:
+To verify that `promptfoo` is installed correctly, run:
 
 ```sh
 promptfoo --version
 ```
 
-This should display the version number of promptfoo.
+This should display the version number of `promptfoo`.
 
 For more detailed installation instructions, including system requirements and troubleshooting, please visit our [installation guide](https://www.promptfoo.dev/docs/installation).
 
