@@ -1,3 +1,7 @@
+import os
+import platform
+
+
 def get_binary_path():
     system = platform.system().lower()
     machine = platform.machine().lower()
