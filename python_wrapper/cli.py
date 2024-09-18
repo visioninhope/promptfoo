@@ -1,8 +1,26 @@
+"""Module for determining the correct binary path for the promptfoo CLI.
+
+This module provides functionality to determine the correct binary path
+for the promptfoo CLI based on the current operating system and architecture.
+"""
+
 import os
 import platform
 
 
 def get_binary_path():
+    """Determines and returns the path to the appropriate promptfoo binary.
+
+    This function identifies the current operating system and architecture,
+    and uses this information to locate the correct promptfoo binary.
+
+    Returns:
+        str: The path to the appropriate promptfoo binary.
+
+    Raises:
+        RuntimeError: If the current architecture or operating system is not supported.
+        FileNotFoundError: If the binary file is not found at the expected location.
+    """
     system = platform.system().lower()
     machine = platform.machine().lower()
 

@@ -1,4 +1,3 @@
-# .github/workflows/pypi-release.yml
 name: PyPI Release
 run-name: PyPI Release for ${{ github.ref_name }} by @${{ github.actor }}
 
