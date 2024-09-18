@@ -10,9 +10,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish-pypi:
+  build-and-publish:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,15 +33,20 @@ jobs:
         run: |
           VERSION=$(poetry version --short)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      - name: Download Nexe Artifacts
+
+      # Download the Nexe artifact for the current OS
+      - name: Download Nexe Artifact
         uses: actions/download-artifact@v4
         with:
-          name: promptfoo-*
-          # Download all artifacts matching the pattern
+          name: promptfoo-${{ matrix.os_short }}-*
+          path: nexe_binaries
+
       - name: Prepare Package
         run: |
-          mkdir -p src/your_package/bin
-          mv promptfoo-* src/your_package/bin/
+          mkdir -p src/promptfoo/binaries/${{ matrix.os_short }}-${{ matrix.arch }}
+          mv nexe_binaries/* src/promptfoo/binaries/${{ matrix.os_short }}-${{ matrix.arch }}/promptfoo${{ matrix.ext }}
+          ls -l src/promptfoo/binaries/${{ matrix.os_short }}-${{ matrix.arch }}
+
       - name: Verify Git Tag
         run: |
           git fetch --tags
@@ -47,11 +55,11 @@ jobs:
             echo "Git tag v${{ steps.get_version.outputs.version }} does not exist. Exiting."
             exit 1
           fi
-      - name: Build Package
-        run: poetry build
+      - name: Build Platform-specific Wheel
+        run: poetry build -f wheel
       - name: Publish to PyPI
         env:
           PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
         run: |
           poetry config pypi-token.pypi $PYPI_TOKEN
-          poetry publish --no-interaction --username __token__ --password $PYPI_TOKEN
+          poetry publish --skip-existing --username __token__ --password $PYPI_TOKEN
