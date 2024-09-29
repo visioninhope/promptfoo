@@ -304,18 +304,7 @@ export async function doEval(
   await runEvaluation(true /* initialization */);
 }
 
-export function evalCommand(
-  program: Command,
-  defaultConfig: Partial<UnifiedConfig>,
-  defaultConfigPath: string | undefined,
-) {
-  const evaluateOptions: EvaluateOptions = {};
-  if (defaultConfig.evaluateOptions) {
-    evaluateOptions.generateSuggestions = defaultConfig.evaluateOptions.generateSuggestions;
-    evaluateOptions.maxConcurrency = defaultConfig.evaluateOptions.maxConcurrency;
-    evaluateOptions.showProgressBar = defaultConfig.evaluateOptions.showProgressBar;
-  }
-
+export function evalCommand(program: Command) {
   const evalCmd = program
     .command('eval')
     .description('Evaluate prompts')
@@ -335,24 +324,12 @@ export function evalCommand(
       'One of: openai:chat, openai:completion, openai:<model name>, or path to custom API caller module',
     )
     .option('-t, --tests <path>', 'Path to CSV with test cases')
-    .option(
-      '-v, --vars <path>',
-      'Path to CSV with test cases (alias for --tests)',
-      defaultConfig?.commandLineOptions?.vars,
-    )
+    .option('-v, --vars <path>', 'Path to CSV with test cases (alias for --tests)')
     .option('--model-outputs <path>', 'Path to JSON containing list of LLM output strings')
 
     // Prompt modification
-    .option(
-      '--prompt-prefix <path>',
-      'This prefix is prepended to every prompt',
-      defaultConfig.defaultTest?.options?.prefix,
-    )
-    .option(
-      '--prompt-suffix <path>',
-      'This suffix is append to every prompt',
-      defaultConfig.defaultTest?.options?.suffix,
-    )
+    .option('--prompt-prefix <path>', 'This prefix is prepended to every prompt')
+    .option('--prompt-suffix <path>', 'This suffix is append to every prompt')
     .option(
       '--var <key=value>',
       'Set a variable in key=value format',
@@ -367,28 +344,10 @@ export function evalCommand(
     )
 
     // Execution control
-    .option(
-      '-j, --max-concurrency <number>',
-      'Maximum number of concurrent API calls',
-      defaultConfig.evaluateOptions?.maxConcurrency
-        ? String(defaultConfig.evaluateOptions.maxConcurrency)
-        : `${DEFAULT_MAX_CONCURRENCY}`,
-    )
-    .option(
-      '--repeat <number>',
-      'Number of times to run each test',
-      defaultConfig.evaluateOptions?.repeat ? String(defaultConfig.evaluateOptions.repeat) : '1',
-    )
-    .option(
-      '--delay <number>',
-      'Delay between each test (in milliseconds)',
-      defaultConfig.evaluateOptions?.delay ? String(defaultConfig.evaluateOptions.delay) : '0',
-    )
-    .option(
-      '--no-cache',
-      'Do not read or write results to disk cache',
-      defaultConfig?.commandLineOptions?.cache ?? defaultConfig?.evaluateOptions?.cache,
-    )
+    .option('-j, --max-concurrency <number>', 'Maximum number of concurrent API calls')
+    .option('--repeat <number>', 'Number of times to run each test')
+    .option('--delay <number>', 'Delay between each test (in milliseconds)')
+    .option('--no-cache', 'Do not read or write results to disk cache')
     .option('--remote', 'Force remote inference wherever possible (used for red teams)', false)
 
     // Filtering and subset selection
@@ -405,26 +364,18 @@ export function evalCommand(
       '-o, --output <paths...>',
       'Path to output file (csv, txt, json, yaml, yml, html), default is no output file',
     )
-    .option('--table', 'Output table in CLI', defaultConfig?.commandLineOptions?.table ?? true)
-    .option('--no-table', 'Do not output table in CLI', defaultConfig?.commandLineOptions?.table)
+    .option('--table', 'Output table in CLI')
+    .option('--no-table', 'Do not output table in CLI')
     .option(
       '--table-cell-max-length <number>',
       'Truncate console table cells to this length',
       '250',
     )
-    .option('--share', 'Create a shareable URL', defaultConfig?.commandLineOptions?.share)
-    .option(
-      '--no-write',
-      'Do not write results to promptfoo directory',
-      defaultConfig?.commandLineOptions?.write,
-    )
+    .option('--share', 'Create a shareable URL')
+    .option('--no-write', 'Do not write results to promptfoo directory')
 
     // Additional features
-    .option(
-      '--grader <provider>',
-      'Model that will grade outputs',
-      defaultConfig?.commandLineOptions?.grader,
-    )
+    .option('--grader <provider>', 'Model that will grade outputs')
     .option(
       '--suggest-prompts <number>',
       'Generate N new prompts and append them to the prompt list',
@@ -433,7 +384,7 @@ export function evalCommand(
 
     // Miscellaneous
     .option('--description <description>', 'Description of the eval run')
-    .option('--verbose', 'Show debug logs', defaultConfig?.commandLineOptions?.verbose)
+    .option('--verbose', 'Show debug logs')
     .option('--no-progress-bar', 'Do not show progress bar')
 
     .action(async (opts) => {
@@ -453,6 +404,8 @@ export function evalCommand(
         );
         process.exit(2);
       }
+
+      const { defaultConfig, defaultConfigPath } = await loadDefaultConfig();
 
       if (opts.remote) {
         cliState.remote = true;
@@ -477,13 +430,22 @@ export function evalCommand(
             if (newConfigPath) {
               opts.config = opts.config.filter((path: string) => path !== configPath);
               opts.config.push(newConfigPath);
-              defaultConfig = { ...defaultConfig, ...dirConfig };
+              Object.assign(defaultConfig, dirConfig);
             } else {
               logger.warn(`No configuration file found in directory: ${configPath}`);
             }
           }
         }
       }
+
+      // Set default values if not overridden by config or command line options
+      const evaluateOptions = defaultConfig.evaluateOptions || {};
+      opts.maxConcurrency =
+        opts.maxConcurrency || evaluateOptions.maxConcurrency || DEFAULT_MAX_CONCURRENCY;
+      opts.repeat = opts.repeat || evaluateOptions.repeat?.toString() || '1';
+      opts.delay = opts.delay || evaluateOptions.delay?.toString() || '0';
+      opts.cache = opts.cache ?? evaluateOptions.cache ?? true;
+      opts.table = opts.table ?? true; // Default to true if not specified
 
       doEval(opts, defaultConfig, defaultConfigPath, evaluateOptions);
     });

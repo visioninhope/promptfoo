@@ -13,6 +13,7 @@ import logger from '../../logger';
 import telemetry from '../../telemetry';
 import type { TestSuite, UnifiedConfig } from '../../types';
 import { printBorder, setupEnv } from '../../util';
+import { loadDefaultConfig } from '../../util/config/default';
 import { resolveConfigs } from '../../util/config/load';
 import { writePromptfooConfig } from '../../util/config/manage';
 import { RedteamGenerateOptionsSchema, RedteamConfigSchema } from '../../validators/redteam';
@@ -208,12 +209,7 @@ export async function doGenerateRedteam(options: RedteamCliGenerateOptions) {
   await telemetry.send();
 }
 
-export function generateRedteamCommand(
-  program: Command,
-  command: 'redteam' | 'generate',
-  defaultConfig: Partial<UnifiedConfig>,
-  defaultConfigPath: string | undefined,
-) {
+export function generateRedteamCommand(program: Command, command: 'redteam' | 'generate') {
   program
     .command(command) // generate or redteam depending on if called from redteam or generate
     .description('Generate adversarial test cases')
@@ -268,17 +264,14 @@ export function generateRedteamCommand(
     )
     .option('--no-cache', 'Do not read or write results to disk cache', false)
     .option('--env-file, --env-path <path>', 'Path to .env file')
-    .option(
-      '-j, --max-concurrency <number>',
-      'Maximum number of concurrent API calls',
-      (val) => Number.parseInt(val, 10),
-      defaultConfig.evaluateOptions?.maxConcurrency,
+    .option('-j, --max-concurrency <number>', 'Maximum number of concurrent API calls', (val) =>
+      Number.parseInt(val, 10),
     )
     .option('--delay <number>', 'Delay in milliseconds between plugin API calls', (val) =>
       Number.parseInt(val, 10),
     )
     .option('--remote', 'Force remote inference wherever possible', false)
-    .action((opts: Partial<RedteamCliGenerateOptions>): void => {
+    .action(async (opts: Partial<RedteamCliGenerateOptions>): Promise<void> => {
       if (opts.remote) {
         cliState.remote = true;
       }
@@ -287,6 +280,14 @@ export function generateRedteamCommand(
       } else {
         logger.debug('Remote generation disabled');
       }
+
+      const {
+        defaultConfig,
+        defaultConfigPath,
+      }: {
+        defaultConfig: Partial<UnifiedConfig>;
+        defaultConfigPath: string | undefined;
+      } = await loadDefaultConfig();
 
       try {
         let overrides: Partial<RedteamFileConfig> = {};

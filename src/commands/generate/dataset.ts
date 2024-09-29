@@ -8,6 +8,7 @@ import telemetry from '../../telemetry';
 import { synthesizeFromTestSuite } from '../../testCases';
 import type { TestSuite, UnifiedConfig } from '../../types';
 import { printBorder, setupEnv } from '../../util';
+import { loadDefaultConfig } from '../../util/config/default';
 import { resolveConfigs } from '../../util/config/load';
 
 interface DatasetGenerateOptions {
@@ -20,8 +21,6 @@ interface DatasetGenerateOptions {
   output?: string;
   provider?: string;
   write: boolean;
-  defaultConfig: Partial<UnifiedConfig>;
-  defaultConfigPath: string | undefined;
 }
 
 async function doGenerateDataset(options: DatasetGenerateOptions): Promise<void> {
@@ -31,14 +30,22 @@ async function doGenerateDataset(options: DatasetGenerateOptions): Promise<void>
     disableCache();
   }
 
+  const {
+    defaultConfig,
+    defaultConfigPath,
+  }: {
+    defaultConfig: Partial<UnifiedConfig>;
+    defaultConfigPath: string | undefined;
+  } = await loadDefaultConfig();
+
   let testSuite: TestSuite;
-  const configPath = options.config || options.defaultConfigPath;
+  const configPath = options.config || defaultConfigPath;
   if (configPath) {
     const resolved = await resolveConfigs(
       {
         config: [configPath],
       },
-      options.defaultConfig,
+      defaultConfig,
     );
     testSuite = resolved.testSuite;
   } else {
@@ -99,11 +106,7 @@ async function doGenerateDataset(options: DatasetGenerateOptions): Promise<void>
   await telemetry.send();
 }
 
-export function generateDatasetCommand(
-  program: Command,
-  defaultConfig: Partial<UnifiedConfig>,
-  defaultConfigPath: string | undefined,
-) {
+export function generateDatasetCommand(program: Command) {
   program
     .command('dataset')
     .description('Generate test cases')
@@ -122,5 +125,5 @@ export function generateDatasetCommand(
     .option('--numTestCasesPerPersona <number>', 'Number of test cases per persona', '3')
     .option('--no-cache', 'Do not read or write results to disk cache', false)
     .option('--env-file, --env-path <path>', 'Path to .env file')
-    .action((opts) => doGenerateDataset({ ...opts, defaultConfig, defaultConfigPath }));
+    .action((opts) => doGenerateDataset(opts));
 }

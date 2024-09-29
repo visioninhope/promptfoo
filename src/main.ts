@@ -21,18 +21,15 @@ import { generateRedteamCommand } from './redteam/commands/generate';
 import { initCommand as redteamInitCommand } from './redteam/commands/init';
 import { pluginsCommand as redteamPluginsCommand } from './redteam/commands/plugins';
 import { checkForUpdates } from './updates';
-import { loadDefaultConfig } from './util/config/default';
 
 async function main() {
   await checkForUpdates();
   await runDbMigrations();
 
-  const { defaultConfig, defaultConfigPath } = await loadDefaultConfig();
-
   const program = new Command();
 
   // Main commands
-  evalCommand(program, defaultConfig, defaultConfigPath);
+  evalCommand(program);
   initCommand(program);
   viewCommand(program);
   const redteamBaseCommand = program.command('redteam').description('Red team LLM applications');
@@ -51,12 +48,12 @@ async function main() {
   showCommand(program);
   versionCommand(program);
 
-  generateDatasetCommand(generateCommand, defaultConfig, defaultConfigPath);
-  generateRedteamCommand(generateCommand, 'redteam', defaultConfig, defaultConfigPath);
+  generateDatasetCommand(generateCommand);
+  generateRedteamCommand(generateCommand, 'redteam');
 
   redteamInitCommand(redteamBaseCommand);
-  evalCommand(redteamBaseCommand, defaultConfig, defaultConfigPath);
-  generateRedteamCommand(redteamBaseCommand, 'generate', defaultConfig, defaultConfigPath);
+  evalCommand(redteamBaseCommand);
+  generateRedteamCommand(redteamBaseCommand, 'generate');
   redteamPluginsCommand(redteamBaseCommand);
 
   if (!process.argv.slice(2).length) {
