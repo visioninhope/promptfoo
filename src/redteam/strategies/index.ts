@@ -106,6 +106,6 @@ export function validateStrategies(strategies: RedteamStrategyObject[]): void {
         
         ${chalk.green(`Valid strategies are: ${validStrategiesString}`)}`,
     );
-    process.exit(1);
+    process.exitCode = 1;
   }
 }

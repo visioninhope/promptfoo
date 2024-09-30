@@ -418,8 +418,8 @@ export async function resolveConfigs(
       feature: 'standalone assertions mode',
     });
     if (!cmdObj.modelOutputs) {
-      logger.error('You must provide --model-outputs when using --assertions');
-      process.exit(1);
+      process.exitCode = 1;
+      throw new Error('You must provide --model-outputs when using --assertions');
     }
     const modelOutputs = JSON.parse(
       fs.readFileSync(path.join(process.cwd(), cmdObj.modelOutputs), 'utf8'),
@@ -473,13 +473,13 @@ export async function resolveConfigs(
 
   // Validation
   if (!config.prompts || config.prompts.length === 0) {
-    logger.error('You must provide at least 1 prompt');
-    process.exit(1);
+    process.exitCode = 1;
+    throw new Error('You must provide at least 1 prompt');
   }
 
   if (!config.providers || config.providers.length === 0) {
-    logger.error('You must specify at least 1 provider (for example, openai:gpt-4o)');
-    process.exit(1);
+    process.exitCode = 1;
+    throw new Error('You must specify at least 1 provider (for example, openai:gpt-4o)');
   }
   invariant(Array.isArray(config.providers), 'providers must be an array');
   // Parse prompts, providers, and tests
@@ -530,8 +530,8 @@ export async function resolveConfigs(
   const parsedProviderPromptMap = readProviderPromptMap(config, parsedPrompts);
 
   if (parsedPrompts.length === 0) {
-    logger.error('No prompts found');
-    process.exit(1);
+    process.exitCode = 1;
+    throw new Error('No prompts found');
   }
 
   const defaultTest: TestCase = {

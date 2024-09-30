@@ -313,10 +313,9 @@ export function startServer(
         logger.error(
           `Unable to start server on port ${port}. It's currently in use. Check for existing promptfoo instances.`,
         );
-        process.exit(1);
       } else {
         logger.error(`Failed to start server: ${error.message}`);
-        process.exit(1);
       }
+      process.exitCode = 1;
     });
 }

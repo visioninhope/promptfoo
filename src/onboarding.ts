@@ -288,12 +288,10 @@ export async function createDummyFiles(directory: string | null, interactive: bo
     if (!overwrite) {
       const isNpx = getEnvString('npm_execpath')?.includes('npx');
       const runCommand = isNpx ? 'npx promptfoo@latest init' : 'promptfoo init';
-      logger.info(
-        chalk.red(
-          `Please run \`${runCommand}\` in a different directory or use \`${runCommand} <directory>\` to specify a new location.`,
-        ),
+      process.exitCode = 1;
+      throw new Error(
+        `Please run \`${runCommand}\` in a different directory or use \`${runCommand} <directory>\` to specify a new location.`,
       );
-      process.exit(1);
     }
   }
 
@@ -583,7 +581,7 @@ export async function initializeProject(directory: string | null, interactive: b
           chalk.green('https://www.promptfoo.dev/contact/'),
       );
       await recordOnboardingStep('early exit');
-      process.exit(130);
+      process.exitCode = 130;
     } else {
       throw err;
     }

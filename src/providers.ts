@@ -451,7 +451,8 @@ export async function loadApiProvider(
     const CustomApiProvider = await importModule(modulePath);
     ret = new CustomApiProvider(options);
   } else {
-    logger.error(dedent`
+    process.exitCode = 1;
+    throw new Error(dedent`
       Could not identify provider: ${chalk.bold(providerPath)}. 
       
       ${chalk.white(dedent`
@@ -459,7 +460,6 @@ export async function loadApiProvider(
   
         For more information on supported providers, visit: `)} ${chalk.cyan('https://promptfoo.dev/docs/providers/')}
     `);
-    process.exit(1);
   }
   ret.transform = options.transform;
   ret.delay = options.delay;
