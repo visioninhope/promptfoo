@@ -1,13 +1,10 @@
-import chalk from 'chalk';
 import child_process from 'child_process';
-import dedent from 'dedent';
 import * as fs from 'fs';
 import fetch from 'node-fetch';
 import * as path from 'path';
 import Stream from 'stream';
 import { clearCache, disableCache, enableCache } from '../src/cache';
 import { importModule } from '../src/esm';
-import logger from '../src/logger';
 import { loadApiProvider, loadApiProviders } from '../src/providers';
 import { AnthropicCompletionProvider } from '../src/providers/anthropic';
 import {
