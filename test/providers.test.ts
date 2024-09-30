@@ -1546,26 +1546,12 @@ config:
     delete process.env.MYPORT;
   });
 
-  it('throws an error for unidentified providers', async () => {
-    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
-      throw new Error('process.exit called');
-    });
+  it('throws an error and sets exit code for unidentified providers', async () => {
     const unknownProviderPath = 'unknown:provider';
-
-    await expect(loadApiProvider(unknownProviderPath)).rejects.toThrow('process.exit called');
-
-    expect(logger.error).toHaveBeenCalledWith(
-      dedent`
-        Could not identify provider: ${chalk.bold(unknownProviderPath)}. 
-        
-        ${chalk.white(dedent`
-          Please check your configuration and ensure the provider is correctly specified.
-    
-          For more information on supported providers, visit: `)} ${chalk.cyan('https://promptfoo.dev/docs/providers/')}
-      `,
-    );
-    expect(mockExit).toHaveBeenCalledWith(1);
-    mockExit.mockRestore();
+    const originalExitCode = process.exitCode;
+    await expect(loadApiProvider(unknownProviderPath)).rejects.toThrow(expect.any(Error));
+    expect(process.exitCode).toBe(1);
+    process.exitCode = originalExitCode;
   });
 
   it('renders label using Nunjucks', async () => {

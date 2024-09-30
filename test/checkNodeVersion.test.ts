@@ -8,10 +8,6 @@ jest.mock('fs');
 jest.mock('../src/logger');
 jest.mock('path');
 
-const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
-  throw new Error('process.exit called');
-});
-
 const setNodeVersion = (version: string) => {
   Object.defineProperty(process, 'version', {
     value: version,
@@ -37,10 +33,6 @@ describe('checkNodeVersion', () => {
     setNodeVersion(originalProcessVersion);
   });
 
-  afterAll(() => {
-    mockExit.mockRestore();
-  });
-
   it('should not log a warning if Node.js version is supported', () => {
     setNodeVersion('v18.10.0');
     expect(() => checkNodeVersion()).not.toThrow();
@@ -50,11 +42,8 @@ describe('checkNodeVersion', () => {
   it('should log a warning and exit if Node.js version is too low', () => {
     setNodeVersion('v16.10.0');
 
-    expect(checkNodeVersion()).toBeUndefined();
-    expect(logger.warn).toHaveBeenCalledWith(
-      chalk.yellow(
-        'You are using Node.js 16.10.0. This version is not supported. Please use Node.js >=18.0.0.',
-      ),
+    expect(() => checkNodeVersion()).toThrow(
+      'You are using Node.js 16.10.0. This version is not supported. Please use Node.js >=18.0.0.',
     );
   });
 
@@ -75,11 +64,8 @@ describe('checkNodeVersion', () => {
       }),
     );
 
-    expect(checkNodeVersion()).toBeUndefined();
-    expect(logger.warn).toHaveBeenCalledWith(
-      chalk.yellow(
-        'You are using Node.js 18.0.0. This version is not supported. Please use Node.js >=18.0.1.',
-      ),
+    expect(() => checkNodeVersion()).toThrow(
+      'You are using Node.js 18.0.0. This version is not supported. Please use Node.js >=18.0.1.',
     );
   });
 });
