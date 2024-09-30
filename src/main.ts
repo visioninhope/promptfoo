@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { version } from '../package.json';
 import { checkNodeVersion } from './checkNodeVersion';
 import { authCommand } from './commands/auth';
 import { cacheCommand } from './commands/cache';
@@ -14,12 +15,13 @@ import { initCommand } from './commands/init';
 import { listCommand } from './commands/list';
 import { shareCommand } from './commands/share';
 import { showCommand } from './commands/show';
-import { versionCommand } from './commands/version';
 import { viewCommand } from './commands/view';
 import { runDbMigrations } from './migrate';
 import { generateRedteamCommand } from './redteam/commands/generate';
 import { initCommand as redteamInitCommand } from './redteam/commands/init';
 import { pluginsCommand as redteamPluginsCommand } from './redteam/commands/plugins';
+import { redteamReportCommand } from './redteam/commands/report';
+import { redteamRunCommand } from './redteam/commands/run';
 import { checkForUpdates } from './updates';
 
 async function main() {
@@ -27,6 +29,7 @@ async function main() {
   await runDbMigrations();
 
   const program = new Command();
+  program.version(version);
 
   // Main commands
   evalCommand(program);
@@ -46,7 +49,6 @@ async function main() {
   importCommand(program);
   listCommand(program);
   showCommand(program);
-  versionCommand(program);
 
   generateDatasetCommand(generateCommand);
   generateRedteamCommand(generateCommand, 'redteam');
@@ -55,11 +57,9 @@ async function main() {
   evalCommand(redteamBaseCommand);
   generateRedteamCommand(redteamBaseCommand, 'generate');
   redteamPluginsCommand(redteamBaseCommand);
+  redteamRunCommand(redteamBaseCommand);
+  redteamReportCommand(redteamBaseCommand);
 
-  if (!process.argv.slice(2).length) {
-    program.outputHelp();
-    process.exit(0);
-  }
   program.parse();
 }
 
