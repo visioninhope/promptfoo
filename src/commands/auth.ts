@@ -85,11 +85,10 @@ export function authCommand(program: Command) {
           name: 'auth login',
         });
         await telemetry.send();
-        process.exit(0);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error(`Authentication failed: ${errorMessage}`);
-        process.exit(1);
+        process.exitCode = 1;
       }
     });
 
@@ -99,6 +98,5 @@ export function authCommand(program: Command) {
     .action(async () => {
       await cloudConfig.delete();
       logger.info(chalk.green('Successfully logged out'));
-      process.exit(0);
     });
 }

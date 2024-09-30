@@ -35,7 +35,7 @@ export function importCommand(program: Command) {
         await telemetry.send();
       } catch (error) {
         logger.error(`Failed to import eval: ${error}`);
-        process.exit(1);
+        process.exitCode = 1;
       }
     });
 }

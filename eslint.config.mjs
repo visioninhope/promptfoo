@@ -62,6 +62,7 @@ export default [
       'no-case-declarations': 0,
       'no-control-regex': 0,
       'no-empty': 0,
+      'no-process-exit': 'error',
       'no-unused-expressions': 'error',
       'no-useless-escape': 0,
       'object-shorthand': 'error',

@@ -44,7 +44,8 @@ export function exportCommand(program: Command) {
 
         if (!result || result.length === 0) {
           logger.error(`No eval found with ID ${evalId}`);
-          process.exit(1);
+          process.exitCode = 1;
+          return;
         }
 
         const jsonData = JSON.stringify(result[0], null, 2);
@@ -62,7 +63,7 @@ export function exportCommand(program: Command) {
         await telemetry.send();
       } catch (error) {
         logger.error(`Failed to export eval: ${error}`);
-        process.exit(1);
+        process.exitCode = 1;
       }
     });
 }

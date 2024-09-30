@@ -43,13 +43,15 @@ export function shareCommand(program: Command) {
           results = (await readResult(evalId))?.result;
           if (!results) {
             logger.error(`Could not load results for eval ID ${evalId}.`);
-            process.exit(1);
+            process.exitCode = 1;
+            return;
           }
         } else {
           results = await getLatestEval();
           if (!results) {
             logger.error('Could not load results. Do you need to run `promptfoo eval` first?');
-            process.exit(1);
+            process.exitCode = 1;
+            return;
           }
         }
 
@@ -66,25 +68,21 @@ export function shareCommand(program: Command) {
           if (cloudConfig.isEnabled()) {
             logger.info(`Sharing eval to ${cloudConfig.getAppUrl()}`);
             await createPublicUrl(results, cmdObj.showAuth);
-            process.exit(0);
-          } else {
-            reader.question(
-              `Create a private shareable URL of your eval on ${hostname}?\n\nTo proceed, please confirm [Y/n] `,
-              async function (answer: string) {
-                if (
-                  answer.toLowerCase() !== 'yes' &&
-                  answer.toLowerCase() !== 'y' &&
-                  answer !== ''
-                ) {
-                  reader.close();
-                  process.exit(1);
-                }
-                reader.close();
-
-                await createPublicUrl(results, cmdObj.showAuth);
-              },
-            );
+            return;
           }
+          reader.question(
+            `Create a private shareable URL of your eval on ${hostname}?\n\nTo proceed, please confirm [Y/n] `,
+            async function (answer: string) {
+              if (answer.toLowerCase() !== 'yes' && answer.toLowerCase() !== 'y' && answer !== '') {
+                reader.close();
+                process.exitCode = 1;
+                return;
+              }
+              reader.close();
+
+              await createPublicUrl(results, cmdObj.showAuth);
+            },
+          );
         }
       },
     );

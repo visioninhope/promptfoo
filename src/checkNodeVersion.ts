@@ -41,11 +41,11 @@ export const checkNodeVersion = (): void => {
     (major === requiredMajor && minor < requiredMinor) ||
     (major === requiredMajor && minor === requiredMinor && patch < requiredPatch)
   ) {
-    logger.warn(
+    process.exitCode = 1;
+    throw new Error(
       chalk.yellow(
         `You are using Node.js ${major}.${minor}.${patch}. This version is not supported. Please use Node.js ${requiredVersion}.`,
       ),
     );
-    process.exit(1);
   }
 };

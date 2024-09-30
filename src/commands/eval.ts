@@ -221,7 +221,8 @@ export async function doEval(
         const configPaths = (cmdObj.config || [defaultConfigPath]).filter(Boolean) as string[];
         if (!configPaths.length) {
           logger.error('Could not locate config file(s) to watch');
-          process.exit(1);
+          process.exitCode = 1;
+          return;
         }
         const basePath = path.dirname(configPaths[0]);
         const promptPaths = Array.isArray(config.prompts)
@@ -294,7 +295,7 @@ export async function doEval(
           );
         }
         logger.info('Done.');
-        process.exit(Number.isSafeInteger(failedTestExitCode) ? failedTestExitCode : 100);
+        process.exitCode = Number.isSafeInteger(failedTestExitCode) ? failedTestExitCode : 100;
       } else {
         logger.info('Done.');
       }
@@ -451,7 +452,8 @@ export function evalCommand(
           ${chalk.green('promptfoo eval -j 1')}
         `),
         );
-        process.exit(2);
+        process.exitCode = 2;
+        return;
       }
 
       if (opts.remote) {
