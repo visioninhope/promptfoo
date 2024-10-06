@@ -1,4 +1,4 @@
-import { chromium, type Page, type ElementHandle } from 'playwright';
+import { type Page, type ElementHandle, type BrowserContext } from 'playwright';
 import invariant from 'tiny-invariant';
 import logger from '../logger';
 import type {
@@ -7,6 +7,7 @@ import type {
   ProviderOptions,
   ProviderResponse,
 } from '../types';
+import { maybeLoadFromExternalFile } from '../util';
 import { safeJsonStringify } from '../util/json';
 import { getNunjucksEngine } from '../util/templates';
 
@@ -23,6 +24,14 @@ interface BrowserProviderConfig {
   responseParser?: string | Function;
   timeoutMs?: number;
   headless?: boolean;
+  cookies?:
+    | Array<{
+        name: string;
+        value: string;
+        domain?: string;
+        path?: string;
+      }>
+    | string;
 }
 
 function createResponseParser(
@@ -73,14 +82,35 @@ export class BrowserProvider implements ApiProvider {
       prompt,
     };
 
+    let chromium, stealth;
+    try {
+      ({ chromium } = await import('playwright-extra'));
+      ({ default: stealth } = await import('puppeteer-extra-plugin-stealth'));
+    } catch (error) {
+      return {
+        error: `Failed to import required modules. Please ensure the following packages are installed:\n\tplaywright @playwright/browser-chromium playwright-extra puppeteer-extra-plugin-stealth\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+
+    chromium.use(stealth());
+
     const browser = await chromium.launch({
       headless: this.headless,
       args: ['--ignore-certificate-errors'],
     });
-    const page = await browser.newPage();
+    const browserContext = await browser.newContext({
+      ignoreHTTPSErrors: true,
+    });
+
+    if (this.config.cookies) {
+      await this.setCookies(browserContext);
+    }
+
+    const page = await browserContext.newPage();
     const extracted: Record<string, any> = {};
 
     try {
+      // Execute all actions
       for (const step of this.config.steps) {
         await this.executeAction(page, step, vars, extracted);
       }
@@ -96,6 +126,22 @@ export class BrowserProvider implements ApiProvider {
     const ret = this.responseParser(extracted, finalHtml);
     logger.debug(`Browser response parser output: ${ret}`);
     return { output: ret };
+  }
+
+  private async setCookies(browserContext: BrowserContext): Promise<void> {
+    if (typeof this.config.cookies === 'string') {
+      // Handle big blob string of cookies
+      const cookieString = maybeLoadFromExternalFile(this.config.cookies) as string;
+      const cookiePairs = cookieString.split(';').map((pair) => pair.trim());
+      const cookies = cookiePairs.map((pair) => {
+        const [name, value] = pair.split('=');
+        return { name, value };
+      });
+      await browserContext.addCookies(cookies);
+    } else if (Array.isArray(this.config.cookies)) {
+      // Handle array of cookie objects
+      await browserContext.addCookies(this.config.cookies);
+    }
   }
 
   private async executeAction(
