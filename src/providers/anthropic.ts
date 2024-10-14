@@ -161,6 +161,38 @@ export function parseMessages(messages: string): {
   return { system, extractedMessages };
 }
 
+// New function to parse vision messages
+function parseVisionMessages(messages: string): Anthropic.MessageParam[] {
+  type AnthropicContent = string | Array<Anthropic.TextBlockParam | Anthropic.ImageBlockParam | Anthropic.ToolUseBlockParam | Anthropic.ToolResultBlockParam>
+  try {
+    const parsed = JSON.parse(messages);
+    if (Array.isArray(parsed)) {
+      return parsed.map((msg: { role: string; content: AnthropicContent }) => ({
+        role: msg.role as Anthropic.MessageParam['role'],
+        content: Array.isArray(msg.content) 
+          ? msg.content.map((content: any) => {
+              if (content.type === 'image') {
+                return {
+                  type: 'image',
+                  source: {
+                    type: content.source.type,
+                    media_type: content.source.media_type,
+                    data: content.source.data,
+                  },
+                };
+              }
+              return content;
+            })
+          : msg.content,
+      }));
+    }
+    throw new Error('Parsed messages is not an array');
+  } catch (error) {
+    logger.warn(`Failed to parse vision messages: ${error.message}. Falling back to text parsing.`);
+    return parseMessages(messages).extractedMessages;
+  }
+}
+
 export function calculateAnthropicCost(
   modelName: string,
   config: AnthropicMessageOptions,
@@ -205,6 +237,11 @@ export class AnthropicMessagesProvider implements ApiProvider {
     return `[Anthropic Messages Provider ${this.modelName || 'claude-2.1'}]`;
   }
 
+  private isVisionModel(modelName: string): boolean {
+    // This could be expanded to include other vision-capable models in the future
+    return modelName.includes('claude-3');
+  }
+
   async callApi(prompt: string): Promise<ProviderResponse> {
     if (!this.apiKey) {
       throw new Error(
@@ -212,12 +249,14 @@ export class AnthropicMessagesProvider implements ApiProvider {
       );
     }
 
-    const { system, extractedMessages } = parseMessages(prompt);
+    const messages = this.isVisionModel(this.modelName)
+      ? parseVisionMessages(prompt)
+      : parseMessages(prompt).extractedMessages;
+
     const params: Anthropic.MessageCreateParams = {
       model: this.modelName,
-      ...(system ? { system } : {}),
       max_tokens: this.config?.max_tokens || getEnvInt('ANTHROPIC_MAX_TOKENS', 1024),
-      messages: extractedMessages,
+      messages,
       stream: false,
       temperature: this.config.temperature || getEnvFloat('ANTHROPIC_TEMPERATURE', 0),
       ...(this.config.tools ? { tools: maybeLoadFromExternalFile(this.config.tools) } : {}),
