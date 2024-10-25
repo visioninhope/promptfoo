@@ -58,38 +58,79 @@ describe('pythonUtils', () => {
 
       const result = await pythonUtils.tryPath('/usr/bin/python3');
       expect(result).toBe('/usr/bin/python3');
-      expect(execAsync).toHaveBeenCalledWith('/usr/bin/python3 --version');
+      expect(execAsync).toHaveBeenCalledWith('"/usr/bin/python3" -V');
     });
 
-    it('should return null for a non-existent executable', async () => {
-      jest.mocked(execAsync).mockRejectedValue(new Error('Command failed'));
+    it('should return null for non-Python 3 version output', async () => {
+      // Just mock the version check, don't try to spawn process
+      jest.mocked(execAsync).mockResolvedValue({
+        stdout: 'Python 2.7.10\n',
+        stderr: '',
+      });
 
-      const result = await pythonUtils.tryPath('/usr/bin/nonexistent');
+      const result = await pythonUtils.tryPath('/usr/bin/python');
       expect(result).toBeNull();
-      expect(execAsync).toHaveBeenCalledWith('/usr/bin/nonexistent --version');
+      expect(execAsync).toHaveBeenCalledWith('"/usr/bin/python" -V');
     });
 
     it('should return null if the command times out', async () => {
       jest.useFakeTimers();
       jest.mocked(execAsync).mockImplementation(() => {
-        const promise = new Promise((resolve) => {
-          setTimeout(() => resolve({ stdout: 'Python 3.8.10\n', stderr: '' }), 500);
-        }) as any;
-        promise.child = { kill: jest.fn() };
-        return promise;
+        return new Promise((resolve) => {
+          setTimeout(() => resolve({ stdout: 'Python 3.8.10\n', stderr: '' }), 1000);
+        });
       });
 
       const resultPromise = pythonUtils.tryPath('/usr/bin/python3');
-      jest.advanceTimersByTime(251);
+      jest.advanceTimersByTime(501);
       const result = await resultPromise;
 
       expect(result).toBeNull();
-      expect(execAsync).toHaveBeenCalledWith('/usr/bin/python3 --version');
+      expect(execAsync).toHaveBeenCalledWith('"/usr/bin/python3" -V');
       jest.useRealTimers();
     });
   });
 
   describe('validatePythonPath', () => {
+    it('should try multiple paths when primary path fails', async () => {
+      jest
+        .mocked(execAsync)
+        .mockRejectedValueOnce(new Error('Command failed')) // First try fails
+        .mockResolvedValueOnce({ stdout: 'Python 3.9.5\n', stderr: '' }); // Second try succeeds
+
+      const result = await pythonUtils.validatePythonPath('non_existent_program', false);
+
+      // Should find python3 on Unix or py -3 on Windows
+      const expectedPath = process.platform === 'win32' ? 'py -3' : 'python3';
+      expect(result).toBe(expectedPath);
+      expect(execAsync).toHaveBeenCalledTimes(2);
+      expect(execAsync).toHaveBeenCalledWith('"non_existent_program" -V');
+      expect(execAsync).toHaveBeenCalledWith(`"${expectedPath}" -V`);
+    });
+
+    it('should throw a specific error message when explicit path fails', async () => {
+      jest.mocked(execAsync).mockRejectedValue(new Error('Command failed'));
+
+      await expect(pythonUtils.validatePythonPath('specific_path', true)).rejects.toThrow(
+        'Python 3 not found at "specific_path"',
+      );
+    });
+
+    it('should throw a comprehensive error when all paths fail', async () => {
+      jest.mocked(execAsync).mockRejectedValue(new Error('Command failed'));
+
+      await expect(pythonUtils.validatePythonPath('python', false)).rejects.toThrow(
+        /Python 3 not found\. Tried multiple paths including "python"/
+      );
+      
+      // Count the actual paths in getPythonPaths()
+      const paths = process.platform === 'win32' 
+        ? ['py -3', 'python3', 'python', ...Array(6).fill(''), 'C:\\Python39\\python.exe', 'C:\\Python310\\python.exe', 'C:\\Python311\\python.exe']
+        : ['python3', 'python', '/usr/bin/python3', '/usr/local/bin/python3', '/opt/homebrew/bin/python3', ...Array(6).fill('')];
+      
+      expect(execAsync).toHaveBeenCalledTimes(paths.length);
+    });
+
     it('should validate an existing Python 3 path', async () => {
       jest.mocked(execAsync).mockResolvedValue({
         stdout: 'Python 3.8.10\n',
@@ -99,7 +140,7 @@ describe('pythonUtils', () => {
       const result = await pythonUtils.validatePythonPath('python', false);
       expect(result).toBe('python');
       expect(pythonUtils.state.cachedPythonPath).toBe('python');
-      expect(execAsync).toHaveBeenCalledWith('python --version');
+      expect(execAsync).toHaveBeenCalledWith('"python" -V');
     });
 
     it('should return the cached path on subsequent calls', async () => {
@@ -123,18 +164,24 @@ describe('pythonUtils', () => {
       jest.mocked(execAsync).mockRejectedValue(new Error('Command failed'));
 
       await expect(pythonUtils.validatePythonPath('non_existent_program', true)).rejects.toThrow(
-        /Python 3 not found\. Tried "non_existent_program"/,
+        'Python 3 not found at "non_existent_program"'
       );
-      expect(execAsync).toHaveBeenCalledWith('non_existent_program --version');
+      expect(execAsync).toHaveBeenCalledWith('"non_existent_program" -V');
     });
 
     it('should throw an error when no valid Python path is found', async () => {
       jest.mocked(execAsync).mockRejectedValue(new Error('Command failed'));
 
       await expect(pythonUtils.validatePythonPath('python', false)).rejects.toThrow(
-        /Python 3 not found\. Tried "python" and ".+"/,
+        /Python 3 not found\. Tried multiple paths including "python"/
       );
-      expect(execAsync).toHaveBeenCalledTimes(2);
+      
+      // Count the actual paths in getPythonPaths()
+      const paths = process.platform === 'win32' 
+        ? ['py -3', 'python3', 'python', ...Array(6).fill(''), 'C:\\Python39\\python.exe', 'C:\\Python310\\python.exe', 'C:\\Python311\\python.exe']
+        : ['python3', 'python', '/usr/bin/python3', '/usr/local/bin/python3', '/opt/homebrew/bin/python3', ...Array(6).fill('')];
+      
+      expect(execAsync).toHaveBeenCalledTimes(paths.length);
     });
 
     it('should use PROMPTFOO_PYTHON environment variable when provided', async () => {
@@ -146,7 +193,7 @@ describe('pythonUtils', () => {
 
       const result = await pythonUtils.validatePythonPath('/custom/python/path', true);
       expect(result).toBe('/custom/python/path');
-      expect(execAsync).toHaveBeenCalledWith('/custom/python/path --version');
+      expect(execAsync).toHaveBeenCalledWith('"/custom/python/path" -V');
     });
   });
 
