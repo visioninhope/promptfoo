@@ -114,8 +114,7 @@ function Contact(): JSX.Element {
             </Link>
           </Typography>
           <Typography variant="body1" gutterBottom>
-            ✉️ Email us at{' '}
-            <Link href="mailto:inquiries@promptfoo.dev">inquiries@promptfoo.dev</Link>
+            ✉️ Email us at <Link href="mailto:inquiries@promptfoo.dev">inquiries@promptfoo.dev</Link>
           </Typography>
           <Typography variant="body1" gutterBottom>
             📅 Or book a time below

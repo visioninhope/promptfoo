@@ -110,11 +110,11 @@
 }
 
 /* Add this for dark mode support */
-[data-theme='dark'] .exampleTabs {
+[data-theme="dark"] .exampleTabs {
   border-bottom-color: #444;
 }
 
-[data-theme='dark'] .exampleTabActive {
+[data-theme="dark"] .exampleTabActive {
   border-bottom-color: #1890ff;
   color: #1890ff;
 }

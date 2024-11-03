@@ -7,7 +7,7 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.defaultFormatter": "biomejs.biome-vscode",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.organizeImports": "never",
@@ -15,12 +15,12 @@
           "source.trimAutoWhitespace": "always"
         },
         "[typescript]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.defaultFormatter": "biomejs.biome-vscode",
           "editor.inlayHints.enabled": "on"
         },
         "terminal.integrated.defaultProfile.linux": "zsh"
       },
-      "extensions": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint", "GitHub.copilot"]
+      "extensions": ["biomejs.biome-vscode", "dbaeumer.vscode-eslint", "GitHub.copilot"]
     }
   },
   "postCreateCommand": "npm ci && npm run build && npm link"

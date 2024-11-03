@@ -25,9 +25,7 @@ export const promptsTable = sqliteTable(
   'prompts',
   {
     id: text('id').primaryKey(),
-    createdAt: integer('created_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+    createdAt: integer('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     prompt: text('prompt').notNull(),
   },
   (table) => ({
@@ -56,9 +54,7 @@ export const evalsTable = sqliteTable(
   'evals',
   {
     id: text('id').primaryKey(),
-    createdAt: integer('created_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+    createdAt: integer('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     author: text('author'),
     description: text('description'),
     results: text('results', { mode: 'json' }).$type<EvaluateSummaryV2 | object>().notNull(),
@@ -75,12 +71,8 @@ export const evalResultsTable = sqliteTable(
   'eval_results',
   {
     id: text('id').primaryKey(),
-    createdAt: integer('created_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: integer('updated_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+    createdAt: integer('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: integer('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     evalId: text('eval_id')
       .notNull()
       .references(() => evalsTable.id),
@@ -175,9 +167,7 @@ export const datasetsTable = sqliteTable(
   {
     id: text('id').primaryKey(),
     tests: text('tests', { mode: 'json' }).$type<UnifiedConfig['tests']>(),
-    createdAt: integer('created_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+    createdAt: integer('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     createdAtIdx: index('datasets_created_at_idx').on(table.createdAt),
@@ -243,12 +233,8 @@ export const configsTable = sqliteTable(
   'configs',
   {
     id: text('id').primaryKey(),
-    createdAt: integer('created_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: integer('updated_at')
-      .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+    createdAt: integer('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: integer('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
     name: text('name').notNull(),
     type: text('type').notNull(), // e.g. 'redteam', 'eval', etc.
     config: text('config', { mode: 'json' }).notNull(),

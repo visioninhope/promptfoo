@@ -8,13 +8,7 @@
     "test:jest": "npx jest",
     "test:vitest": "npx vitest"
   },
-  "keywords": [
-    "jest",
-    "vitest",
-    "prompt testing",
-    "LLM",
-    "promptfoo"
-  ],
+  "keywords": ["jest", "vitest", "prompt testing", "LLM", "promptfoo"],
   "author": "Ian Webster",
   "license": "MIT",
   "devDependencies": {

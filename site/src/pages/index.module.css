@@ -90,7 +90,7 @@
   border-radius: 8px;
   padding: 1rem;
   margin: 1rem 0;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   font-size: 0.9rem;
   overflow-x: auto;
   white-space: pre-wrap;
@@ -98,7 +98,7 @@
   animation: rainbow-glint 5s linear infinite;
 }
 
-[data-theme='dark'] .codeBox {
+[data-theme="dark"] .codeBox {
   background-color: #2d2d2d;
   border-color: #444;
   color: #e0e0e0;

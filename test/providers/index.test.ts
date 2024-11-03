@@ -502,7 +502,8 @@ describe('call provider apis', () => {
   it('OllamaCompletionProvider callApi', async () => {
     const mockResponse = {
       ...defaultMockResponse,
-      text: jest.fn()
+      text: jest
+        .fn()
         .mockResolvedValue(`{"model":"llama2:13b","created_at":"2023-08-08T21:50:34.898068Z","response":"Gre","done":false}
 {"model":"llama2:13b","created_at":"2023-08-08T21:50:34.929199Z","response":"at","done":false}
 {"model":"llama2:13b","created_at":"2023-08-08T21:50:34.959989Z","response":" question","done":false}
@@ -525,7 +526,8 @@ describe('call provider apis', () => {
   it('OllamaChatProvider callApi', async () => {
     const mockResponse = {
       ...defaultMockResponse,
-      text: jest.fn()
+      text: jest
+        .fn()
         .mockResolvedValue(`{"model":"orca-mini","created_at":"2023-12-16T01:46:19.263682972Z","message":{"role":"assistant","content":" Because","images":null},"done":false}
 {"model":"orca-mini","created_at":"2023-12-16T01:46:19.275143974Z","message":{"role":"assistant","content":" of","images":null},"done":false}
 {"model":"orca-mini","created_at":"2023-12-16T01:46:19.288137727Z","message":{"role":"assistant","content":" Ray","images":null},"done":false}

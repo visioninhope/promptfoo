@@ -19,7 +19,7 @@ div.strategy-stats-content {
   height: 100%;
 }
 
-[data-theme='dark'] .strategy-item {
+[data-theme="dark"] .strategy-item {
   border: 1px solid #424242;
 }
 

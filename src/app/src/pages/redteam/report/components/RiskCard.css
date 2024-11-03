@@ -17,9 +17,7 @@
 
 .risk-card-list-item {
   padding: 0;
-  transition:
-    background-color 0.3s,
-    box-shadow 0.3s;
+  transition: background-color 0.3s, box-shadow 0.3s;
 }
 
 .risk-card-list-item:hover {
@@ -28,7 +26,7 @@
   border-radius: 4px;
 }
 
-[data-theme='dark'] .risk-card-list-item:hover {
+[data-theme="dark"] .risk-card-list-item:hover {
   background-color: #2a2a2a;
   box-shadow: 0 0 0 1px #555555;
   border-radius: 4px;
@@ -66,14 +64,14 @@
   color: #f44336;
 }
 
-[data-theme='dark'] .risk-card-percentage-high {
+[data-theme="dark"] .risk-card-percentage-high {
   color: #81c784;
 }
 
-[data-theme='dark'] .risk-card-percentage-medium {
+[data-theme="dark"] .risk-card-percentage-medium {
   color: #ffb74d;
 }
 
-[data-theme='dark'] .risk-card-percentage-low {
+[data-theme="dark"] .risk-card-percentage-low {
   color: #e57373;
 }

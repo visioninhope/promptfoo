@@ -201,7 +201,9 @@ export async function matchesSimilarity(
   const finalProvider = (await getAndCheckProvider(
     'embedding',
     grading?.provider,
-    (await getDefaultProviders()).embeddingProvider,
+    (
+      await getDefaultProviders()
+    ).embeddingProvider,
     'similarity check',
   )) as ApiEmbeddingProvider | ApiSimilarityProvider;
 
@@ -927,7 +929,9 @@ export async function matchesModeration(
   const moderationProvider = (await getAndCheckProvider(
     'moderation',
     grading?.provider,
-    (await getDefaultProviders()).moderationProvider,
+    (
+      await getDefaultProviders()
+    ).moderationProvider,
     'moderation check',
   )) as ApiModerationProvider;
 
