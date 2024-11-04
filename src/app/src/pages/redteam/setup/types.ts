@@ -81,14 +81,17 @@ export interface YamlConfig {
   redteam: RedteamFileConfig;
 }
 
+// First, let's define our types properly
+export interface PluginAdvancedConfig {
+  numTests?: number;
+  strategies?: string[];
+}
+
+export interface PluginConfig {
+  advanced?: PluginAdvancedConfig;
+  [key: string]: any;
+}
+
 export interface LocalPluginConfig {
-  [key: string]: {
-    policy?: string;
-    systemPrompt?: string;
-    targetIdentifiers?: string[];
-    targetSystems?: string[];
-    indirectInjectionVar?: string;
-    targetUrls?: string[];
-    [key: string]: string | string[] | undefined;
-  };
+  [key: string]: PluginConfig;
 }

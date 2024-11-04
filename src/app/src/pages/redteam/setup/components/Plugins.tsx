@@ -5,6 +5,7 @@ import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import TuneIcon from '@mui/icons-material/Tune';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -40,10 +41,11 @@ import {
 } from '@promptfoo/redteam/constants';
 import { useDebounce } from 'use-debounce';
 import { useRedTeamConfig } from '../hooks/useRedTeamConfig';
-import type { LocalPluginConfig } from '../types';
+import type { LocalPluginConfig, PluginConfig } from '../types';
 import { CustomPoliciesSection } from './CustomPoliciesSection';
 import PluginConfigDialog from './PluginConfigDialog';
 import PresetCard from './PresetCard';
+import PluginAdvancedConfig from './advancedConfig/PluginAdvancedConfig';
 
 interface PluginsProps {
   onNext: () => void;
@@ -81,6 +83,7 @@ export default function Plugins({ onNext, onBack }: PluginsProps) {
   });
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [selectedConfigPlugin, setSelectedConfigPlugin] = useState<Plugin | null>(null);
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState<Record<string, boolean>>({});
 
   const [debouncedUpdatePlugins] = useDebounce(
     (plugins: Array<string | { id: string; config: any }>) => {
@@ -200,21 +203,19 @@ export default function Plugins({ onNext, onBack }: PluginsProps) {
     { name: 'Custom', plugins: new Set() },
   ];
 
-  const updatePluginConfig = useCallback(
-    (plugin: string, newConfig: Partial<LocalPluginConfig[string]>) => {
-      setPluginConfig((prevConfig) => {
-        const updatedConfig = {
-          ...prevConfig,
-          [plugin]: {
-            ...prevConfig[plugin],
-            ...newConfig,
-          },
-        };
-        return updatedConfig;
-      });
-    },
-    [],
-  );
+  const handleAdvancedConfigToggle = (plugin: Plugin) => {
+    setShowAdvancedConfig((prev) => ({
+      ...prev,
+      [plugin]: !prev[plugin],
+    }));
+  };
+
+  const updatePluginConfig = useCallback((plugin: string, newConfig: PluginConfig) => {
+    setPluginConfig((prevConfig) => ({
+      ...prevConfig,
+      [plugin]: newConfig,
+    }));
+  }, []);
 
   const isConfigValid = useCallback(() => {
     for (const plugin of selectedPlugins) {
@@ -268,6 +269,7 @@ export default function Plugins({ onNext, onBack }: PluginsProps) {
     if (pluginsToShow.length === 0) {
       return null;
     }
+
     return (
       <Accordion key={category} defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -310,64 +312,51 @@ export default function Plugins({ onNext, onBack }: PluginsProps) {
                     },
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      height: '100%',
-                      position: 'relative',
-                    }}
-                  >
-                    <FormControlLabel
-                      sx={{ flex: 1 }}
-                      control={
-                        <Checkbox
-                          checked={selectedPlugins.has(plugin)}
-                          onChange={() => handlePluginToggle(plugin)}
-                          color="primary"
-                        />
-                      }
-                      label={
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            {displayNameOverrides[plugin] || categoryAliases[plugin] || plugin}
-                          </Box>
-                          <Typography variant="body2" color="text.secondary">
-                            {subCategoryDescriptions[plugin]}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                    {selectedPlugins.has(plugin) && PLUGINS_SUPPORTING_CONFIG.includes(plugin) && (
-                      <IconButton
-                        size="small"
-                        title={
-                          isPluginConfigured(plugin)
-                            ? 'Edit Configuration'
-                            : 'Configuration Required'
+                  <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={selectedPlugins.has(plugin)}
+                            onChange={() => handlePluginToggle(plugin)}
+                          />
                         }
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleConfigClick(plugin);
-                        }}
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          opacity: 0.6,
-                          '&:hover': {
-                            opacity: 1,
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                          },
-                          ...(PLUGINS_REQUIRING_CONFIG.includes(plugin) &&
-                            !isPluginConfigured(plugin) && {
-                              color: 'error.main',
-                              opacity: 1,
-                            }),
-                        }}
-                      >
-                        <SettingsOutlinedIcon fontSize="small" />
-                      </IconButton>
+                        label={displayNameOverrides[plugin] || plugin}
+                      />
+
+                      {selectedPlugins.has(plugin) && (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {PLUGINS_SUPPORTING_CONFIG.includes(plugin) && (
+                            <IconButton
+                              size="small"
+                              onClick={() => handleConfigClick(plugin)}
+                              title="Configure Plugin"
+                            >
+                              <SettingsOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            size="small"
+                            onClick={() => handleAdvancedConfigToggle(plugin)}
+                            title="Advanced Settings"
+                            sx={{
+                              transform: showAdvancedConfig[plugin] ? 'rotate(180deg)' : 'none',
+                              transition: 'transform 0.2s',
+                            }}
+                          >
+                            <TuneIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {selectedPlugins.has(plugin) && (
+                      <PluginAdvancedConfig
+                        plugin={plugin as string}
+                        isExpanded={showAdvancedConfig[plugin]}
+                        config={pluginConfig[plugin] || {}}
+                        onUpdateConfig={updatePluginConfig}
+                      />
                     )}
                   </Box>
                 </Paper>
