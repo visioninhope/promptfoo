@@ -11,6 +11,7 @@ Output-based:
 - [`llm-rubric`](llm-rubric) - checks if the LLM output matches given requirements, using a language model to grade the output based on the rubric.
 - `model-graded-closedqa` - similar to the above, a "criteria-checking" eval that ensures the answer meets a specific requirement. Uses an OpenAI-authored prompt from their public evals.
 - `factuality` - a factual consistency eval which, given a completion `A` and reference answer `B` evaluates whether A is a subset of B, A is a superset of B, A and B are equivalent, A and B disagree, or A and B differ, but difference don't matter from the perspective of factuality. Uses the prompt from OpenAI's public evals.
+- `is-refusal` - uses an LLM to determine if the output is refusing or declining to answer
 - `answer-relevance` - ensure that LLM output is related to original query
 - `classifier` - see [classifier grading docs](/docs/configuration/expected-outputs/classifier).
 - `moderation` - see [moderation grading docs](/docs/configuration/expected-outputs/moderation).
@@ -40,6 +41,14 @@ assert:
   - type: factuality
     # Make sure the LLM output is consistent with this statement:
     value: Sacramento is the capital of California
+```
+
+Example of checking for refusal:
+
+```yaml
+assert:
+  - type: is-refusal
+    # Will pass if the LLM determines the output is refusing or declining to answer
 ```
 
 For more information on factuality, see the [guide on LLM factuality](/docs/guides/factuality-eval).

@@ -34,6 +34,7 @@ These metrics are created by logical tests that are run on LLM output.
 | [regex](#regex)                                                 | output matches regex                                               |
 | rouge-n                                                         | Rouge-N score is above a given threshold                           |
 | [starts-with](#starts-with)                                     | output starts with string                                          |
+| [static-refusal](#static-refusal)                               | output matches common refusal patterns                             |
 | [webhook](#webhook)                                             | provided webhook returns \{pass: true\}                            |
 
 :::tip
@@ -726,3 +727,16 @@ The F-score will be calculated automatically after the evaluation completes. A s
 This is particularly useful for evaluating classification tasks like sentiment analysis, where you want to measure both the precision (accuracy of positive predictions) and recall (ability to find all positive cases).
 
 See [Github](https://github.com/promptfoo/promptfoo/tree/main/examples/f-score) for a complete example.
+
+### Static-Refusal
+
+The `static-refusal` assertion checks if the LLM output matches common refusal patterns, such as "I cannot" or "I'm not able to". This is useful for ensuring that the model appropriately refuses harmful or inappropriate requests.
+
+Example:
+
+```yaml
+assert:
+  - type: static-refusal
+```
+
+This will pass if the output contains phrases indicating refusal, and fail if it appears to comply with the request.
