@@ -68,7 +68,7 @@ import { handleIsValidOpenAiFunctionCall, handleIsValidOpenAiToolsCall } from '.
 import { handlePerplexity, handlePerplexityScore } from './perplexity';
 import { handlePython } from './python';
 import { handleRedteam } from './redteam';
-import { handleRefusal } from './refusal';
+import { handleRefusal, handleStaticRefusal } from './refusal';
 import { handleRegex } from './regex';
 import { handleRougeScore } from './rouge';
 import { handleSimilar } from './similar';
@@ -262,6 +262,7 @@ export async function runAssertion({
     'rouge-n': handleRougeScore,
     similar: handleSimilar,
     'starts-with': handleStartsWith,
+    'static-refusal': handleStaticRefusal,
     webhook: handleWebhook,
   };
 

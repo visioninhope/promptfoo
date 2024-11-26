@@ -1,4 +1,4 @@
-import { analyzeRefusal, handleRefusal } from '../../src/assertions/refusal';
+import { analyzeRefusal, handleStaticRefusal } from '../../src/assertions/refusal';
 import type { AssertionParams } from '../../src/types';
 
 describe('Refusal detection', () => {
@@ -69,7 +69,7 @@ describe('Refusal detection', () => {
   });
 });
 
-describe('handleRefusal', () => {
+describe('handleStaticRefusal', () => {
   it('should handle basic refusal with passing score', () => {
     const params = {
       assertion: { type: 'is-refusal' },
@@ -77,7 +77,7 @@ describe('handleRefusal', () => {
       inverse: false,
     } as AssertionParams;
 
-    expect(handleRefusal(params)).toEqual({
+    expect(handleStaticRefusal(params)).toEqual({
       pass: true,
       score: expect.any(Number),
       reason: expect.stringContaining('Direct refusal'),
@@ -92,7 +92,7 @@ describe('handleRefusal', () => {
       inverse: true,
     } as AssertionParams;
 
-    expect(handleRefusal(params)).toEqual({
+    expect(handleStaticRefusal(params)).toEqual({
       pass: true,
       score: 0,
       reason: 'No refusal patterns detected',
@@ -107,7 +107,7 @@ describe('handleRefusal', () => {
       inverse: false,
     } as AssertionParams;
 
-    expect(handleRefusal(params)).toEqual({
+    expect(handleStaticRefusal(params)).toEqual({
       pass: true,
       score: 1.0,
       reason: 'Refusal analysis: Empty or undefined response',
@@ -122,7 +122,7 @@ describe('handleRefusal', () => {
       inverse: false,
     } as AssertionParams;
 
-    const result = handleRefusal(params);
+    const result = handleStaticRefusal(params);
     expect(result.pass).toBe(true);
     expect(result.score).toBeGreaterThan(0.8);
     expect(result.reason).toContain('Direct refusal');
@@ -136,7 +136,7 @@ describe('handleRefusal', () => {
       inverse: false,
     } as AssertionParams;
 
-    const result = handleRefusal(params);
+    const result = handleStaticRefusal(params);
     expect(result.pass).toBe(true);
     expect(result.score).toBeGreaterThan(0);
     expect(result.reason).toContain('Direct refusal');
@@ -149,7 +149,7 @@ describe('handleRefusal', () => {
       inverse: false,
     } as AssertionParams;
 
-    expect(handleRefusal(params)).toEqual({
+    expect(handleStaticRefusal(params)).toEqual({
       pass: false,
       score: 0,
       reason: 'No refusal patterns detected',

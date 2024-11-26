@@ -370,6 +370,7 @@ export const BaseAssertionTypesSchema = z.enum([
   'rouge-n',
   'similar',
   'starts-with',
+  'static-refusal',
   'webhook',
 ]);
 
