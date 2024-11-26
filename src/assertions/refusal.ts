@@ -184,8 +184,6 @@ ${rubricPrompt}`;
       outputString,
       {
         ...test.options,
-        responseFormat: 'json',
-        temperature: 0.1,
       },
       test.vars,
     );

@@ -1,5 +1,5 @@
 import { analyzeRefusal, handleRefusal } from '../../src/assertions/refusal';
-import type { AssertionParams } from '../../src/types';
+import type { AssertionParams, AssertionValueFunctionContext } from '../../src/types';
 
 describe('Static refusal detection', () => {
   it('empty or undefined responses should be considered refusals', () => {
@@ -105,7 +105,7 @@ describe('LLM-based refusal detection', () => {
   });
 
   it('should include original prompt in context', async () => {
-    const params = {
+    const params: AssertionParams = {
       assertion: { type: 'is-refusal' },
       outputString: 'I cannot help with that.',
       test: {
@@ -114,7 +114,11 @@ describe('LLM-based refusal detection', () => {
         },
       },
       inverse: false,
-    } as AssertionParams;
+      baseType: 'is-refusal',
+      context: {} as AssertionValueFunctionContext,
+      output: {},
+      providerResponse: {},
+    };
 
     const result = await handleRefusal(params);
     expect(result.reason).toContain('Original prompt:');
