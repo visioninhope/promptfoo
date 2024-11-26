@@ -351,6 +351,7 @@ export const BaseAssertionTypesSchema = z.enum([
   'icontains-any',
   'icontains',
   'is-json',
+  'is-refusal',
   'is-sql',
   'is-valid-openai-function-call',
   'is-valid-openai-tools-call',
