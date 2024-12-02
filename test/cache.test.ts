@@ -1,4 +1,10 @@
-import { fetchWithCache, disableCache, enableCache, clearCache } from '../src/cache';
+import {
+  fetchWithCache,
+  disableCache,
+  enableCache,
+  clearCache,
+  isCacheEnabled,
+} from '../src/cache';
 
 const mockedFetch = jest.mocked(jest.fn());
 global.fetch = mockedFetch;
@@ -158,5 +164,83 @@ describe('fetchWithCache', () => {
     });
 
     enableCache();
+  });
+
+  it('should handle non-JSON response when cache is disabled', async () => {
+    disableCache();
+    const url = 'https://api.example.com/data';
+    const invalidResponse = 'not json';
+
+    mockedFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(invalidResponse),
+      headers: new Headers(),
+    } as Response);
+
+    await expect(fetchWithCache(url, {}, 1000)).rejects.toThrow('Error parsing response as JSON');
+  });
+
+  it('should handle invalid JSON in response', async () => {
+    const url = 'https://api.example.com/data';
+    const invalidJson = '{ invalid json }';
+
+    mockedFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(invalidJson),
+      headers: new Headers(),
+    } as Response);
+
+    await expect(fetchWithCache(url, {}, 1000)).rejects.toThrow(
+      `Error parsing response from ${url}`,
+    );
+  });
+
+  it('should handle text format responses', async () => {
+    const url = 'https://api.example.com/data';
+    const textResponse = 'plain text response';
+
+    mockedFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: () => Promise.resolve(textResponse),
+      headers: new Headers(),
+    } as Response);
+
+    const result = await fetchWithCache(url, {}, 1000, 'text');
+    expect(result.data).toBe(textResponse);
+  });
+
+  describe('cache control functions', () => {
+    it('should correctly report cache enabled status', () => {
+      enableCache();
+      expect(isCacheEnabled()).toBe(true);
+
+      disableCache();
+      expect(isCacheEnabled()).toBe(false);
+
+      enableCache();
+      expect(isCacheEnabled()).toBe(true);
+    });
+
+    it('should bypass cache when bust parameter is true', async () => {
+      const url = 'https://api.example.com/data';
+      const response = { data: 'test data' };
+
+      // First call
+      mockedFetch.mockResolvedValueOnce(mockedFetchResponse(true, response));
+      await fetchWithCache(url, {}, 1000);
+
+      // Second call with bust=true should ignore cache
+      mockedFetch.mockResolvedValueOnce(mockedFetchResponse(true, response));
+      const result = await fetchWithCache(url, {}, 1000, 'json', true);
+
+      expect(mockedFetch).toHaveBeenCalledTimes(2);
+      expect(result.cached).toBe(false);
+    });
   });
 });
