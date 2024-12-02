@@ -52,16 +52,32 @@ import RedteamImageIterativeProvider from '../../src/redteam/providers/iterative
 import RedteamIterativeTreeProvider from '../../src/redteam/providers/iterativeTree';
 import type { ProviderOptionsMap, ProviderFunction } from '../../src/types';
 
+jest.mock('../../src/database', () => ({
+  getDb: jest.fn(),
+}));
+
+jest.mock('../../src/esm', () => ({
+  ...jest.requireActual('../../src/esm'),
+  importModule: jest.fn(),
+}));
+
+jest.mock('../../src/logger', () => ({
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+}));
+
 jest.mock('fs', () => ({
-  readFileSync: jest.fn(),
-  writeFileSync: jest.fn(),
-  statSync: jest.fn(),
-  readdirSync: jest.fn(),
   existsSync: jest.fn(),
   mkdirSync: jest.fn(),
   promises: {
     readFile: jest.fn(),
   },
+  readFileSync: jest.fn(),
+  readdirSync: jest.fn(),
+  statSync: jest.fn(),
+  writeFileSync: jest.fn(),
 }));
 
 jest.mock('glob', () => ({
@@ -70,31 +86,6 @@ jest.mock('glob', () => ({
 
 jest.mock('proxy-agent', () => ({
   ProxyAgent: jest.fn().mockImplementation(() => ({})),
-}));
-
-jest.mock('../../src/esm', () => ({
-  ...jest.requireActual('../../src/esm'),
-  importModule: jest.fn(),
-}));
-
-jest.mock('fs', () => ({
-  readFileSync: jest.fn(),
-  existsSync: jest.fn(),
-  mkdirSync: jest.fn(),
-}));
-
-jest.mock('glob', () => ({
-  globSync: jest.fn(),
-}));
-
-jest.mock('../../src/database', () => ({
-  getDb: jest.fn(),
-}));
-jest.mock('../../src/logger', () => ({
-  error: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
 }));
 
 const mockFetch = jest.mocked(jest.fn());
@@ -1224,6 +1215,9 @@ describe('call provider apis', () => {
 });
 
 describe('loadApiProvider', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   it('loadApiProvider with yaml filepath', async () => {
     const mockYamlContent = dedent`
     id: 'openai:gpt-4'
