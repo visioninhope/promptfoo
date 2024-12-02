@@ -67,7 +67,6 @@ describe('maybeFilePath', () => {
     expect(maybeFilePath('filename.txt')).toBe(true);
   });
 
-  // Additional tests
   it('should return false for empty strings', () => {
     expect(maybeFilePath('')).toBe(false);
   });

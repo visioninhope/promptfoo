@@ -821,7 +821,6 @@ describe('readConfig', () => {
   });
 
   it('should read JSON config file', async () => {
-    // Arrange
     const mockConfig = {
       description: 'Test config',
       providers: ['openai:gpt-4o'],
@@ -832,16 +831,13 @@ describe('readConfig', () => {
     jest.mocked(fs.readFileSync).mockReturnValueOnce(JSON.stringify(mockConfig));
     jest.spyOn(path, 'parse').mockReturnValueOnce({ ext: '.json' } as any);
 
-    // Act
     const result = await readConfig('config.json');
 
-    // Assert
     expect(result).toEqual(mockConfig);
     expect(fs.readFileSync).toHaveBeenCalledWith('config.json', 'utf-8');
   });
 
   it('should read YAML config file', async () => {
-    // Arrange
     const mockConfig = {
       description: 'Test config',
       providers: ['openai:gpt-4o'],
@@ -852,10 +848,8 @@ describe('readConfig', () => {
     jest.mocked(fs.readFileSync).mockReturnValueOnce(yaml.dump(mockConfig));
     jest.spyOn(path, 'parse').mockReturnValueOnce({ ext: '.yaml' } as any);
 
-    // Act
     const result = await readConfig('config.yaml');
 
-    // Assert
     expect(result).toEqual(mockConfig);
     expect(fs.readFileSync).toHaveBeenCalledWith('config.yaml', 'utf-8');
   });
@@ -885,7 +879,6 @@ describe('readConfig', () => {
   });
 
   it('should rewrite targets to providers', async () => {
-    // Arrange
     const inputConfig = {
       description: 'Test config',
       targets: ['openai:gpt-4o'], // Note: using targets instead of providers
@@ -900,15 +893,12 @@ describe('readConfig', () => {
     jest.mocked(fs.readFileSync).mockReturnValueOnce(JSON.stringify(inputConfig));
     jest.spyOn(path, 'parse').mockReturnValueOnce({ ext: '.json' } as any);
 
-    // Act
     const result = await readConfig('config.json');
 
-    // Assert
     expect(result).toEqual(expectedConfig);
   });
 
   it('should rewrite plugins and strategies to redteam', async () => {
-    // Arrange
     const inputConfig = {
       description: 'Test config',
       providers: ['openai:gpt-4o'],
@@ -929,15 +919,12 @@ describe('readConfig', () => {
     jest.mocked(fs.readFileSync).mockReturnValueOnce(JSON.stringify(inputConfig));
     jest.spyOn(path, 'parse').mockReturnValueOnce({ ext: '.json' } as any);
 
-    // Act
     const result = await readConfig('config.json');
 
-    // Assert
     expect(result).toEqual(expectedConfig);
   });
 
   it('should set default prompt when no prompts are provided', async () => {
-    // Arrange
     const inputConfig = {
       description: 'Test config',
       providers: ['openai:gpt-4o'],
@@ -959,10 +946,8 @@ describe('readConfig', () => {
     jest.mocked(fs.readFileSync).mockReturnValueOnce(JSON.stringify(inputConfig));
     jest.spyOn(path, 'parse').mockReturnValueOnce({ ext: '.json' } as any);
 
-    // Act
     const result = await readConfig('config.json');
 
-    // Assert
     expect(result).toEqual(expectedConfig);
   });
 

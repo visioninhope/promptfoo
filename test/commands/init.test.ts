@@ -3,7 +3,6 @@ import fs from 'fs/promises';
 import * as init from '../../src/commands/init';
 import logger from '../../src/logger';
 
-// Add mock for redteam init
 jest.mock('../../src/redteam/commands/init', () => ({
   redteamInit: jest.fn(),
 }));
@@ -39,7 +38,6 @@ jest.mock('@inquirer/confirm');
 jest.mock('@inquirer/input');
 jest.mock('@inquirer/select');
 
-// Add these constants at the top of the file
 const GITHUB_API_BASE = 'https://api.github.com';
 const VERSION = 'main'; // or whatever version you're using
 

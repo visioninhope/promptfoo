@@ -402,7 +402,7 @@ describe('readPrompts', () => {
         raw: String(mockFunction),
         label: 'prompt.js:functionName',
         function: expect.any(Function),
-        config: {}, // Add this line
+        config: {},
       },
     ]);
 

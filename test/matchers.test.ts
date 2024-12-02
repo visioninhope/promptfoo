@@ -226,7 +226,6 @@ describe('matchesSimilarity', () => {
   });
 
   it('should use Nunjucks templating when PROMPTFOO_DISABLE_TEMPLATING is set', async () => {
-    // Arrange
     process.env.PROMPTFOO_DISABLE_TEMPLATING = 'true';
     const expected = 'Expected {{ var }}';
     const output = 'Output {{ var }}';
@@ -242,10 +241,8 @@ describe('matchesSimilarity', () => {
         tokenUsage: { total: 10, prompt: 5, completion: 5 },
       });
 
-    // Act
     await matchesSimilarity(expected, output, threshold, false, grading);
 
-    // Assert
     expect(mockEmbeddingApi).toHaveBeenCalledWith('Expected {{ var }}');
     expect(mockEmbeddingApi).toHaveBeenCalledWith('Output {{ var }}');
   });
