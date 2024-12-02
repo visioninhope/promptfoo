@@ -16,12 +16,18 @@ jest.mock('proxy-agent', () => ({
 jest.mock('../../src/logger');
 
 describe('Anthropic', () => {
-  afterEach(async () => {
+  beforeEach(() => {
     jest.clearAllMocks();
-    await clearCache();
+    enableCache();
+    return clearCache();
+  });
+
+  afterEach(() => {
+    return clearCache();
   });
 
   describe('AnthropicMessagesProvider callApi', () => {
+    let provider: AnthropicMessagesProvider;
     const tools: Anthropic.Tool[] = [
       {
         name: 'get_weather',
@@ -43,8 +49,10 @@ describe('Anthropic', () => {
       },
     ];
 
-    const provider = new AnthropicMessagesProvider('claude-3-opus-20240229', {
-      config: { tools },
+    beforeEach(() => {
+      provider = new AnthropicMessagesProvider('claude-3-opus-20240229', {
+        config: { tools },
+      });
     });
 
     it('should use cache by default for ToolUse requests', async () => {
@@ -318,8 +326,13 @@ describe('Anthropic', () => {
   });
 
   describe('AnthropicCompletionProvider callApi', () => {
+    let provider: AnthropicCompletionProvider;
+
+    beforeEach(() => {
+      provider = new AnthropicCompletionProvider('claude-1');
+    });
+
     it('should return output for default behavior', async () => {
-      const provider = new AnthropicCompletionProvider('claude-1');
       jest.spyOn(provider.anthropic.completions, 'create').mockImplementation().mockResolvedValue({
         id: 'test-id',
         model: 'claude-1',
@@ -337,26 +350,34 @@ describe('Anthropic', () => {
     });
 
     it('should return cached output with caching enabled', async () => {
-      const provider = new AnthropicCompletionProvider('claude-1');
-      jest.spyOn(provider.anthropic.completions, 'create').mockImplementation().mockResolvedValue({
+      // Setup mock response
+      const mockResponse = {
         id: 'test-id',
         model: 'claude-1',
         stop_reason: 'stop_sequence',
         type: 'completion',
         completion: 'Test output',
-      });
-      const result = await provider.callApi('Test prompt');
+      };
 
-      expect(provider.anthropic.completions.create).toHaveBeenCalledTimes(1);
+      // Create fresh spy for this test
+      const createSpy = jest
+        .spyOn(provider.anthropic.completions, 'create')
+        .mockResolvedValue(mockResponse);
+
+      // First call should use API
+      const result = await provider.callApi('Test prompt');
+      expect(createSpy).toHaveBeenCalledTimes(1);
       expect(result).toMatchObject({
         output: 'Test output',
         tokenUsage: {},
       });
 
-      jest.mocked(provider.anthropic.completions.create).mockClear();
-      const cachedResult = await provider.callApi('Test prompt');
+      // Reset spy call count
+      createSpy.mockClear();
 
-      expect(provider.anthropic.completions.create).toHaveBeenCalledTimes(0);
+      // Second call should use cache
+      const cachedResult = await provider.callApi('Test prompt');
+      expect(createSpy).not.toHaveBeenCalled();
       expect(cachedResult).toMatchObject({
         output: 'Test output',
         tokenUsage: {},
@@ -364,7 +385,6 @@ describe('Anthropic', () => {
     });
 
     it('should return fresh output with caching disabled', async () => {
-      const provider = new AnthropicCompletionProvider('claude-1');
       jest.spyOn(provider.anthropic.completions, 'create').mockImplementation().mockResolvedValue({
         id: 'test-id',
         model: 'claude-1',
@@ -394,7 +414,6 @@ describe('Anthropic', () => {
     });
 
     it('should handle API call error', async () => {
-      const provider = new AnthropicCompletionProvider('claude-1');
       jest
         .spyOn(provider.anthropic.completions, 'create')
         .mockImplementation()
