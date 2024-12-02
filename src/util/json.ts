@@ -75,6 +75,9 @@ export function extractFirstJsonObject<T>(str: string): T {
  * // Result: { a: 1, b: 2, c: 3 }
  */
 export function orderKeys<T extends object>(obj: T, order: (keyof T)[]): T {
+  if (typeof obj !== 'object' || obj === null) {
+    return {} as T;
+  }
   const result: T = {} as T;
 
   // Add ordered keys (excluding undefined values)

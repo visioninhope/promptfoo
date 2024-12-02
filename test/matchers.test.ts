@@ -56,7 +56,13 @@ jest.mock('fs', () => ({
 const Grader = new TestGrader();
 
 describe('matchesSimilarity', () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
+    // Reset environment before each test
+    process.env = { ...originalEnv };
+
+    // Setup default mocks
     jest.spyOn(DefaultEmbeddingProvider, 'callEmbeddingApi').mockImplementation((text) => {
       if (text === 'Expected output' || text === 'Sample output') {
         return Promise.resolve({
@@ -74,7 +80,10 @@ describe('matchesSimilarity', () => {
   });
 
   afterEach(() => {
+    // Clean up all mocks
     jest.restoreAllMocks();
+    // Reset environment
+    process.env = originalEnv;
   });
 
   it('should pass when similarity is above the threshold', async () => {
@@ -217,6 +226,7 @@ describe('matchesSimilarity', () => {
   });
 
   it('should use Nunjucks templating when PROMPTFOO_DISABLE_TEMPLATING is set', async () => {
+    // Arrange
     process.env.PROMPTFOO_DISABLE_TEMPLATING = 'true';
     const expected = 'Expected {{ var }}';
     const output = 'Output {{ var }}';
@@ -225,28 +235,41 @@ describe('matchesSimilarity', () => {
       provider: DefaultEmbeddingProvider,
     };
 
-    jest.spyOn(DefaultEmbeddingProvider, 'callEmbeddingApi').mockResolvedValue({
-      embedding: [1, 2, 3],
-      tokenUsage: { total: 10, prompt: 5, completion: 5 },
-    });
+    const mockEmbeddingApi = jest
+      .spyOn(DefaultEmbeddingProvider, 'callEmbeddingApi')
+      .mockResolvedValue({
+        embedding: [1, 2, 3],
+        tokenUsage: { total: 10, prompt: 5, completion: 5 },
+      });
 
+    // Act
     await matchesSimilarity(expected, output, threshold, false, grading);
 
-    expect(DefaultEmbeddingProvider.callEmbeddingApi).toHaveBeenCalledWith('Expected {{ var }}');
-    expect(DefaultEmbeddingProvider.callEmbeddingApi).toHaveBeenCalledWith('Output {{ var }}');
-
-    process.env.PROMPTFOO_DISABLE_TEMPLATING = undefined;
+    // Assert
+    expect(mockEmbeddingApi).toHaveBeenCalledWith('Expected {{ var }}');
+    expect(mockEmbeddingApi).toHaveBeenCalledWith('Output {{ var }}');
   });
 });
 
 describe('matchesLlmRubric', () => {
   const mockFilePath = path.join('path', 'to', 'external', 'rubric.txt');
   const mockFileContent = 'This is an external rubric prompt';
+  const originalCliState = { ...cliState };
 
   beforeEach(() => {
+    // Reset state
     jest.clearAllMocks();
+    cliState.config = undefined;
+
+    // Setup default mocks
     jest.mocked(fs.existsSync).mockReturnValue(true);
     jest.mocked(fs.readFileSync).mockReturnValue(mockFileContent);
+  });
+
+  afterEach(() => {
+    // Restore original state
+    cliState.config = originalCliState.config;
+    jest.restoreAllMocks();
   });
 
   it('should pass when the grading provider returns a passing result', async () => {

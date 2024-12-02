@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import yaml from 'js-yaml';
+import type { GlobalConfig } from '../src/configTypes';
 import {
   readGlobalConfig,
   writeGlobalConfig,
@@ -154,7 +155,7 @@ describe('Global Config Operations', () => {
       jest.mocked(fs.existsSync).mockReturnValue(true);
       jest.mocked(fs.readFileSync).mockReturnValue(yaml.dump(existingConfig));
 
-      writeGlobalConfigPartial(partialConfig);
+      writeGlobalConfigPartial(partialConfig as Partial<GlobalConfig>);
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         mockConfigPath,
@@ -192,7 +193,7 @@ describe('Global Config Operations', () => {
       jest.mocked(fs.existsSync).mockReturnValue(true);
       jest.mocked(fs.readFileSync).mockReturnValue(yaml.dump(existingConfig));
 
-      writeGlobalConfigPartial(partialConfig);
+      writeGlobalConfigPartial(partialConfig as Partial<GlobalConfig>);
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
         mockConfigPath,
