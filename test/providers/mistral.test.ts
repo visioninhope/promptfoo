@@ -16,17 +16,32 @@ jest.mock('../../src/util');
 jest.mock('../../src/logger');
 
 describe('Mistral', () => {
+  // Global mock cleanup
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.mocked(fetchWithCache).mockReset();
+    jest.resetAllMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // Common mock responses
+  const mockCacheResponse = {
+    output: 'Cached output',
+    tokenUsage: { total: 10, prompt: 5, completion: 5 },
+    cached: true,
+    cost: 0.000005,
+  };
+
+  const mockApiResponse = {
+    choices: [{ message: { content: 'Test output' } }],
+    usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+  };
+
+  const setupCommonMocks = () => {
     jest.mocked(getCache).mockReturnValue({
-      get: jest.fn().mockResolvedValue({
-        output: 'Cached output',
-        tokenUsage: { total: 10, prompt: 5, completion: 5 },
-        cached: true,
-        cost: 0.000005,
-      }),
-      set: jest.fn(),
+      get: jest.fn().mockResolvedValue(mockCacheResponse),
+      set: jest.fn().mockResolvedValue(undefined),
       wrap: jest.fn(),
       del: jest.fn(),
       reset: jest.fn(),
@@ -35,17 +50,19 @@ describe('Mistral', () => {
         set: jest.fn(),
       },
     });
-  });
+  };
 
   describe('MistralChatCompletionProvider', () => {
     let provider: MistralChatCompletionProvider;
 
     beforeEach(() => {
+      setupCommonMocks();
       provider = new MistralChatCompletionProvider('mistral-tiny');
       jest.spyOn(provider, 'getApiKey').mockReturnValue('fake-api-key');
     });
 
     it('should create a provider with default options', () => {
+      const provider = new MistralChatCompletionProvider('mistral-tiny');
       expect(provider.modelName).toBe('mistral-tiny');
       expect(provider.config).toEqual({});
     });
@@ -58,103 +75,112 @@ describe('Mistral', () => {
       expect(customProvider.config).toEqual({ temperature: 0.7 });
     });
 
-    it('should call Mistral API and return output with correct structure', async () => {
-      const mockResponse = {
-        choices: [{ message: { content: 'Test output' } }],
-        usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
-      };
-      jest
-        .mocked(fetchWithCache)
-        .mockResolvedValue({ data: mockResponse, cached: false, status: 200, statusText: 'OK' });
+    describe('API calls', () => {
+      beforeEach(() => {
+        jest.mocked(fetchWithCache).mockResolvedValue({
+          data: mockApiResponse,
+          cached: false,
+          status: 200,
+          statusText: 'OK',
+        });
+      });
 
-      const result = await provider.callApi('Test prompt');
+      it('should handle successful API calls', async () => {
+        const result = await provider.callApi('Test prompt');
 
-      expect(jest.mocked(fetchWithCache)).toHaveBeenCalledWith(
-        expect.stringContaining('/chat/completions'),
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            Authorization: expect.stringContaining('Bearer '),
+        expect(fetchWithCache).toHaveBeenCalledWith(
+          expect.stringContaining('/chat/completions'),
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer fake-api-key',
+            }),
+            body: expect.stringContaining('"messages":[{"role":"user","content":"Test prompt"}]'),
           }),
-          body: expect.stringContaining('"messages":[{"role":"user","content":"Test prompt"}]'),
-        }),
-        expect.any(Number),
-      );
+          expect.any(Number),
+        );
 
-      expect(result).toEqual({
-        output: 'Test output',
-        tokenUsage: {
-          total: 10,
-          prompt: 5,
-          completion: 5,
-        },
-        cached: false,
-        cost: expect.any(Number),
+        expect(result).toEqual({
+          output: 'Test output',
+          tokenUsage: {
+            total: 10,
+            prompt: 5,
+            completion: 5,
+          },
+          cached: false,
+          cost: expect.any(Number),
+        });
+      });
+
+      it('should handle API errors gracefully', async () => {
+        jest.mocked(fetchWithCache).mockRejectedValueOnce(new Error('API Error'));
+
+        const result = await provider.callApi('Test prompt');
+
+        expect(result).toEqual({
+          error: 'API call error: Error: API Error',
+        });
+      });
+
+      it('should handle malformed API responses', async () => {
+        jest.mocked(fetchWithCache).mockResolvedValueOnce({
+          data: { choices: [] },
+          cached: false,
+          status: 200,
+          statusText: 'OK',
+        });
+
+        const result = await provider.callApi('Test prompt');
+
+        expect(result.error).toContain('Malformed response data');
       });
     });
 
-    it('should use cache when enabled', async () => {
-      jest.mocked(isCacheEnabled).mockReturnValue(true);
-      jest.mocked(getCache).mockReturnValue({
-        get: jest.fn().mockResolvedValue({
-          output: 'Cached output',
-          tokenUsage: { total: 10, prompt: 5, completion: 5 },
-          cached: true,
-          cost: 0.000005,
-        }),
-        set: jest.fn(),
-        wrap: jest.fn(),
-        del: jest.fn(),
-        reset: jest.fn(),
-        store: {
-          get: jest.fn(),
-          set: jest.fn(),
-        },
+    describe('Caching behavior', () => {
+      it('should use cache when enabled', async () => {
+        jest.mocked(isCacheEnabled).mockReturnValue(true);
+
+        const result = await provider.callApi('Test prompt');
+
+        expect(result).toEqual({
+          ...mockCacheResponse,
+          tokenUsage: {
+            ...mockCacheResponse.tokenUsage,
+            cached: mockCacheResponse.tokenUsage.total,
+          },
+        });
+        expect(fetchWithCache).not.toHaveBeenCalled();
       });
-      const result = await provider.callApi('Test prompt');
 
-      expect(result).toEqual({
-        output: 'Cached output',
-        tokenUsage: {
-          total: 10,
-          prompt: 5,
-          completion: 5,
-          cached: 10,
-        },
-        cached: true,
-        cost: 0.000005,
+      it('should not use cache when disabled', async () => {
+        const mockResponse = {
+          choices: [{ message: { content: 'Fresh output' } }],
+          usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+        };
+        jest.mocked(isCacheEnabled).mockReturnValue(false);
+        jest
+          .mocked(fetchWithCache)
+          .mockResolvedValue({ data: mockResponse, cached: false, status: 200, statusText: 'OK' });
+
+        const result = await provider.callApi('Test prompt');
+
+        expect(result).toEqual({
+          output: 'Fresh output',
+          tokenUsage: {
+            total: 10,
+            prompt: 5,
+            completion: 5,
+          },
+          cached: false,
+          cost: expect.any(Number),
+        });
+        expect(jest.mocked(fetchWithCache)).toHaveBeenCalledWith(
+          expect.stringContaining('/chat/completions'),
+          expect.any(Object),
+          expect.any(Number),
+        );
       });
-      expect(jest.mocked(fetchWithCache)).not.toHaveBeenCalled();
-    });
-
-    it('should not use cache when disabled', async () => {
-      const mockResponse = {
-        choices: [{ message: { content: 'Fresh output' } }],
-        usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
-      };
-      jest.mocked(isCacheEnabled).mockReturnValue(false);
-      jest
-        .mocked(fetchWithCache)
-        .mockResolvedValue({ data: mockResponse, cached: false, status: 200, statusText: 'OK' });
-
-      const result = await provider.callApi('Test prompt');
-
-      expect(result).toEqual({
-        output: 'Fresh output',
-        tokenUsage: {
-          total: 10,
-          prompt: 5,
-          completion: 5,
-        },
-        cached: false,
-        cost: expect.any(Number),
-      });
-      expect(jest.mocked(fetchWithCache)).toHaveBeenCalledWith(
-        expect.stringContaining('/chat/completions'),
-        expect.any(Object),
-        expect.any(Number),
-      );
     });
 
     it('should handle API errors', async () => {
