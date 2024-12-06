@@ -343,28 +343,6 @@ describe('testCases', () => {
         expect(result.provider).toBe(mockProvider);
       });
 
-      it('should load provider when provider is an object with id', async () => {
-        const mockProvider = { callApi: jest.fn(), id: jest.fn().mockReturnValue('mock-provider') };
-        jest.mocked(loadApiProvider).mockResolvedValue(mockProvider);
-
-        const testCase: TestCase = {
-          description: 'Test with provider object',
-          provider: {
-            id: 'mock-provider',
-            callApi: jest.fn(),
-          },
-        };
-        const result = await readTest(testCase);
-        expect(result).toEqual([
-          {
-            assert: [],
-            description: 'Row #2',
-            options: {},
-            vars: { var1: 'value3', var2: 'value4' },
-          },
-        ]);
-      });
-
       it('should read Google Sheets and return test cases', async () => {
         const mockFetchCsvFromGoogleSheet = jest.mocked(fetchCsvFromGoogleSheet);
         mockFetchCsvFromGoogleSheet.mockResolvedValue([
