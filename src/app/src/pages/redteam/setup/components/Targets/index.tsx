@@ -16,11 +16,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
-import {
-  DEFAULT_HTTP_TARGET,
-  DEFAULT_PURPOSE,
-  useRedTeamConfig,
-} from '../../hooks/useRedTeamConfig';
+import { DEFAULT_HTTP_TARGET, useRedTeamConfig } from '../../hooks/useRedTeamConfig';
 import type { ProviderOptions } from '../../types';
 import Prompts from '../Prompts';
 import BrowserAutomationConfiguration from './BrowserAutomationConfiguration';
@@ -68,7 +64,7 @@ const validateUrl = (url: string, type: 'http' | 'websocket' = 'http'): boolean 
   }
 };
 
-const requiresResponseParser = (target: ProviderOptions) => {
+const requiresTransformResponse = (target: ProviderOptions) => {
   return target.id === 'http' || target.id === 'websocket';
 };
 
@@ -106,7 +102,9 @@ export default function Targets({ onNext, onBack, setupModalOpen }: TargetsProps
       selectedTarget.config.headers['Content-Type'] === 'application/json',
   );
   const [requestBody, setRequestBody] = useState(
-    isJsonContentType ? JSON.stringify(selectedTarget.config.body) : selectedTarget.config.body,
+    isJsonContentType
+      ? JSON.stringify(selectedTarget.config.body, null, 2)
+      : selectedTarget.config.body,
   );
 
   const [missingFields, setMissingFields] = useState<string[]>([]);
@@ -154,7 +152,6 @@ export default function Targets({ onNext, onBack, setupModalOpen }: TargetsProps
         config: { temperature: 0.5 },
       });
       setRawConfigJson(JSON.stringify({ temperature: 0.5 }, null, 2));
-      updateConfig('purpose', DEFAULT_PURPOSE);
     } else if (value === 'javascript' || value === 'python') {
       const filePath =
         value === 'javascript'
@@ -165,7 +162,6 @@ export default function Targets({ onNext, onBack, setupModalOpen }: TargetsProps
         config: {},
         label: currentLabel,
       });
-      updateConfig('purpose', DEFAULT_PURPOSE);
     } else if (value === 'http') {
       setSelectedTarget({
         ...DEFAULT_HTTP_TARGET,
@@ -180,7 +176,7 @@ export default function Targets({ onNext, onBack, setupModalOpen }: TargetsProps
           type: 'websocket',
           url: 'wss://example.com/ws',
           messageTemplate: '{"message": "{{prompt}}"}',
-          responseParser: 'response.message',
+          transformResponse: 'response.message',
           timeoutMs: 30000,
         },
       });
@@ -198,14 +194,12 @@ export default function Targets({ onNext, onBack, setupModalOpen }: TargetsProps
           ],
         },
       });
-      updateConfig('purpose', DEFAULT_PURPOSE);
     } else {
       setSelectedTarget({
         id: value,
         config: {},
         label: currentLabel,
       });
-      updateConfig('purpose', DEFAULT_PURPOSE);
     }
   };
 
@@ -507,7 +501,7 @@ export default function Targets({ onNext, onBack, setupModalOpen }: TargetsProps
           handleTestTarget={handleTestTarget}
           selectedTarget={selectedTarget}
           testResult={testResult}
-          requiresResponseParser={requiresResponseParser}
+          requiresTransformResponse={requiresTransformResponse}
           updateCustomTarget={updateCustomTarget}
           hasTestedTarget={hasTestedTarget}
         />

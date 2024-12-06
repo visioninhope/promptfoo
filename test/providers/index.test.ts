@@ -87,6 +87,18 @@ jest.mock('glob', () => ({
 jest.mock('proxy-agent', () => ({
   ProxyAgent: jest.fn().mockImplementation(() => ({})),
 }));
+jest.mock('../../src/logger', () => ({
+  error: jest.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+}));
+
+jest.mock('../../src/redteam/remoteGeneration', () => ({
+  shouldGenerateRemote: jest.fn().mockReturnValue(false),
+  neverGenerateRemote: jest.fn().mockReturnValue(false),
+  getRemoteGenerationUrl: jest.fn().mockReturnValue('http://test-url'),
+}));
 
 const mockFetch = jest.mocked(jest.fn());
 global.fetch = mockFetch;
