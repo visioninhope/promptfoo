@@ -11,14 +11,15 @@ import path from 'node:path';
 import { Server as SocketIOServer } from 'socket.io';
 import invariant from 'tiny-invariant';
 import { fromError } from 'zod-validation-error';
-import { createPublicUrl } from '../commands/share';
 import { VERSION, DEFAULT_PORT } from '../constants';
 import { getDbSignalPath } from '../database';
 import { getDirectory } from '../esm';
+import { cloudConfig } from '../globalConfig/cloud';
 import type { Prompt, PromptWithMetadata, TestCase, TestSuite } from '../index';
 import logger from '../logger';
 import { runDbMigrations } from '../migrate';
 import Eval from '../models/eval';
+import { createShareableUrl } from '../share';
 import telemetry from '../telemetry';
 import { TelemetryEventSchema } from '../telemetry';
 import { synthesizeFromTestSuite } from '../testCases';
@@ -115,16 +116,39 @@ export function createApp() {
   // This is used by ResultsView.tsx to share an eval with another promptfoo instance
   app.post('/api/results/share', async (req: Request, res: Response): Promise<void> => {
     const { id } = req.body;
+    const authorEmail = req.headers['x-author-email'] as string;
+
+    // Check for required author email
+    if (!authorEmail) {
+      res.status(401).json({ error: 'Author email is required for sharing' });
+      return;
+    }
 
     const result = await readResult(id);
     if (!result) {
       res.status(404).json({ error: 'Eval not found' });
       return;
     }
-    const eval_ = await Eval.findById(id);
-    invariant(eval_, 'Eval not found');
-    const url = await createPublicUrl(eval_, true);
-    res.json({ url });
+
+    try {
+      const eval_ = await Eval.findById(id);
+      invariant(eval_, 'Eval not found');
+
+      // Set the author
+      eval_.author = authorEmail;
+      await eval_.save();
+
+      // Create shareable URL with the eval record
+      const url = await createShareableUrl(eval_, false); // Changed to false to not show auth
+      if (!url) {
+        throw new Error('Failed to create shareable URL');
+      }
+      res.json({ url });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to create public URL:', errorMessage);
+      res.status(500).json({ error: `Failed to create public URL: ${errorMessage}` });
+    }
   });
 
   app.post('/api/dataset/generate', async (req: Request, res: Response): Promise<void> => {
@@ -160,6 +184,13 @@ export function createApp() {
       console.error('Error processing telemetry request:', error);
       res.status(500).json({ error: 'Failed to process telemetry request' });
     }
+  });
+
+  app.get('/api/user/cloud-status', (req: Request, res: Response): void => {
+    res.json({
+      enabled: cloudConfig.isEnabled(),
+      apiKey: !!cloudConfig.getApiKey(),
+    });
   });
 
   // Must come after the above routes (particularly /api/config) so it doesn't

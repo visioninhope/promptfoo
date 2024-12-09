@@ -1,6 +1,5 @@
 import input from '@inquirer/input';
 import chalk from 'chalk';
-import invariant from 'tiny-invariant';
 import { URL } from 'url';
 import { SHARE_API_BASE_URL, SHARE_VIEW_BASE_URL, DEFAULT_SHARE_VIEW_BASE_URL } from './constants';
 import { getEnvBool, isCI } from './envars';
@@ -32,18 +31,31 @@ async function sendEvalResults(evalRecord: Eval, url: string) {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+
+  const author = evalRecord.author || getUserEmail();
+  if (author) {
+    headers['X-Author-Email'] = author;
+  }
+
   if (cloudConfig.isEnabled()) {
-    headers['Authorization'] = `Bearer ${cloudConfig.getApiKey()}`;
+    const apiKey = cloudConfig.getApiKey();
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
   }
 
   const response = await fetchWithProxy(url, {
     method: 'POST',
     headers,
-    body: JSON.stringify(evalRecord),
+    body: JSON.stringify({
+      ...evalRecord,
+      author,
+    }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to send eval results: ${response.statusText}`);
+    const errorText = await response.text().catch(() => response.statusText);
+    throw new Error(`Failed to send eval results (${response.status}): ${errorText}`);
   }
 
   const evalId = (await response.json()).id;
@@ -77,6 +89,10 @@ export async function createShareableUrl(
   evalRecord: Eval,
   showAuth: boolean = false,
 ): Promise<string | null> {
+  if (!evalRecord.author && !getUserEmail()) {
+    throw new Error('Author email is required for sharing');
+  }
+
   if (process.stdout.isTTY && !isCI() && !getEnvBool('PROMPTFOO_DISABLE_SHARE_EMAIL_REQUEST')) {
     let email = getUserEmail();
     if (!email) {
@@ -99,16 +115,9 @@ export async function createShareableUrl(
     apiBaseUrl = cloudConfig.getApiHost();
     url = `${apiBaseUrl}/results`;
 
-    const loggedInEmail = getUserEmail();
-    invariant(loggedInEmail, 'User email is not set');
-    const evalAuthor = evalRecord.author;
-    if (evalAuthor !== loggedInEmail) {
-      logger.warn(
-        `Warning: Changing eval author from ${evalAuthor} to logged-in user ${loggedInEmail}`,
-      );
+    if (!cloudConfig.getApiKey()) {
+      throw new Error('Cloud API key is required for sharing');
     }
-    evalRecord.author = loggedInEmail;
-    await evalRecord.save();
   } else {
     apiBaseUrl =
       typeof evalRecord.config.sharing === 'object'

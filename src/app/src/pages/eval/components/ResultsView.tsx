@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { IS_RUNNING_LOCALLY } from '@app/constants';
 import { useToast } from '@app/hooks/useToast';
 import { useStore as useMainStore } from '@app/stores/evalConfig';
 import { callApi, fetchUserEmail, updateEvalAuthor } from '@app/utils/api';
@@ -36,6 +35,7 @@ import { ColumnSelector } from './ColumnSelector';
 import CompareEvalMenuItem from './CompareEvalMenuItem';
 import ConfigModal from './ConfigModal';
 import DownloadMenu from './DownloadMenu';
+import EmailModal from './EmailModal';
 import { EvalIdChip } from './EvalIdChip';
 import EvalSelectorDialog from './EvalSelectorDialog';
 import EvalSelectorKeyboardShortcut from './EvalSelectorKeyboardShortcut';
@@ -135,33 +135,71 @@ export default function ResultsView({
     setAnchorEl(event.currentTarget);
   };
 
-  const handleShareButtonClick = async () => {
-    if (IS_RUNNING_LOCALLY) {
-      setShareLoading(true);
-      try {
-        const response = await callApi('/results/share', {
-          method: 'POST',
-          body: JSON.stringify({ id: currentEvalId }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        const { url } = await response.json();
-        if (response.ok) {
-          setShareUrl(url);
-          setShareModalOpen(true);
-        } else {
-          alert('Sorry, something went wrong.');
-        }
-      } catch {
-        alert('Sorry, something went wrong.');
-      } finally {
+  const [emailModalOpen, setEmailModalOpen] = React.useState(false);
+
+  const [currentUserEmail, setCurrentUserEmail] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetchUserEmail().then((email) => {
+      setCurrentUserEmail(email);
+    });
+  }, []);
+
+  const [cloudEnabled, setCloudEnabled] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    callApi('/api/user/cloud-status')
+      .then((r) => r.json())
+      .then((data) => {
+        setCloudEnabled(data.enabled);
+      })
+      .catch(() => {
+        setCloudEnabled(false);
+      });
+  }, []);
+
+  const handleShare = async () => {
+    setShareLoading(true);
+    try {
+      if (cloudEnabled && !currentUserEmail) {
+        setEmailModalOpen(true);
         setShareLoading(false);
+        return;
       }
-    } else {
-      setShareUrl(`${window.location.host}/eval/?evalId=${currentEvalId}`);
+
+      const response = await callApi('/results/share', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: currentEvalId,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Author-Email': currentUserEmail || '',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errorData.error || 'Failed to share evaluation');
+      }
+
+      const { url } = await response.json();
+      setShareUrl(url);
       setShareModalOpen(true);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Failed to share evaluation', 'error');
+    } finally {
+      setShareLoading(false);
     }
+  };
+
+  const handleShareClick = async () => {
+    if (!currentUserEmail) {
+      setEmailModalOpen(true);
+      return;
+    }
+
+    await handleShare();
   };
 
   const handleComparisonEvalSelected = async (compareEvalId: string) => {
@@ -346,14 +384,6 @@ export default function ResultsView({
     }
   };
 
-  const [currentUserEmail, setCurrentUserEmail] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    fetchUserEmail().then((email) => {
-      setCurrentUserEmail(email);
-    });
-  }, []);
-
   const handleEditAuthor = async (newAuthor: string) => {
     if (evalId) {
       try {
@@ -365,6 +395,10 @@ export default function ResultsView({
       }
     }
   };
+
+  const canShare = React.useMemo(() => {
+    return !!currentUserEmail || !cloudEnabled;
+  }, [currentUserEmail, cloudEnabled]);
 
   return (
     <div style={{ marginLeft: '1rem', marginRight: '1rem' }}>
@@ -498,20 +532,18 @@ export default function ResultsView({
                   </MenuItem>
                 </Tooltip>
                 <DownloadMenu />
-                {config?.sharing && (
-                  <Tooltip title="Generate a unique URL that others can access" placement="left">
-                    <MenuItem onClick={handleShareButtonClick} disabled={shareLoading}>
-                      <ListItemIcon>
-                        {shareLoading ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          <ShareIcon fontSize="small" />
-                        )}
-                      </ListItemIcon>
-                      Share
-                    </MenuItem>
-                  </Tooltip>
-                )}
+                <Tooltip title={canShare ? 'Share this evaluation' : 'Email required for sharing'}>
+                  <MenuItem onClick={handleShareClick} disabled={shareLoading || !canShare}>
+                    <ListItemIcon>
+                      {shareLoading ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <ShareIcon fontSize="small" />
+                      )}
+                    </ListItemIcon>
+                    Share
+                  </MenuItem>
+                </Tooltip>
                 <Tooltip title="Delete this eval" placement="left">
                   <MenuItem onClick={handleDeleteEvalClick}>
                     <ListItemIcon>
@@ -563,6 +595,19 @@ export default function ResultsView({
       <EvalSelectorKeyboardShortcut
         recentEvals={recentEvals}
         onRecentEvalSelected={onRecentEvalSelected}
+      />
+      <EmailModal
+        open={emailModalOpen}
+        onClose={() => setEmailModalOpen(false)}
+        onEmailSet={async (email: string) => {
+          try {
+            await handleEditAuthor(email);
+            setCurrentUserEmail(email);
+            handleShare();
+          } catch {
+            showToast('Failed to set email', 'error');
+          }
+        }}
       />
     </div>
   );
