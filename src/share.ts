@@ -1,17 +1,12 @@
-import input from '@inquirer/input';
-import chalk from 'chalk';
 import { URL } from 'url';
 import { SHARE_API_BASE_URL, SHARE_VIEW_BASE_URL, DEFAULT_SHARE_VIEW_BASE_URL } from './constants';
-import { getEnvBool, isCI } from './envars';
 import { fetchWithProxy } from './fetch';
-import { getAuthor } from './globalConfig/accounts';
-import { getUserEmail, setUserEmail } from './globalConfig/accounts';
+import { getUserEmail } from './globalConfig/accounts';
 import { cloudConfig } from './globalConfig/cloud';
 import logger from './logger';
 import type Eval from './models/eval';
-import type { SharedResults } from './types';
 
-async function targetHostCanUseNewResults(apiHost: string): Promise<boolean> {
+export async function targetHostCanUseNewResults(apiHost: string): Promise<boolean> {
   const response = await fetchWithProxy(`${apiHost}/health`, {
     method: 'GET',
     headers: {
@@ -89,117 +84,59 @@ export async function createShareableUrl(
   evalRecord: Eval,
   showAuth: boolean = false,
 ): Promise<string | null> {
+  logger.debug('Starting createShareableUrl');
+
   if (!evalRecord.author && !getUserEmail()) {
+    logger.error('No author email available');
     throw new Error('Author email is required for sharing');
   }
 
-  if (process.stdout.isTTY && !isCI() && !getEnvBool('PROMPTFOO_DISABLE_SHARE_EMAIL_REQUEST')) {
-    let email = getUserEmail();
-    if (!email) {
-      email = await input({
-        message: `${chalk.bold('Please enter your work email address')} (for managing shared URLs):`,
-        validate: (value) => {
-          return value.includes('@') || 'Please enter a valid email address';
-        },
-      });
-      setUserEmail(email);
-    }
-    evalRecord.author = email;
-    await evalRecord.save();
-  }
-
-  let response: Response;
   let apiBaseUrl: string;
   let url: string;
+
   if (cloudConfig.isEnabled()) {
+    logger.debug('Using cloud config');
     apiBaseUrl = cloudConfig.getApiHost();
     url = `${apiBaseUrl}/results`;
 
     if (!cloudConfig.getApiKey()) {
+      logger.error('No cloud API key available');
       throw new Error('Cloud API key is required for sharing');
     }
   } else {
+    logger.debug('Using local config');
     apiBaseUrl =
       typeof evalRecord.config.sharing === 'object'
         ? evalRecord.config.sharing.apiBaseUrl || SHARE_API_BASE_URL
         : SHARE_API_BASE_URL;
-
     url = `${apiBaseUrl}/api/eval`;
   }
 
-  const canUseNewResults =
-    cloudConfig.isEnabled() || (await targetHostCanUseNewResults(apiBaseUrl));
-  logger.debug(
-    `Sharing with ${url} canUseNewResults: ${canUseNewResults} Use old results: ${evalRecord.useOldResults()}`,
-  );
-  let evalId: string | undefined;
-  if (canUseNewResults && !evalRecord.useOldResults()) {
-    evalId = await sendEvalResults(evalRecord, url);
-  } else {
-    const summary = await evalRecord.toEvaluateSummary();
-    const table = await evalRecord.getTable();
-    const v2Summary = {
-      ...summary,
-      table,
-      version: 2,
-    };
+  logger.debug(`Sharing URL: ${url}`);
 
-    logger.debug(`Sending eval results (v2 result file) to ${url}`);
-    // check if we're using the cloud
-    const sharedResults: SharedResults = {
-      data: {
-        version: 3,
-        createdAt: new Date().toISOString(),
-        author: getAuthor(),
-        results: v2Summary,
-        config: evalRecord.config,
-      },
-    };
+  try {
+    const evalId = await sendEvalResults(evalRecord, url);
+    logger.debug(`Got eval ID: ${evalId}`);
+
+    let fullUrl: string;
     if (cloudConfig.isEnabled()) {
-      response = await fetchWithProxy(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${cloudConfig.getApiKey()}`,
-        },
-        body: JSON.stringify(sharedResults),
-      });
+      const appBaseUrl = cloudConfig.getAppUrl();
+      fullUrl = `${appBaseUrl}/eval/${evalId}`;
     } else {
-      response = await fetchWithProxy(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sharedResults),
-      });
+      const appBaseUrl =
+        typeof evalRecord.config.sharing === 'object'
+          ? evalRecord.config.sharing.appBaseUrl
+          : SHARE_VIEW_BASE_URL;
+      fullUrl =
+        SHARE_VIEW_BASE_URL === DEFAULT_SHARE_VIEW_BASE_URL
+          ? `${appBaseUrl}/eval/${evalId}`
+          : `${appBaseUrl}/eval/?evalId=${evalId}`;
     }
-    if (!response.ok) {
-      logger.error(`Failed to create shareable URL: ${response.statusText}`);
-      return null;
-    }
-    const responseJson = (await response.json()) as { id?: string; error?: string };
-    if (responseJson.error) {
-      logger.error(`Failed to create shareable URL: ${responseJson.error}`);
-      return null;
-    }
-    evalId = responseJson.id;
-  }
-  logger.debug(`New eval ID on remote instance: ${evalId}`);
-  let appBaseUrl = SHARE_VIEW_BASE_URL;
-  let fullUrl = SHARE_VIEW_BASE_URL;
-  if (cloudConfig.isEnabled()) {
-    appBaseUrl = cloudConfig.getAppUrl();
-    fullUrl = `${appBaseUrl}/eval/${evalId}`;
-  } else {
-    const appBaseUrl =
-      typeof evalRecord.config.sharing === 'object'
-        ? evalRecord.config.sharing.appBaseUrl
-        : SHARE_VIEW_BASE_URL;
-    fullUrl =
-      SHARE_VIEW_BASE_URL === DEFAULT_SHARE_VIEW_BASE_URL
-        ? `${appBaseUrl}/eval/${evalId}`
-        : `${appBaseUrl}/eval/?evalId=${evalId}`;
-  }
 
-  return showAuth ? fullUrl : stripAuthFromUrl(fullUrl);
+    logger.debug(`Created full URL: ${fullUrl}`);
+    return showAuth ? fullUrl : stripAuthFromUrl(fullUrl);
+  } catch (error) {
+    logger.error('Error in createShareableUrl:', error);
+    throw error;
+  }
 }

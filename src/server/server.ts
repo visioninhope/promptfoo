@@ -9,7 +9,6 @@ import fs from 'fs';
 import http from 'node:http';
 import path from 'node:path';
 import { Server as SocketIOServer } from 'socket.io';
-import invariant from 'tiny-invariant';
 import { fromError } from 'zod-validation-error';
 import { VERSION, DEFAULT_PORT } from '../constants';
 import { getDbSignalPath } from '../database';
@@ -118,35 +117,53 @@ export function createApp() {
     const { id } = req.body;
     const authorEmail = req.headers['x-author-email'] as string;
 
-    // Check for required author email
-    if (!authorEmail) {
-      res.status(401).json({ error: 'Author email is required for sharing' });
-      return;
-    }
-
-    const result = await readResult(id);
-    if (!result) {
-      res.status(404).json({ error: 'Eval not found' });
-      return;
-    }
+    logger.debug(`Sharing eval ${id} with author ${authorEmail}`);
 
     try {
-      const eval_ = await Eval.findById(id);
-      invariant(eval_, 'Eval not found');
+      // Check for required author email when using cloud
+      if (cloudConfig.isEnabled() && !authorEmail) {
+        logger.error('Author email missing from share request (cloud mode)');
+        res.status(401).json({ error: 'Author email is required for sharing in cloud mode' });
+        return;
+      }
 
-      // Set the author
-      eval_.author = authorEmail;
-      await eval_.save();
+      const result = await readResult(id);
+      if (!result) {
+        logger.error(`Eval ${id} not found in results`);
+        res.status(404).json({ error: 'Eval not found' });
+        return;
+      }
+
+      const eval_ = await Eval.findById(id);
+      if (!eval_) {
+        logger.error(`Eval ${id} not found in database`);
+        res.status(404).json({ error: 'Eval not found in database' });
+        return;
+      }
+
+      // Set the author if provided
+      if (authorEmail) {
+        eval_.author = authorEmail;
+        await eval_.save();
+        logger.debug(`Updated eval ${id} with author ${authorEmail}`);
+      }
+
+      // Load results before sharing
+      await eval_.loadResults();
+      logger.debug(`Loaded results for eval ${id}`);
 
       // Create shareable URL with the eval record
-      const url = await createShareableUrl(eval_, false); // Changed to false to not show auth
+      const url = await createShareableUrl(eval_, false);
       if (!url) {
+        logger.error(`Failed to create shareable URL for eval ${id}`);
         throw new Error('Failed to create shareable URL');
       }
+
+      logger.debug(`Created shareable URL for eval ${id}: ${url}`);
       res.json({ url });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Failed to create public URL:', errorMessage);
+      logger.error(`Failed to create public URL for eval ${id}:`, error);
       res.status(500).json({ error: `Failed to create public URL: ${errorMessage}` });
     }
   });

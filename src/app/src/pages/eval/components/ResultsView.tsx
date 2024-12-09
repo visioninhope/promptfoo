@@ -161,7 +161,9 @@ export default function ResultsView({
   const handleShare = async () => {
     setShareLoading(true);
     try {
-      if (cloudEnabled && !currentUserEmail) {
+      const emailToUse = author || currentUserEmail;
+
+      if (cloudEnabled && !emailToUse) {
         setEmailModalOpen(true);
         setShareLoading(false);
         return;
@@ -174,7 +176,7 @@ export default function ResultsView({
         }),
         headers: {
           'Content-Type': 'application/json',
-          'X-Author-Email': currentUserEmail || '',
+          'X-Author-Email': emailToUse || '',
         },
       });
 
@@ -187,6 +189,7 @@ export default function ResultsView({
       setShareUrl(url);
       setShareModalOpen(true);
     } catch (error) {
+      console.error('Share error:', error);
       showToast(error instanceof Error ? error.message : 'Failed to share evaluation', 'error');
     } finally {
       setShareLoading(false);
@@ -194,7 +197,7 @@ export default function ResultsView({
   };
 
   const handleShareClick = async () => {
-    if (!currentUserEmail) {
+    if (cloudEnabled && !author && !currentUserEmail) {
       setEmailModalOpen(true);
       return;
     }
@@ -397,8 +400,8 @@ export default function ResultsView({
   };
 
   const canShare = React.useMemo(() => {
-    return !!currentUserEmail || !cloudEnabled;
-  }, [currentUserEmail, cloudEnabled]);
+    return !!(author || currentUserEmail) || !cloudEnabled;
+  }, [author, currentUserEmail, cloudEnabled]);
 
   return (
     <div style={{ marginLeft: '1rem', marginRight: '1rem' }}>
