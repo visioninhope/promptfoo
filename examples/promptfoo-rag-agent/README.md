@@ -15,15 +15,37 @@ This example demonstrates how to use LangChain to create a RAG (Retrieval Augmen
 
 ## Prerequisites
 
+1. Set up Python environment:
+
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate  # On Unix/macOS
+# or
+.\venv\Scripts\activate  # On Windows
+```
+
 1. Set up your environment variables:
 
 ```bash
+# Create .env file
+cp .env.example .env
+
+# Edit .env with your API key
+vim .env
+# or
 export OPENAI_API_KEY="your_api_key"
 ```
 
 2. Install dependencies:
 
 ```bash
+# Upgrade pip
+python -m pip install --upgrade pip
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -41,6 +63,8 @@ examples/promptfoo-rag-agent/
 ├── static/
 │   └── index.html         # Web-based chat interface
 ├── tests/                 # Comprehensive test suite
+├── .env.example           # Example environment variables
+├── .gitignore            # Git ignore file
 └── requirements.txt       # Python dependencies
 ```
 
@@ -49,6 +73,11 @@ examples/promptfoo-rag-agent/
 ### 1. Start the Server
 
 ```bash
+# Ensure virtual environment is activated
+source venv/bin/activate  # On Unix/macOS
+# or
+.\venv\Scripts\activate  # On Windows
+
 # Start the FastAPI server
 python run.py
 ```
@@ -93,6 +122,7 @@ else:
 ### 5. API Endpoints
 
 - `POST /chat`
+
   ```json
   {
     "session_id": "unique_session_id",
@@ -108,6 +138,7 @@ else:
 1. **Retrieval**: The agent indexes example promptfoo configurations using FAISS vector store and sentence transformers for embeddings.
 
 2. **Generation**: When given requirements, the agent:
+
    - Retrieves relevant example configurations
    - Uses GPT-4 to generate a new configuration based on the examples and requirements
    - Validates the generated config against the official promptfoo schema
@@ -155,6 +186,21 @@ Create an evaluation suite that:
 
 ## Development
 
+### Setup Development Environment
+
+```bash
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Unix/macOS
+# or
+.\venv\Scripts\activate  # On Windows
+
+# Install development dependencies
+pip install -r requirements.txt
+```
+
+### Code Quality
+
 1. Run tests:
 
 ```bash
@@ -171,6 +217,13 @@ ruff format src tests
 
 ```bash
 ruff check src tests
+```
+
+### Pre-commit Checks
+
+```bash
+# Run all checks
+pytest && ruff check . && ruff format --check .
 ```
 
 ## Contributing

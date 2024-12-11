@@ -5,10 +5,24 @@ model configurations, and API keys. It uses pydantic for settings management and
 environment variable loading.
 """
 
+import os
 from pathlib import Path
 from typing import Optional
 
 from pydantic_settings import BaseSettings
+
+# Set tokenizer parallelism to avoid fork warnings
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+def find_repo_root() -> Path:
+    """Find the root of the promptfoo repository."""
+    current = Path.cwd()
+    while current != current.parent:
+        if (current / "site" / "static" / "config-schema.json").exists():
+            return current
+        current = current.parent
+    raise FileNotFoundError("Could not find promptfoo repository root")
 
 
 class Settings(BaseSettings):
@@ -24,16 +38,22 @@ class Settings(BaseSettings):
     """
 
     OPENAI_API_KEY: str
-    EXAMPLES_DIR: Path = Path("data/examples")
-    SCHEMA_PATH: Path = Path("site/static/config-schema.json")
+    EXAMPLES_DIR: Path = Path("../")
+    SCHEMA_PATH: Path = find_repo_root() / "site" / "static" / "config-schema.json"
     MODEL_NAME: str = "gpt-4"
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
-    VECTOR_STORE_PATH: Optional[Path] = Path("data/vectorstore")
+    VECTOR_STORE_PATH: Optional[Path] = Path("data/vectorstore/faiss_index")
 
     class Config:
         """Pydantic configuration."""
 
         env_file = ".env"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Create data directory if it doesn't exist
+        if self.VECTOR_STORE_PATH:
+            self.VECTOR_STORE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 settings: Settings = Settings()

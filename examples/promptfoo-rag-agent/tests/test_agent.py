@@ -3,8 +3,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-
-from src.agent import PromptfooConfigAgent
+from promptfoo_rag.agent import PromptfooConfigAgent
 
 
 @pytest.fixture
@@ -42,7 +41,7 @@ def mock_llm_response() -> str:
     """
 
 
-@patch("src.agent.ChatOpenAI")
+@patch("promptfoo_rag.agent.ChatOpenAI")
 def test_generate_config_with_real_requirements(
     mock_chat, test_examples_dir, test_schema, mock_llm_response
 ) -> None:
@@ -52,7 +51,7 @@ def test_generate_config_with_real_requirements(
     mock_message.content = mock_llm_response
     mock_chat.return_value.invoke.return_value = mock_message
 
-    with patch("src.config.settings") as mock_settings:
+    with patch("promptfoo_rag.config.settings") as mock_settings:
         mock_settings.EXAMPLES_DIR = test_examples_dir
         mock_settings.SCHEMA_PATH.exists.return_value = True
         mock_settings.SCHEMA_PATH.open.return_value.__enter__.return_value.read.return_value = test_schema

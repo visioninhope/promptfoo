@@ -4,8 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-
-from src.utils.validation import load_schema, validate_yaml
+from promptfoo_rag.utils.validation import load_schema, validate_yaml
 
 
 def test_validate_yaml_valid(test_schema) -> None:

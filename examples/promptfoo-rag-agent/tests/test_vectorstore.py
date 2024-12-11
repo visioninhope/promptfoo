@@ -3,8 +3,7 @@
 from pathlib import Path
 
 import pytest
-
-from src.utils.vectorstore import initialize_vectorstore, load_examples
+from promptfoo_rag.utils.vectorstore import initialize_vectorstore, load_examples
 
 
 def test_load_examples(test_examples_dir: Path) -> None:

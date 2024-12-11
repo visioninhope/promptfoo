@@ -1,7 +1,21 @@
-from src.agent import PromptfooConfigAgent
+"""Example script for generating promptfoo configurations."""
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from promptfoo_rag.agent import PromptfooConfigAgent
 
 
-def main():
+def main() -> None:
+    """Generate a promptfoo configuration file."""
+    # Load environment variables from .env file
+    load_dotenv()
+
+    # Ensure required environment variables are set
+    if not os.getenv("OPENAI_API_KEY"):
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+
     agent = PromptfooConfigAgent()
 
     requirements = """
@@ -19,8 +33,9 @@ def main():
         print(config)
 
         # Save to file
-        with open("generated_config.yaml", "w") as f:
-            f.write(config)
+        output_path = Path("generated_config.yaml")
+        output_path.write_text(config)
+        print(f"\nSaved config to {output_path}")
     else:
         print("Validation errors:", errors)
 

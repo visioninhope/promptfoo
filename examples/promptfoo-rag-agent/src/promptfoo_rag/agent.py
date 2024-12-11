@@ -7,10 +7,10 @@ configuration files based on user requirements and example configurations.
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import BaseMessage, Document
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
+from langchain_openai import ChatOpenAI
 
 from .config import settings
 from .utils.validation import load_schema, validate_yaml
