@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Promptfoo Config Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-2xl font-bold mb-4">Promptfoo Config Generator</h1>
+        
+        <div id="chat-container" class="bg-white rounded-lg shadow-md p-4 mb-4 h-[500px] overflow-y-auto">
+            <!-- Chat messages will be inserted here -->
+        </div>
+        
+        <div class="flex gap-2">
+            <input 
+                type="text" 
+                id="message-input"
+                class="flex-1 p-2 border rounded"
+                placeholder="Type your message here..."
+            >
+            <button 
+                onclick="sendMessage()"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+                Send
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const sessionId = Math.random().toString(36).substring(7);
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessageToChat('user', message);
+            messageInput.value = '';
+
+            try {
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: message
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Add assistant response to chat
+                addMessageToChat('assistant', data.response);
+
+                // If there's a generated config, show validation status
+                if (data.config) {
+                    const validationMsg = data.is_valid 
+                        ? '✅ Configuration is valid' 
+                        : `❌ Validation failed: ${JSON.stringify(data.errors)}`;
+                    addMessageToChat('system', validationMsg);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessageToChat('system', 'Error: Failed to send message');
+            }
+        }
+
+        function addMessageToChat(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mb-4 ${role === 'user' ? 'text-right' : 'text-left'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `inline-block p-3 rounded-lg ${
+                role === 'user' 
+                    ? 'bg-blue-500 text-white' 
+                    : role === 'system'
+                        ? 'bg-gray-200 text-gray-700'
+                        : 'bg-gray-300'
+            }`;
+
+            // Format code blocks
+            if (content.includes('```')) {
+                const parts = content.split('```');
+                for (let i = 0; i < parts.length; i++) {
+                    if (i % 2 === 1) { // Code block
+                        const pre = document.createElement('pre');
+                        pre.className = 'bg-gray-800 text-white p-2 rounded mt-2 mb-2';
+                        pre.textContent = parts[i].trim();
+                        bubble.appendChild(pre);
+                    } else { // Regular text
+                        if (parts[i].trim()) {
+                            const p = document.createElement('p');
+                            p.textContent = parts[i].trim();
+                            bubble.appendChild(p);
+                        }
+                    }
+                }
+            } else {
+                bubble.textContent = content;
+            }
+
+            messageDiv.appendChild(bubble);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html> 
