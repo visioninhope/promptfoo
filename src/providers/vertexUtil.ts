@@ -104,19 +104,53 @@ const PartSchema = z.object({
 });
 
 const ContentSchema = z.object({
-  role: z.enum(['user', 'model']).optional(),
+  role: z.enum(['user', 'model', 'system']).optional(),
   parts: z.array(PartSchema),
 });
 
 const GeminiFormatSchema = z.array(ContentSchema);
 
-export type GeminiFormat = z.infer<typeof GeminiFormatSchema>;
+export type GeminiFormat = {
+  parts: {
+    text?: string;
+    inline_data?: {
+      mime_type: string;
+      data: string;
+    };
+  }[];
+  role?: 'user' | 'model' | 'system';
+}[];
+
 export type GeminiPart = z.infer<typeof PartSchema>;
 
-export function maybeCoerceToGeminiFormat(contents: any): {
+export interface OpenAIMessage {
+  role: string;
+  content: string;
+}
+
+export interface GeminiPromptFormat {
+  role?: string;
+  parts?: { text: string }[];
+  content?: string;
+}
+
+export interface GeminiContent {
+  parts: {
+    text?: string;
+    inline_data?: {
+      mime_type: string;
+      data: string;
+    };
+  }[];
+  role?: string;
+}
+
+export function maybeCoerceToGeminiFormat(
+  contents: string | GeminiPromptFormat | GeminiFormat | OpenAIMessage[] | { [key: string]: any },
+): {
   contents: GeminiFormat;
   coerced: boolean;
-  systemInstruction: { parts: [GeminiPart, ...GeminiPart[]] } | undefined;
+  systemInstruction?: GeminiContent;
 } {
   let coerced = false;
   const parseResult = GeminiFormatSchema.safeParse(contents);
@@ -138,28 +172,31 @@ export function maybeCoerceToGeminiFormat(contents: any): {
       },
     ];
     coerced = true;
-  } else if (
-    Array.isArray(contents) &&
-    contents.every((item) => typeof item.content === 'string')
-  ) {
-    // This looks like an OpenAI chat format
+  } else if (Array.isArray(contents)) {
+    // Handle OpenAI chat format
     coercedContents = contents.map((item) => ({
-      role: item.role as 'user' | 'model' | undefined,
-      parts: [{ text: item.content }],
+      role: item.role as 'user' | 'model',
+      parts: [{ text: item.content || '' }],
     }));
     coerced = true;
   } else if (typeof contents === 'object' && 'parts' in contents) {
-    // This might be a single content object
-    coercedContents = [contents as z.infer<typeof ContentSchema>];
+    // Single content object
+    coercedContents = [contents as GeminiFormat[number]];
     coerced = true;
   } else {
     logger.warn(`Unknown format for Gemini: ${JSON.stringify(contents)}`);
-    return { contents: contents as GeminiFormat, coerced: false, systemInstruction: undefined };
+    // Convert unknown format to a basic message
+    coercedContents = [
+      {
+        parts: [{ text: JSON.stringify(contents) }],
+      },
+    ];
+    coerced = true;
   }
 
   const systemPromptParts: { text: string }[] = [];
   coercedContents = coercedContents.filter((message) => {
-    if (message.role === ('system' as any) && message.parts.length > 0) {
+    if (message.role === 'system' && message.parts?.length > 0) {
       systemPromptParts.push(
         ...message.parts.filter(
           (part): part is { text: string } => 'text' in part && typeof part.text === 'string',
@@ -174,9 +211,7 @@ export function maybeCoerceToGeminiFormat(contents: any): {
     contents: coercedContents,
     coerced,
     systemInstruction:
-      systemPromptParts.length > 0
-        ? { parts: systemPromptParts as [GeminiPart, ...GeminiPart[]] }
-        : undefined,
+      systemPromptParts.length > 0 ? { parts: systemPromptParts, role: 'system' } : undefined,
   };
 }
 

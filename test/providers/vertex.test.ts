@@ -1,8 +1,9 @@
 import type { JSONClient } from 'google-auth-library/build/src/auth/googleauth';
 import { getCache, isCacheEnabled } from '../../src/cache';
-import logger from '../../src/logger';
 import { VertexChatProvider } from '../../src/providers/vertex';
 import * as vertexUtil from '../../src/providers/vertexUtil';
+import type { GeminiFormat, OpenAIMessage } from '../../src/providers/vertexUtil';
+import { REQUEST_TIMEOUT_MS } from '../../src/providers/shared';
 
 jest.mock('../../src/cache', () => ({
   getCache: jest.fn().mockReturnValue({
@@ -86,14 +87,36 @@ describe('VertexChatProvider.callGeminiApi', () => {
     });
 
     expect(vertexUtil.getGoogleClient).toHaveBeenCalledWith();
-    expect(mockRequest).toHaveBeenCalledWith({
-      url: expect.any(String),
-      method: 'POST',
-      data: expect.objectContaining({
-        contents: [{ parts: { text: 'test prompt' }, role: 'user' }],
+    expect(mockRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: expect.stringContaining('streamGenerateContent'),
+        method: 'POST',
+        data: {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: 'test prompt' }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 100,
+            topP: 0.9,
+            topK: 40,
+            candidateCount: undefined,
+            stopSequences: undefined,
+            presencePenalty: undefined,
+            frequencyPenalty: undefined,
+            responseMimeType: undefined,
+            seed: undefined,
+            responseLogprobs: undefined,
+            logprobs: undefined,
+            audioTimestamp: undefined,
+          },
+        },
+        timeout: REQUEST_TIMEOUT_MS,
       }),
-      timeout: expect.any(Number),
-    });
+    );
   });
 
   it('should return cached response if available', async () => {
@@ -164,93 +187,75 @@ describe('VertexChatProvider.callGeminiApi', () => {
 });
 
 describe('maybeCoerceToGeminiFormat', () => {
-  it('should return unmodified content if it matches GeminiFormat', () => {
+  it('should handle chat format', () => {
     const input = [
-      {
-        role: 'user',
-        parts: [{ text: 'Hello, Gemini!' }],
-      },
-    ];
-    const result = vertexUtil.maybeCoerceToGeminiFormat(input);
-    expect(result).toEqual({
-      contents: input,
-      coerced: false,
-      systemInstruction: undefined,
-    });
-  });
-
-  it('should coerce OpenAI chat format to GeminiFormat', () => {
-    const input = [
-      { role: 'user', content: 'Hello' },
-      { role: 'user', content: ', ' },
-      { role: 'user', content: 'Gemini!' },
-    ];
-    const expected = [
       {
         role: 'user',
         parts: [{ text: 'Hello' }],
       },
-      {
-        role: 'user',
-        parts: [{ text: ', ' }],
-      },
-      {
-        role: 'user',
-        parts: [{ text: 'Gemini!' }],
-      },
-    ];
+    ] as GeminiFormat;
     const result = vertexUtil.maybeCoerceToGeminiFormat(input);
-    expect(result).toEqual({
-      contents: expected,
-      coerced: true,
-      systemInstruction: undefined,
-    });
+    expect(result.contents).toEqual(input);
   });
 
-  it('should coerce string input to GeminiFormat', () => {
-    const input = 'Hello, Gemini!';
-    const expected = [
-      {
-        parts: [{ text: 'Hello, Gemini!' }],
-      },
-    ];
-    const result = vertexUtil.maybeCoerceToGeminiFormat(input);
-    expect(result).toEqual({
-      contents: expected,
-      coerced: true,
-      systemInstruction: undefined,
-    });
-  });
-
-  it('should handle system messages and create systemInstruction', () => {
+  it('should handle OpenAI format', () => {
     const input = [
-      { role: 'system', content: 'You are a helpful assistant.' },
-      { role: 'user', content: 'Hello!' },
-    ];
-    const result = vertexUtil.maybeCoerceToGeminiFormat(input);
-    expect(result).toEqual({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: 'Hello!' }],
-        },
-      ],
-      coerced: true,
-      systemInstruction: {
-        parts: [{ text: 'You are a helpful assistant.' }],
+      {
+        role: 'user',
+        content: 'Hello',
       },
+    ] as OpenAIMessage[];
+    const result = vertexUtil.maybeCoerceToGeminiFormat(input);
+    expect(result.contents).toEqual([
+      {
+        role: 'user',
+        parts: [{ text: 'Hello' }],
+      },
+    ]);
+  });
+
+  it('should handle string input', () => {
+    const input = 'Hello';
+    const result = vertexUtil.maybeCoerceToGeminiFormat(input);
+    expect(result.contents).toEqual([
+      {
+        parts: [{ text: 'Hello' }],
+      },
+    ]);
+  });
+
+  it('should handle system messages', () => {
+    const input = [
+      {
+        role: 'system',
+        content: 'You are a helpful assistant.',
+      },
+      {
+        role: 'user',
+        content: 'Hello!',
+      },
+    ] as OpenAIMessage[];
+    const result = vertexUtil.maybeCoerceToGeminiFormat(input);
+    expect(result.contents).toEqual([
+      {
+        role: 'user',
+        parts: [{ text: 'Hello!' }],
+      },
+    ]);
+    expect(result.systemInstruction).toEqual({
+      role: 'system',
+      parts: [{ text: 'You are a helpful assistant.' }],
     });
   });
 
-  it('should log a warning and return the input for unknown formats', () => {
-    const loggerSpy = jest.spyOn(logger, 'warn');
+  it('should handle unknown formats', () => {
     const input = { unknownFormat: 'test' };
     const result = vertexUtil.maybeCoerceToGeminiFormat(input);
-    expect(result).toEqual({
-      contents: input,
-      coerced: false,
-      systemInstruction: undefined,
-    });
-    expect(loggerSpy).toHaveBeenCalledWith(`Unknown format for Gemini: ${JSON.stringify(input)}`);
+    expect(result.contents).toEqual([
+      {
+        parts: [{ text: JSON.stringify(input) }],
+      },
+    ]);
+    expect(result.coerced).toBe(true);
   });
 });

@@ -1,4 +1,3 @@
-import Clone from 'rfdc';
 import { getCache, isCacheEnabled } from '../cache';
 import cliState from '../cliState';
 import { getEnvString } from '../envars';
@@ -50,9 +49,14 @@ interface Part {
   fileData?: FileData;
 }
 
-interface Content {
+interface GeminiContent {
   parts: Part[];
   role?: string;
+}
+
+interface GeminiPromptFormat {
+  role: string;
+  parts: { text: string }[];
 }
 
 interface VertexCompletionOptions {
@@ -73,13 +77,19 @@ interface VertexCompletionOptions {
   topK?: number;
 
   generationConfig?: {
-    context?: string;
-    examples?: { input: string; output: string }[];
-    stopSequence?: string[];
     temperature?: number;
-    maxOutputTokens?: number;
     topP?: number;
     topK?: number;
+    candidateCount?: number;
+    maxOutputTokens?: number;
+    stopSequences?: string[];
+    presencePenalty?: number;
+    frequencyPenalty?: number;
+    responseMimeType?: string;
+    seed?: number;
+    responseLogprobs?: boolean;
+    logprobs?: number;
+    audioTimestamp?: boolean;
   };
 
   toolConfig?: {
@@ -89,10 +99,8 @@ interface VertexCompletionOptions {
     };
   };
 
-  systemInstruction?: Content;
+  systemInstruction?: GeminiContent;
 }
-
-const clone = Clone();
 
 class VertexGenericProvider implements ApiProvider {
   modelName: string;
@@ -183,30 +191,35 @@ export class VertexChatProvider extends VertexGenericProvider {
   }
 
   async callGeminiApi(prompt: string, context?: CallApiContextParams): Promise<ProviderResponse> {
-    // https://cloud.google.com/vertex-ai/docs/generative-ai/model-reference/gemini#gemini-pro
-    let contents: GeminiFormat | { role: string; parts: { text: string } } = parseChatPrompt(
-      prompt,
-      {
-        role: 'user',
-        parts: {
+    let contents: GeminiFormat | GeminiPromptFormat = parseChatPrompt(prompt, {
+      role: 'user',
+      parts: [
+        {
           text: prompt,
         },
-      },
-    );
+      ],
+    } as GeminiPromptFormat);
+
     const {
       contents: updatedContents,
       coerced,
       systemInstruction: parsedSystemInstruction,
     } = maybeCoerceToGeminiFormat(contents);
+
     if (coerced) {
       logger.debug(`Coerced JSON prompt to Gemini format: ${JSON.stringify(contents)}`);
       contents = updatedContents;
     }
 
-    let systemInstruction: Content | undefined = parsedSystemInstruction;
+    let systemInstruction: GeminiContent | undefined = parsedSystemInstruction;
     if (this.config.systemInstruction && !systemInstruction) {
-      // Make a copy
-      systemInstruction = clone(this.config.systemInstruction);
+      systemInstruction = {
+        role: this.config.systemInstruction.role,
+        parts: this.config.systemInstruction.parts.map((part) => ({
+          text: part.text,
+        })),
+      };
+
       if (systemInstruction && context?.vars) {
         const nunjucks = getNunjucksEngine();
         for (const part of systemInstruction.parts) {
@@ -216,23 +229,30 @@ export class VertexChatProvider extends VertexGenericProvider {
         }
       }
     }
-    // https://ai.google.dev/api/rest/v1/models/streamGenerateContent
+
     const body = {
       contents: contents as GeminiFormat,
       generationConfig: {
-        context: this.config.context,
-        examples: this.config.examples,
-        stopSequence: this.config.stopSequence,
         temperature: this.config.temperature,
         maxOutputTokens: this.config.maxOutputTokens,
         topP: this.config.topP,
         topK: this.config.topK,
+        candidateCount: this.config.generationConfig?.candidateCount,
+        stopSequences: this.config.generationConfig?.stopSequences,
+        presencePenalty: this.config.generationConfig?.presencePenalty,
+        frequencyPenalty: this.config.generationConfig?.frequencyPenalty,
+        responseMimeType: this.config.generationConfig?.responseMimeType,
+        seed: this.config.generationConfig?.seed,
+        responseLogprobs: this.config.generationConfig?.responseLogprobs,
+        logprobs: this.config.generationConfig?.logprobs,
+        audioTimestamp: this.config.generationConfig?.audioTimestamp,
         ...this.config.generationConfig,
       },
       ...(this.config.safetySettings ? { safetySettings: this.config.safetySettings } : {}),
       ...(this.config.toolConfig ? { toolConfig: this.config.toolConfig } : {}),
       ...(systemInstruction ? { systemInstruction } : {}),
     };
+
     logger.debug(`Preparing to call Google Vertex API (Gemini) with body: ${JSON.stringify(body)}`);
 
     const cache = await getCache();

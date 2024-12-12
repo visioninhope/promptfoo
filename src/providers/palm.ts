@@ -6,7 +6,7 @@ import type { EnvOverrides } from '../types/env';
 import { maybeLoadFromExternalFile, renderVarsInObject } from '../util';
 import { CHAT_MODELS } from './googleShared';
 import { parseChatPrompt, REQUEST_TIMEOUT_MS } from './shared';
-import { maybeCoerceToGeminiFormat } from './vertexUtil';
+import { maybeCoerceToGeminiFormat, type GeminiFormat } from './vertexUtil';
 
 const DEFAULT_API_HOST = 'generativelanguage.googleapis.com';
 
@@ -100,7 +100,12 @@ export class PalmChatProvider extends PalmGenericProvider {
 
     // https://developers.generativeai.google/tutorials/curl_quickstart
     // https://ai.google.dev/api/rest/v1beta/models/generateMessage
-    const messages = parseChatPrompt(prompt, [{ content: prompt }]);
+    const messages = parseChatPrompt(prompt, [
+      {
+        role: 'user',
+        parts: [{ text: prompt }],
+      },
+    ] as GeminiFormat);
     const body = {
       prompt: { messages },
       temperature: this.config.temperature,
@@ -156,7 +161,12 @@ export class PalmChatProvider extends PalmGenericProvider {
 
   async callGemini(prompt: string, context?: CallApiContextParams): Promise<ProviderResponse> {
     const { contents, systemInstruction } = maybeCoerceToGeminiFormat(
-      parseChatPrompt(prompt, [{ content: prompt }]),
+      parseChatPrompt(prompt, [
+        {
+          role: 'user',
+          parts: [{ text: prompt }],
+        },
+      ] as GeminiFormat),
     );
     const body: Record<string, any> = {
       contents,

@@ -6,8 +6,21 @@ sidebar_position: 42
 
 The `vertex` provider is compatible with Google's [Vertex AI](https://cloud.google.com/vertex-ai) offering, which offers access to models such as Gemini and Bison.
 
-You can use it by specifying any of the available stable or latest [model versions](https://cloud.google.com/vertex-ai/docs/generative-ai/learn/model-versioning) offered by Vertex AI. These include:
+## Supported Models
 
+You can use any of the available stable or latest [model versions](https://cloud.google.com/vertex-ai/docs/generative-ai/learn/model-versioning) offered by Vertex AI, including:
+
+### Gemini Models
+
+- `vertex:gemini-1.5-pro`
+- `vertex:gemini-1.5-pro-001`
+- `vertex:gemini-1.5-pro-002`
+- `vertex:gemini-1.5-flash`
+- `vertex:gemini-1.5-flash-001`
+- `vertex:gemini-1.5-flash-002`
+- `vertex:gemini-1.0-pro`
+- `vertex:gemini-1.0-pro-001`
+- `vertex:gemini-1.0-pro-002`
 - `vertex:chat-bison`
 - `vertex:chat-bison@001`
 - `vertex:chat-bison@002`
@@ -37,6 +50,40 @@ You can use it by specifying any of the available stable or latest [model versio
 - `vertex:gemini-1.5-flash-preview-0514`
 - `vertex:gemini-1.5-flash-001`
 - `vertex:aqa`
+
+### Gemini 2.0 Models (Experimental)
+
+- `vertex:gemini-2.0-flash-exp` - Experimental preview of Gemini 2.0 Flash
+- `vertex:gemini-2.0-pro-exp` - Experimental preview of Gemini 2.0 Pro
+
+The Gemini 2.0 models introduce several new capabilities:
+
+- Improved multimodal understanding and generation
+- Enhanced coding capabilities
+- Better function calling support
+- Native image generation (allowlist only)
+- Text-to-speech capabilities (allowlist only)
+- Bounding box detection for images and video
+- Search-as-a-tool functionality
+
+Example configuration:
+
+```yaml
+providers:
+  - id: vertex:gemini-2.0-flash-exp
+    config:
+      generationConfig:
+        temperature: 0.7
+        maxOutputTokens: 2048
+        responseModalities: ['TEXT'] # For text-only output
+      toolConfig:
+        functionCallingConfig:
+          mode: 'ANY' # Enhanced function calling support
+```
+
+:::note
+Some Gemini 2.0 features like image generation and text-to-speech require special access. Contact Google Cloud support for more information.
+:::
 
 Embeddings models such as `vertex:embedding:text-embedding-004` are also supported.
 
