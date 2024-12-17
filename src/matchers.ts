@@ -14,6 +14,7 @@ import {
   OPENAI_CLOSED_QA_PROMPT,
   OPENAI_FACTUALITY_PROMPT,
 } from './prompts';
+import { GEVAL_PROMPTS, GEVAL_SCORE_RANGES } from './prompts/geval';
 import { loadApiProvider } from './providers';
 import { getDefaultProviders } from './providers/defaults';
 import { LLAMA_GUARD_REPLICATE_PROVIDER } from './redteam/constants';
@@ -980,4 +981,120 @@ export async function matchesModeration(
     score: 1,
     reason: 'No relevant moderation flags detected',
   };
+}
+
+function parseGEvalScore(
+  output: string | undefined,
+  dimension: keyof typeof GEVAL_SCORE_RANGES,
+): number | null {
+  if (!output) {
+    return null;
+  }
+  const match = output.trim().match(/^[\s]*([0-9.]+)/);
+  if (!match) {
+    return null;
+  }
+  const score = Number.parseFloat(match[1]);
+  const [min, max] = GEVAL_SCORE_RANGES[dimension];
+  if (score < min || score > max) {
+    return null;
+  }
+  return score;
+}
+
+export async function matchesGEval(
+  dimension: keyof typeof GEVAL_PROMPTS,
+  source: string,
+  output: string,
+  n: number = 20,
+  grading?: GradingConfig,
+): Promise<Omit<GradingResult, 'assertion'>> {
+  try {
+    const provider = await getAndCheckProvider(
+      'text',
+      grading?.provider,
+      (await getDefaultProviders()).gradingProvider,
+      'g-eval check',
+    );
+
+    // First, generate CoT
+    const basePrompt = GEVAL_PROMPTS[dimension].split('Evaluation Steps:')[0];
+    const cotResponse = await provider.callApi(basePrompt + '\nEvaluation Steps:');
+    const cot = cotResponse.output;
+
+    // Then use the complete prompt with generated CoT
+    const fullPrompt =
+      basePrompt +
+      '\nEvaluation Steps:\n' +
+      cot +
+      '\n\nExample:\n\nSource Text:\n' +
+      source +
+      '\n\nSummary:\n' +
+      output +
+      '\n\nEvaluation Form (scores ONLY):\n\n- ' +
+      dimension +
+      ':';
+
+    // Make n parallel calls to get multiple scores
+    const responses = await Promise.all(
+      Array(n)
+        .fill(0)
+        .map(() => provider.callApi(fullPrompt)),
+    );
+
+    // Parse scores and average them
+    const scores = responses
+      .map((r) => {
+        const outputStr = typeof r.output === 'object' ? JSON.stringify(r.output) : r.output;
+        return parseGEvalScore(outputStr, dimension);
+      })
+      .filter((score) => score !== null);
+
+    if (scores.length === 0) {
+      return fail('Could not parse any valid scores');
+    }
+
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+    // Normalize to 0-1 range
+    const [min, max] = GEVAL_SCORE_RANGES[dimension];
+    const normalizedScore = (avgScore - min) / (max - min);
+
+    // Add minimum valid responses check
+    const minValidResponses = Math.ceil(n * 0.5); // At least 50% valid responses
+    if (scores.length < minValidResponses) {
+      return {
+        pass: false,
+        score: 0,
+        reason: `Too few valid responses (${scores.length}/${n}). Minimum required: ${minValidResponses}`,
+      };
+    }
+
+    return {
+      pass: true,
+      score: normalizedScore,
+      reason: `G-Eval ${dimension} score: ${avgScore.toFixed(2)} (normalized: ${normalizedScore.toFixed(2)})`,
+      tokensUsed: responses.reduce(
+        (acc, r) => ({
+          total: acc.total + (r.tokenUsage?.total || 0),
+          prompt: acc.prompt + (r.tokenUsage?.prompt || 0),
+          completion: acc.completion + (r.tokenUsage?.completion || 0),
+          cached: acc.cached + (r.tokenUsage?.cached || 0),
+        }),
+        {
+          total: 0,
+          prompt: 0,
+          completion: 0,
+          cached: 0,
+        },
+      ),
+    };
+  } catch (error: unknown) {
+    logger.error(`G-Eval error: ${error}`);
+    return {
+      pass: false,
+      score: 0,
+      reason: `G-Eval failed: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 }

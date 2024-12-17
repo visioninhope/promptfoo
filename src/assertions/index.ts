@@ -57,6 +57,7 @@ import { handleContextRelevance } from './contextRelevance';
 import { handleCost } from './cost';
 import { handleEquals } from './equals';
 import { handleFactuality } from './factuality';
+import { handleGEval } from './geval';
 import { handleJavascript } from './javascript';
 import { handleContainsJson, handleIsJson } from './json';
 import { handleLatency } from './latency';
@@ -122,7 +123,8 @@ export async function runAssertion({
   });
 
   if (assertion.transform) {
-    output = await transform(assertion.transform, output, {
+    const transformInput = typeof output === 'object' ? JSON.stringify(output) : output;
+    output = await transform(assertion.transform, transformInput, {
       vars: test.vars,
       prompt: { label: prompt },
     });
@@ -209,8 +211,8 @@ export async function runAssertion({
     inverse,
     latencyMs,
     logProbs,
-    output,
-    outputString: coerceString(output),
+    output: output ?? '',
+    outputString: coerceString(output ?? ''),
     prompt,
     provider,
     providerResponse,
@@ -261,6 +263,7 @@ export async function runAssertion({
     similar: handleSimilar,
     'starts-with': handleStartsWith,
     webhook: handleWebhook,
+    'g-eval': handleGEval,
   };
 
   const handler = assertionHandlers[baseType as keyof typeof assertionHandlers];
