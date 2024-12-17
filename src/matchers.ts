@@ -40,6 +40,32 @@ import { getNunjucksEngine } from './util/templates';
 
 const nunjucks = getNunjucksEngine(undefined, false, true);
 
+function generateCustomPrompt(criteria: string, steps?: string[]): string {
+  let prompt = `You will evaluate the following output.
+
+Evaluation Criteria:
+${criteria}
+
+`;
+
+  if (steps?.length) {
+    prompt += `Evaluation Steps:
+${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+
+`;
+  }
+
+  prompt += `Example:
+
+Output to evaluate:
+{{output}}
+
+Evaluation Form (scores ONLY):
+Score (0-1):`;
+
+  return prompt;
+}
+
 function cosineSimilarity(vecA: number[], vecB: number[]) {
   if (vecA.length !== vecB.length) {
     throw new Error('Vectors must be of equal length');
@@ -1002,44 +1028,52 @@ function parseGEvalScore(
   return score;
 }
 
-export async function matchesGEval(
-  dimension: keyof typeof GEVAL_PROMPTS,
-  source: string,
-  output: string,
-  n: number = 20,
-  grading?: GradingConfig,
-): Promise<Omit<GradingResult, 'assertion'>> {
+interface GEvalParams {
+  dimension: keyof typeof GEVAL_PROMPTS;
+  prompt: string;
+  output: string;
+  n?: number;
+  options?: GradingConfig;
+  criteria?: string;
+  evaluationSteps?: string[];
+  strictMode?: boolean;
+  verboseMode?: boolean;
+}
+
+export async function matchesGEval({
+  dimension,
+  prompt,
+  output,
+  n = 20,
+  options,
+  criteria,
+  evaluationSteps,
+  strictMode,
+  verboseMode,
+}: GEvalParams): Promise<Omit<GradingResult, 'assertion'>> {
   try {
     const provider = await getAndCheckProvider(
       'text',
-      grading?.provider,
+      options?.provider,
       (await getDefaultProviders()).gradingProvider,
       'g-eval check',
     );
 
-    // First, generate CoT
-    const basePrompt = GEVAL_PROMPTS[dimension].split('Evaluation Steps:')[0];
-    const cotResponse = await provider.callApi(basePrompt + '\nEvaluation Steps:');
-    const cot = cotResponse.output;
+    // Use custom criteria/steps if provided, otherwise use default prompts
+    let evalPrompt: string;
+    if (criteria) {
+      evalPrompt = generateCustomPrompt(criteria, evaluationSteps);
+    } else if (dimension in GEVAL_PROMPTS) {
+      evalPrompt = GEVAL_PROMPTS[dimension];
+    } else {
+      throw new Error(`Unknown dimension: ${dimension}`);
+    }
 
-    // Then use the complete prompt with generated CoT
-    const fullPrompt =
-      basePrompt +
-      '\nEvaluation Steps:\n' +
-      cot +
-      '\n\nExample:\n\nSource Text:\n' +
-      source +
-      '\n\nSummary:\n' +
-      output +
-      '\n\nEvaluation Form (scores ONLY):\n\n- ' +
-      dimension +
-      ':';
-
-    // Make n parallel calls to get multiple scores
+    // Make parallel calls and get scores
     const responses = await Promise.all(
       Array(n)
         .fill(0)
-        .map(() => provider.callApi(fullPrompt)),
+        .map(() => provider.callApi(evalPrompt)),
     );
 
     // Parse scores and average them
@@ -1089,7 +1123,7 @@ export async function matchesGEval(
         },
       ),
     };
-  } catch (error: unknown) {
+  } catch (error) {
     logger.error(`G-Eval error: ${error}`);
     return {
       pass: false,

@@ -455,6 +455,12 @@ export const AssertionSchema = z.object({
 
   // Process the output before running the assertion
   transform: z.string().optional(),
+
+  // Add new G-EVAL specific types
+  criteria: z.string().optional(),
+  evaluation_steps: z.array(z.string()).optional(),
+  strict_mode: z.boolean().optional(),
+  verbose_mode: z.boolean().optional(),
 });
 
 export type Assertion = z.infer<typeof AssertionSchema>;
