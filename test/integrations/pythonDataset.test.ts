@@ -20,7 +20,7 @@ describe('pythonDataset', () => {
       ];
       jest.mocked(runPython).mockResolvedValue(mockTestCases);
 
-      await fetchPythonDataset('python://dataset/test.py:custom_function?limit=10&filter=positive');
+      await fetchPythonDataset('python://test.py:custom_function?limit=10&filter=positive');
 
       expect(runPython).toHaveBeenCalledWith('test.py', 'custom_function', [
         { limit: '10', filter: 'positive' },
@@ -36,7 +36,7 @@ describe('pythonDataset', () => {
       ];
       jest.mocked(runPython).mockResolvedValue(mockTestCases);
 
-      await fetchPythonDataset('python://dataset/test.py');
+      await fetchPythonDataset('python://test.py');
 
       expect(runPython).toHaveBeenCalledWith('test.py', 'get_test_cases', [{}]);
     });
@@ -50,7 +50,7 @@ describe('pythonDataset', () => {
       ];
       jest.mocked(runPython).mockResolvedValue(mockTestCases);
 
-      const result = await fetchPythonDataset('python://dataset/test.py');
+      const result = await fetchPythonDataset('python://test.py');
 
       expect(result).toEqual(mockTestCases);
     });
@@ -64,7 +64,7 @@ describe('pythonDataset', () => {
       ];
       jest.mocked(runPython).mockResolvedValue({ test_cases: mockTestCases });
 
-      const result = await fetchPythonDataset('python://dataset/test.py');
+      const result = await fetchPythonDataset('python://test.py');
 
       expect(result).toEqual(mockTestCases);
     });
@@ -72,7 +72,7 @@ describe('pythonDataset', () => {
     it('should throw error for invalid response format', async () => {
       jest.mocked(runPython).mockResolvedValue({ invalid: 'format' });
 
-      await expect(fetchPythonDataset('python://dataset/test.py')).rejects.toThrow(
+      await expect(fetchPythonDataset('python://test.py')).rejects.toThrow(
         'Python function must return an array of test cases or an object with test_cases property',
       );
     });
@@ -80,7 +80,7 @@ describe('pythonDataset', () => {
     it('should handle Python execution errors', async () => {
       jest.mocked(runPython).mockRejectedValue(new Error('Python error'));
 
-      await expect(fetchPythonDataset('python://dataset/test.py')).rejects.toThrow(
+      await expect(fetchPythonDataset('python://test.py')).rejects.toThrow(
         '[Python Dataset] Failed to load dataset: Python error',
       );
     });

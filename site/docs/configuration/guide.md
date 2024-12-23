@@ -138,7 +138,7 @@ tests:
       var2: bar
 
   # Load from a Python script that returns test cases
-  - python://dataset/my_dataset.py:get_test_cases?limit=100
+  - python://my_dataset.py:get_test_cases?limit=100
 ```
 
 A single string is also valid:
@@ -221,14 +221,14 @@ Use it in your config:
 ```yaml
 tests:
   # Basic usage
-  - python://dataset/my_dataset.py
+  - python://my_dataset.py
 
   # Specify function name and parameters
-  - python://dataset/my_dataset.py:get_test_cases?limit=10&filter=positive
+  - python://my_dataset.py:get_test_cases?limit=10&filter=positive
 
   # Mix with other test sources
   - file://tests/manual_cases.yaml
-  - python://dataset/another_dataset.py
+  - python://another_dataset.py
 ```
 
 The Python script should:

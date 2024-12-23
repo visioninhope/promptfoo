@@ -44,10 +44,10 @@ The config shows different ways to use the dataset:
 
 ```yaml
 # Load first 10 test cases
-- python://dataset/sentiment_dataset.py:get_test_cases?limit=10
+- python://sentiment_dataset.py:get_test_cases?limit=10
 
 # Load only positive examples
-- python://dataset/sentiment_dataset.py:get_test_cases?sentiment=positive&limit=5
+- python://sentiment_dataset.py:get_test_cases?sentiment=positive&limit=5
 ```
 
 ## Customization

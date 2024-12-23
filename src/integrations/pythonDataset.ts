@@ -11,8 +11,8 @@ function parsePythonDatasetPath(
   functionName: string;
   queryParams: URLSearchParams;
 } {
-  // Remove the python://dataset/ prefix and split into path and query
-  const [pathPart, queryPart] = datasetPath.replace('python://dataset/', '').split('?');
+  // Remove the python:// prefix and split into path and query
+  const [pathPart, queryPart] = datasetPath.replace('python://', '').split('?');
   const [scriptPath, functionName = 'get_test_cases'] = pathPart.split(':');
 
   // Parse query parameters

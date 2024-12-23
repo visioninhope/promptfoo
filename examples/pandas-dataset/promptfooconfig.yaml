@@ -20,13 +20,13 @@ providers:
 # Different ways to load test cases
 tests:
   # Basic usage - load first 5 test cases with sampling
-  - python://dataset/sentiment_dataset.py:get_test_cases?limit=5&sample=100
+  - python://sentiment_dataset.py:get_test_cases?limit=5&sample=100
 
   # Load only positive sentiment examples
-  - python://dataset/sentiment_dataset.py:get_test_cases?sentiment=positive&limit=3&sample=50
+  - python://sentiment_dataset.py:get_test_cases?sentiment=positive&limit=3&sample=50
 
   # Load only negative sentiment examples
-  - python://dataset/sentiment_dataset.py:get_test_cases?sentiment=negative&limit=3&sample=50
+  - python://sentiment_dataset.py:get_test_cases?sentiment=negative&limit=3&sample=50
 
 defaultTest:
   options:

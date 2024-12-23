@@ -841,10 +841,10 @@ describe('readTests with Python dataset', () => {
     ).fetchPythonDataset;
     mockFetchPythonDataset.mockResolvedValue(mockTestCases);
 
-    const result = await readTests('python://dataset/sentiment_dataset.py:get_test_cases?limit=10');
+    const result = await readTests('python://sentiment_dataset.py:get_test_cases?limit=10');
 
     expect(mockFetchPythonDataset).toHaveBeenCalledWith(
-      'python://dataset/sentiment_dataset.py:get_test_cases?limit=10',
+      'python://sentiment_dataset.py:get_test_cases?limit=10',
     );
     expect(result).toEqual(mockTestCases);
   });
@@ -855,7 +855,7 @@ describe('readTests with Python dataset', () => {
     ).fetchPythonDataset;
     mockFetchPythonDataset.mockRejectedValue(new Error('Failed to load dataset'));
 
-    await expect(readTests('python://dataset/sentiment_dataset.py:get_test_cases')).rejects.toThrow(
+    await expect(readTests('python://sentiment_dataset.py:get_test_cases')).rejects.toThrow(
       'Failed to load dataset',
     );
   });

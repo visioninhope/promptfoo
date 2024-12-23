@@ -176,7 +176,7 @@ export async function readTests(
   const ret: TestCase[] = [];
 
   const loadTestsFromGlob = async (loadTestsGlob: string) => {
-    if (loadTestsGlob.startsWith('python://dataset/')) {
+    if (loadTestsGlob.startsWith('python://')) {
       telemetry.recordAndSendOnce('feature_used', {
         feature: 'python dataset',
       });
