@@ -56,6 +56,11 @@ jest.mock('../src/envars', () => ({
   getEnvString: jest.fn().mockImplementation((key, defaultValue) => defaultValue),
 }));
 
+// Mock the Python dataset integration
+jest.mock('../src/integrations/pythonDataset', () => ({
+  fetchPythonDataset: jest.fn(),
+}));
+
 describe('readStandaloneTestsFile', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -811,5 +816,47 @@ describe('testCasesPrompt', () => {
 
       Your response should contain a JSON map of variable names to values, of the form {vars: {country: string, city: string}[]}
     `);
+  });
+});
+
+describe('readTests with Python dataset', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should load test cases from a Python dataset', async () => {
+    const mockTestCases = [
+      {
+        vars: { text: 'I love this product!', sentiment: 'positive' },
+        assert: [{ type: 'equals', value: 'positive' }],
+      },
+      {
+        vars: { text: 'This is terrible.', sentiment: 'negative' },
+        assert: [{ type: 'equals', value: 'negative' }],
+      },
+    ];
+
+    const mockFetchPythonDataset = jest.requireMock(
+      '../src/integrations/pythonDataset',
+    ).fetchPythonDataset;
+    mockFetchPythonDataset.mockResolvedValue(mockTestCases);
+
+    const result = await readTests('python://dataset/sentiment_dataset.py:get_test_cases?limit=10');
+
+    expect(mockFetchPythonDataset).toHaveBeenCalledWith(
+      'python://dataset/sentiment_dataset.py:get_test_cases?limit=10',
+    );
+    expect(result).toEqual(mockTestCases);
+  });
+
+  it('should handle errors from Python dataset', async () => {
+    const mockFetchPythonDataset = jest.requireMock(
+      '../src/integrations/pythonDataset',
+    ).fetchPythonDataset;
+    mockFetchPythonDataset.mockRejectedValue(new Error('Failed to load dataset'));
+
+    await expect(readTests('python://dataset/sentiment_dataset.py:get_test_cases')).rejects.toThrow(
+      'Failed to load dataset',
+    );
   });
 });

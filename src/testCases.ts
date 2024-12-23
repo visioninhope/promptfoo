@@ -11,6 +11,7 @@ import { testCaseFromCsvRow } from './csv';
 import { getEnvBool, getEnvString } from './envars';
 import { fetchCsvFromGoogleSheet } from './googleSheets';
 import { fetchHuggingFaceDataset } from './integrations/huggingfaceDatasets';
+import { fetchPythonDataset } from './integrations/pythonDataset';
 import logger from './logger';
 import { loadApiProvider } from './providers';
 import { getDefaultProviders } from './providers/defaults';
@@ -175,6 +176,13 @@ export async function readTests(
   const ret: TestCase[] = [];
 
   const loadTestsFromGlob = async (loadTestsGlob: string) => {
+    if (loadTestsGlob.startsWith('python://dataset/')) {
+      telemetry.recordAndSendOnce('feature_used', {
+        feature: 'python dataset',
+      });
+      return await fetchPythonDataset(loadTestsGlob, undefined, basePath);
+    }
+
     if (loadTestsGlob.startsWith('huggingface://datasets/')) {
       telemetry.recordAndSendOnce('feature_used', {
         feature: 'huggingface dataset',

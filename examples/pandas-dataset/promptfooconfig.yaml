@@ -1,0 +1,40 @@
+description: 'Twitter Sentiment Analysis Dataset Example'
+
+prompts:
+  - id: basic
+    raw: 'Classify the sentiment of this tweet as exactly "positive" or "negative": {{text}}'
+  - id: detailed
+    raw: |
+      Analyze the sentiment of this tweet and explain your reasoning.
+      Tweet: {{text}}
+
+      Respond in this JSON format:
+      {
+        "sentiment": "positive|negative",
+        "explanation": "your reasoning here"
+      }
+
+providers:
+  - openai:gpt-4o-mini
+
+# Different ways to load test cases
+tests:
+  # Basic usage - load first 5 test cases with sampling
+  - python://dataset/sentiment_dataset.py:get_test_cases?limit=5&sample=100
+
+  # Load only positive sentiment examples
+  - python://dataset/sentiment_dataset.py:get_test_cases?sentiment=positive&limit=3&sample=50
+
+  # Load only negative sentiment examples
+  - python://dataset/sentiment_dataset.py:get_test_cases?sentiment=negative&limit=3&sample=50
+
+defaultTest:
+  options:
+    # Extract just the sentiment from JSON responses for the detailed prompt
+    transform: |
+      try {
+        const json = JSON.parse(output);
+        return json.sentiment;
+      } catch (e) {
+        return output;
+      }

@@ -136,6 +136,9 @@ tests:
   - vars:
       var1: foo
       var2: bar
+
+  # Load from a Python script that returns test cases
+  - python://dataset/my_dataset.py:get_test_cases?limit=100
 ```
 
 A single string is also valid:
@@ -152,6 +155,87 @@ tests:
   - 'tests/creativity'
   - 'tests/hallucination'
 ```
+
+### Load from Python/Pandas
+
+You can load test cases directly from a Python script, which is useful for:
+
+- Loading from pandas DataFrames
+- Fetching from databases
+- Complex data transformations
+- Dynamic test case generation
+
+Example Python script:
+
+```python
+import pandas as pd
+
+def get_test_cases(args=None):
+    """
+    Load test cases from a pandas DataFrame.
+    Args:
+        args: Dictionary containing parameters like:
+            - limit: number of test cases to return
+            - filter: custom filter criteria
+    Returns:
+        Dictionary containing test cases in promptfoo format
+    """
+    # Create or load your DataFrame
+    df = pd.DataFrame({
+        'text': ['I love this!', 'This is terrible'],
+        'sentiment': ['positive', 'negative']
+    })
+
+    # Apply filters if specified
+    if args and 'filter' in args:
+        df = df[df['sentiment'] == args['filter']]
+
+    # Apply limit if specified
+    if args and 'limit' in args:
+        df = df.head(int(args['limit']))
+
+    # Convert DataFrame to promptfoo test cases
+    test_cases = [
+        {
+            'vars': {
+                'text': row['text'],
+            },
+            'assert': [
+                {
+                    'type': 'equals',
+                    'value': row['sentiment']
+                }
+            ]
+        }
+        for _, row in df.iterrows()
+    ]
+
+    return {
+        'type': 'final_result',
+        'data': test_cases
+    }
+```
+
+Use it in your config:
+
+```yaml
+tests:
+  # Basic usage
+  - python://dataset/my_dataset.py
+
+  # Specify function name and parameters
+  - python://dataset/my_dataset.py:get_test_cases?limit=10&filter=positive
+
+  # Mix with other test sources
+  - file://tests/manual_cases.yaml
+  - python://dataset/another_dataset.py
+```
+
+The Python script should:
+
+1. Accept an optional `args` parameter containing query parameters
+2. Return test cases in promptfoo format
+3. Support common parameters like `limit`
 
 :::tip
 We also support CSV datasets from [local file](/docs/configuration/parameters/#import-from-csv) and [Google Sheets](/docs/integrations/google-sheets).
