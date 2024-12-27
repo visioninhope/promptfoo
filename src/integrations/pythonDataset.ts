@@ -1,64 +1,89 @@
 import path from 'path';
+import cliState from '../cliState';
 import logger from '../logger';
 import { runPython } from '../python/pythonUtils';
 import type { TestCase } from '../types';
 
-function parsePythonDatasetPath(
-  datasetPath: string,
-  configDir?: string,
-): {
+interface PythonDatasetConfig {
+  scriptPath: string;
+  functionName?: string;
+  [key: string]: any;
+}
+
+function resolvePythonPath(scriptPath: string, configDir?: string): string {
+  // First try configDir if provided
+  if (configDir) {
+    return path.resolve(configDir, scriptPath);
+  }
+  // Then try cliState.basePath
+  if (cliState.basePath) {
+    return path.resolve(cliState.basePath, scriptPath);
+  }
+  // Finally use scriptPath as-is
+  return scriptPath;
+}
+
+export function parsePythonDatasetPath(datasetPath: string): {
   scriptPath: string;
   functionName: string;
-  queryParams: URLSearchParams;
 } {
-  // Remove the python:// prefix and split into path and query
-  const [pathPart, queryPart] = datasetPath.replace('python://', '').split('?');
+  const pathPart = datasetPath.replace('python://', '');
   const [scriptPath, functionName = 'get_test_cases'] = pathPart.split(':');
+  return { scriptPath, functionName };
+}
 
-  // Parse query parameters
-  const queryParams = new URLSearchParams(queryPart || '');
+function validateAndCoerceTestCases(testCases: TestCase[]): TestCase[] {
+  return testCases.map((testCase) => {
+    // Ensure vars is an object
+    if (!testCase.vars || typeof testCase.vars !== 'object') {
+      testCase.vars = {};
+    }
 
-  // Resolve script path relative to config directory if provided
-  const resolvedScriptPath = configDir ? path.resolve(configDir, scriptPath) : scriptPath;
+    // Ensure assert is an array
+    if (!Array.isArray(testCase.assert)) {
+      testCase.assert = [];
+    }
 
-  return { scriptPath: resolvedScriptPath, functionName, queryParams };
+    return testCase;
+  });
+}
+
+async function loadPythonTestCases(
+  scriptPath: string,
+  functionName: string,
+  config: Record<string, any>,
+): Promise<TestCase[]> {
+  const result = await runPython(scriptPath, functionName, [config]);
+
+  let testCases: TestCase[];
+  if (Array.isArray(result)) {
+    testCases = result;
+  } else if (result.test_cases) {
+    testCases = result.test_cases;
+  } else {
+    throw new Error(
+      'Python function must return an array of test cases or an object with test_cases property',
+    );
+  }
+
+  testCases = validateAndCoerceTestCases(testCases);
+  logger.debug(`[Python Dataset] Successfully loaded ${testCases.length} test cases`);
+  return testCases;
 }
 
 export async function fetchPythonDataset(
-  datasetPath: string,
-  limit?: number,
+  config: PythonDatasetConfig,
   configDir?: string,
 ): Promise<TestCase[]> {
-  const { scriptPath, functionName, queryParams } = parsePythonDatasetPath(datasetPath, configDir);
+  const { scriptPath, functionName = 'get_test_cases', ...otherConfig } = config;
+  const resolvedScriptPath = resolvePythonPath(scriptPath, configDir);
 
   logger.info(
-    `[Python Dataset] Loading dataset from ${scriptPath} using function ${functionName}...`,
+    `[Python Dataset] Loading dataset from ${resolvedScriptPath} using function ${functionName}...`,
   );
 
   try {
-    // Convert query parameters to args object
-    const args: Record<string, string> = Object.fromEntries(queryParams.entries());
-    if (limit) {
-      args.limit = limit.toString();
-    }
-
-    // Use runPython utility to execute the Python function
-    const result = await runPython(scriptPath, functionName, [args]);
-
-    // Normalize the result into test cases
-    let testCases: TestCase[];
-    if (Array.isArray(result)) {
-      testCases = result;
-    } else if (result.test_cases) {
-      testCases = result.test_cases;
-    } else {
-      throw new Error(
-        'Python function must return an array of test cases or an object with test_cases property',
-      );
-    }
-
-    logger.debug(`[Python Dataset] Successfully loaded ${testCases.length} test cases`);
-    return testCases;
+    return await loadPythonTestCases(resolvedScriptPath, functionName, otherConfig);
   } catch (err) {
     const error = `[Python Dataset] Failed to load dataset: ${err}`;
     logger.error(error);

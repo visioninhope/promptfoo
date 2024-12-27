@@ -57,9 +57,18 @@ jest.mock('../src/envars', () => ({
 }));
 
 // Mock the Python dataset integration
-jest.mock('../src/integrations/pythonDataset', () => ({
-  fetchPythonDataset: jest.fn(),
-}));
+jest.mock('../src/integrations/pythonDataset', () => {
+  const originalModule = jest.requireActual('../src/integrations/pythonDataset');
+  return {
+    ...originalModule,
+    fetchPythonDataset: jest.fn(),
+    parsePythonDatasetPath: jest.fn().mockImplementation((path) => {
+      const pathPart = path.replace('python://', '');
+      const [scriptPath, functionName = 'get_test_cases'] = pathPart.split(':');
+      return { scriptPath, functionName };
+    }),
+  };
+});
 
 describe('readStandaloneTestsFile', () => {
   beforeEach(() => {
@@ -836,27 +845,42 @@ describe('readTests with Python dataset', () => {
       },
     ];
 
-    const mockFetchPythonDataset = jest.requireMock(
-      '../src/integrations/pythonDataset',
-    ).fetchPythonDataset;
-    mockFetchPythonDataset.mockResolvedValue(mockTestCases);
+    const { fetchPythonDataset } = jest.requireMock('../src/integrations/pythonDataset');
+    fetchPythonDataset.mockResolvedValue(mockTestCases);
 
-    const result = await readTests('python://sentiment_dataset.py:get_test_cases?limit=10');
+    const result = await readTests(['python://sentiment_dataset.py:get_test_cases'], '/base/path');
 
-    expect(mockFetchPythonDataset).toHaveBeenCalledWith(
-      'python://sentiment_dataset.py:get_test_cases?limit=10',
+    expect(fetchPythonDataset).toHaveBeenCalledWith(
+      {
+        scriptPath: 'sentiment_dataset.py',
+        functionName: 'get_test_cases',
+      },
+      '/base/path',
     );
     expect(result).toEqual(mockTestCases);
   });
 
   it('should handle errors from Python dataset', async () => {
-    const mockFetchPythonDataset = jest.requireMock(
-      '../src/integrations/pythonDataset',
-    ).fetchPythonDataset;
-    mockFetchPythonDataset.mockRejectedValue(new Error('Failed to load dataset'));
+    const { fetchPythonDataset } = jest.requireMock('../src/integrations/pythonDataset');
+    fetchPythonDataset.mockRejectedValue(new Error('Failed to load dataset'));
 
-    await expect(readTests('python://sentiment_dataset.py:get_test_cases')).rejects.toThrow(
+    await expect(readTests(['python://sentiment_dataset.py:get_test_cases'])).rejects.toThrow(
       'Failed to load dataset',
+    );
+  });
+
+  it('should pass basePath to fetchPythonDataset', async () => {
+    const { fetchPythonDataset } = jest.requireMock('../src/integrations/pythonDataset');
+    fetchPythonDataset.mockResolvedValue([]);
+
+    await readTests(['python://sentiment_dataset.py'], '/custom/path');
+
+    expect(fetchPythonDataset).toHaveBeenCalledWith(
+      {
+        scriptPath: 'sentiment_dataset.py',
+        functionName: 'get_test_cases',
+      },
+      '/custom/path',
     );
   });
 });

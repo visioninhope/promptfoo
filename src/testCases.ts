@@ -180,7 +180,7 @@ export async function readTests(
       telemetry.recordAndSendOnce('feature_used', {
         feature: 'python dataset',
       });
-      return await fetchPythonDataset(loadTestsGlob, undefined, basePath);
+      return await fetchPythonDataset(loadTestsGlob, basePath);
     }
 
     if (loadTestsGlob.startsWith('huggingface://datasets/')) {

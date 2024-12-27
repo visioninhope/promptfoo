@@ -658,8 +658,34 @@ export const TestSuiteSchema = z.object({
   // all prompts are used for all providers.
   providerPromptMap: ProviderPromptMapSchema.optional(),
   // Test cases
-  tests: z.array(TestCaseSchema).optional(),
+  tests: z
+    .array(z.union([TestCaseSchema, z.string(), z.record(z.string(), z.string())]))
+    .optional()
+    .transform((value: (TestCase | string | Record<string, string>)[] | undefined): TestCase[] => {
+      if (!value) {
+        return [];
+      }
+      const testCases: TestCase[] = [];
 
+      const isExternalDataset = (value: string) =>
+        value.startsWith('file://') ||
+        value.startsWith('huggingface://') ||
+        value.startsWith('python://');
+
+      for (const item of value) {
+        if (typeof item === 'string' && isExternalDataset(item)) {
+          testCases.push(item as unknown as TestCase);
+        } else {
+          const testCase = TestCaseSchema.safeParse(item);
+          if (testCase.success) {
+            testCases.push(testCase.data);
+          } else {
+            throw new Error(`Invalid test case: ${item}`);
+          }
+        }
+      }
+      return testCases;
+    }),
   // scenarios
   scenarios: z.array(ScenarioSchema).optional(),
 
