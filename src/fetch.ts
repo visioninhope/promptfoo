@@ -127,51 +127,50 @@ export async function fetchWithRetries(
   retries: number = 4,
 ): Promise<Response> {
   const maxRetries = Math.max(0, retries);
+  const baseBackoff = getEnvInt('PROMPTFOO_REQUEST_BACKOFF_MS', 5000);
+  const maxBackoff = 60_000; // Cap at 1 minute
+  let attempt = 0;
 
-  let lastError;
-  const backoff = getEnvInt('PROMPTFOO_REQUEST_BACKOFF_MS', 5000);
-
-  for (let i = 0; i <= maxRetries; i++) {
-    let response;
+  while (true) {
     try {
-      response = await fetchWithTimeout(url, options, timeout);
-
-      if (getEnvBool('PROMPTFOO_RETRY_5XX') && response.status >= 500 && response.status < 600) {
-        throw new Error(`Internal Server Error: ${response.status} ${response.statusText}`);
-      }
+      const response = await fetchWithTimeout(url, options, timeout);
 
       if (response && isRateLimited(response)) {
         logger.debug(
-          `Rate limited on URL ${url}: ${response.status} ${response.statusText}, waiting before retry ${i + 1}/${maxRetries}`,
+          `Rate limited on URL ${url}: ${response.status} ${response.statusText}, waiting before retry ${attempt + 1}/${maxRetries}`,
         );
+        if (attempt >= maxRetries) {
+          return response;
+        }
         await handleRateLimit(response);
+        attempt++;
         continue;
+      }
+
+      if (!response.ok) {
+        if (getEnvBool('PROMPTFOO_RETRY_5XX') && response.status >= 500 && response.status < 600) {
+          throw new Error(`Internal Server Error: ${response.status} ${response.statusText}`);
+        }
+
+        if (response.status >= 400 && response.status < 500) {
+          return response;
+        }
       }
 
       return response;
     } catch (error) {
-      let errorMessage;
-      if (error instanceof Error) {
-        // Extract as much detail as possible from the error
-        errorMessage = `${error.name}: ${error.message}`;
-        if ('cause' in error) {
-          errorMessage += ` (Cause: ${error.cause})`;
-        }
-        if ('code' in error) {
-          // Node.js system errors often have error codes
-          errorMessage += ` (Code: ${error.code})`;
-        }
-      } else {
-        errorMessage = String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.debug(`Request to ${url} failed (attempt ${attempt + 1}): ${errorMessage}`);
+
+      if (attempt >= maxRetries) {
+        throw new Error(`Request failed after ${attempt + 1} attempts: ${errorMessage}`);
       }
 
-      logger.debug(`Request to ${url} failed (attempt #${i + 1}), retrying: ${errorMessage}`);
-      if (i < maxRetries) {
-        const waitTime = Math.pow(2, i) * (backoff + 1000 * Math.random());
-        await sleep(waitTime);
-      }
-      lastError = error;
+      // Standard exponential backoff with jitter, capped at maxBackoff
+      const exponentialPart = baseBackoff * Math.pow(2, attempt);
+      const waitTime = Math.min(exponentialPart + Math.random() * 1000, maxBackoff);
+      await sleep(waitTime);
+      attempt++;
     }
   }
-  throw new Error(`Request failed after ${maxRetries} retries: ${(lastError as Error).message}`);
 }

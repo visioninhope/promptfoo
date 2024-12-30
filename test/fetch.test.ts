@@ -1,6 +1,6 @@
 import { ProxyAgent } from 'proxy-agent';
 import { VERSION } from '../src/constants';
-import { getEnvBool } from '../src/envars';
+import { getEnvBool, getEnvInt } from '../src/envars';
 import {
   fetchWithProxy,
   fetchWithRetries,
@@ -20,7 +20,7 @@ jest.mock('proxy-agent');
 jest.mock('../src/logger');
 jest.mock('../src/envars', () => ({
   ...jest.requireActual('../src/envars'),
-  getEnvInt: jest.fn().mockReturnValue(100),
+  getEnvInt: jest.fn(),
   getEnvBool: jest.fn().mockReturnValue(false),
 }));
 
@@ -342,10 +342,20 @@ describe('handleRateLimit', () => {
 });
 
 describe('fetchWithRetries', () => {
+  beforeAll(() => {
+    jest.mocked(getEnvInt).mockReturnValue(5000);
+  });
+
   beforeEach(() => {
     jest.mocked(sleep).mockClear();
     jest.spyOn(global, 'fetch').mockImplementation();
     jest.clearAllMocks();
+    jest.mocked(getEnvInt).mockClear();
+    jest.mocked(getEnvInt).mockReturnValue(5000);
+  });
+
+  afterAll(() => {
+    jest.mocked(getEnvInt).mockReset();
   });
 
   it('should make exactly one attempt when retries is 0', async () => {
@@ -355,7 +365,7 @@ describe('fetchWithRetries', () => {
     await fetchWithRetries('https://example.com', {}, 1000, 0);
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(sleep).not.toHaveBeenCalled(); // Should not sleep when retries=0
+    expect(sleep).not.toHaveBeenCalled();
   });
 
   it('should handle negative retry values by treating them as 0', async () => {
@@ -372,22 +382,22 @@ describe('fetchWithRetries', () => {
     jest.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
 
     await expect(fetchWithRetries('https://example.com', {}, 1000, 2)).rejects.toThrow(
-      'Request failed after 2 retries: Network error',
+      'Request failed after 3 attempts: Network error',
     );
 
-    expect(global.fetch).toHaveBeenCalledTimes(3); // Initial attempt + 2 retries
-    expect(sleep).toHaveBeenCalledTimes(2); // Should sleep between attempts, but not after last attempt
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
   });
 
   it('should not sleep after the final attempt', async () => {
     jest.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
 
     await expect(fetchWithRetries('https://example.com', {}, 1000, 1)).rejects.toThrow(
-      'Request failed after 1 retries: Network error',
+      'Request failed after 2 attempts: Network error',
     );
 
-    expect(global.fetch).toHaveBeenCalledTimes(2); // Initial attempt + 1 retry
-    expect(sleep).toHaveBeenCalledTimes(1); // Should only sleep once between attempts
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
   });
 
   it('should handle 5XX errors when PROMPTFOO_RETRY_5XX is true', async () => {
@@ -396,6 +406,7 @@ describe('fetchWithRetries', () => {
     const errorResponse = createMockResponse({
       status: 502,
       statusText: 'Bad Gateway',
+      ok: false,
     });
     const successResponse = createMockResponse();
 
@@ -408,6 +419,23 @@ describe('fetchWithRetries', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not retry 5XX errors when PROMPTFOO_RETRY_5XX is false', async () => {
+    jest.mocked(getEnvBool).mockReturnValueOnce(false);
+
+    const errorResponse = createMockResponse({
+      status: 502,
+      statusText: 'Bad Gateway',
+      ok: false,
+    });
+
+    jest.mocked(global.fetch).mockResolvedValueOnce(errorResponse);
+
+    const response = await fetchWithRetries('https://example.com', {}, 1000, 2);
+    expect(response).toBe(errorResponse);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
   });
 
   it('should handle rate limits with proper backoff', async () => {
@@ -431,14 +459,119 @@ describe('fetchWithRetries', () => {
     expect(sleep).toHaveBeenCalledTimes(1);
   });
 
-  it('should respect maximum retry count', async () => {
-    jest.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
+  it('should immediately return 4xx errors (except rate limits)', async () => {
+    const clientErrorResponse = createMockResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      ok: false,
+    });
 
-    await expect(fetchWithRetries('https://example.com', {}, 1000, 2)).rejects.toThrow(
-      'Request failed after 2 retries: Network error',
+    jest.mocked(global.fetch).mockResolvedValueOnce(clientErrorResponse);
+
+    const response = await fetchWithRetries('https://example.com', {}, 1000, 2);
+    expect(response).toBe(clientErrorResponse);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it('should respect maximum retry count even with rate limits', async () => {
+    const rateLimitedResponse = createMockResponse({
+      status: 429,
+      headers: new Headers({
+        'Retry-After': '1',
+      }),
+    });
+
+    jest.mocked(global.fetch).mockResolvedValue(rateLimitedResponse);
+    jest.mocked(sleep).mockResolvedValue(undefined);
+
+    const result = await fetchWithRetries('https://example.com', {}, 1000, 1);
+    expect(result).toBe(rateLimitedResponse);
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle non-Error objects thrown', async () => {
+    // Some APIs might throw non-Error objects
+    jest.mocked(global.fetch).mockRejectedValue('API Error String');
+
+    await expect(fetchWithRetries('https://example.com', {}, 1000, 1)).rejects.toThrow(
+      'Request failed after 2 attempts: API Error String',
     );
 
-    expect(global.fetch).toHaveBeenCalledTimes(3); // Initial attempt + 2 retries
-    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle undefined errors', async () => {
+    // In some rare cases, undefined might be thrown
+    jest.mocked(global.fetch).mockRejectedValue(undefined);
+
+    await expect(fetchWithRetries('https://example.com', {}, 1000, 1)).rejects.toThrow(
+      'Request failed after 2 attempts: undefined',
+    );
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle object errors', async () => {
+    const errorObj = { code: 'CUSTOM_ERROR', message: 'Custom error' };
+    jest.mocked(global.fetch).mockRejectedValue(errorObj);
+
+    await expect(fetchWithRetries('https://example.com', {}, 1000, 1)).rejects.toThrow(
+      'Request failed after 2 attempts: [object Object]',
+    );
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it('should use exponential backoff with jitter', async () => {
+    jest.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
+    const sleepCalls: number[] = [];
+    jest.mocked(sleep).mockImplementation(async (ms) => {
+      sleepCalls.push(ms);
+    });
+
+    await expect(fetchWithRetries('https://example.com', {}, 1000, 2)).rejects.toThrow(
+      'Request failed after 3 attempts: Network error',
+    );
+
+    expect(sleepCalls).toHaveLength(2);
+
+    // First retry: baseBackoff * 2^0 + jitter = 5000 * 1 + jitter
+    expect(sleepCalls[0]).toBeGreaterThanOrEqual(5000);
+    expect(sleepCalls[0]).toBeLessThanOrEqual(6000);
+
+    // Second retry: baseBackoff * 2^1 + jitter = 5000 * 2 + jitter
+    expect(sleepCalls[1]).toBeGreaterThanOrEqual(10000);
+    expect(sleepCalls[1]).toBeLessThanOrEqual(11000);
+  });
+
+  it('should cap exponential backoff at maximum value', async () => {
+    jest.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
+    const sleepCalls: number[] = [];
+    jest.mocked(sleep).mockImplementation(async (ms) => {
+      sleepCalls.push(ms);
+    });
+
+    // Use more retries to test the cap
+    await expect(fetchWithRetries('https://example.com', {}, 1000, 5)).rejects.toThrow(
+      'Request failed after 6 attempts: Network error',
+    );
+
+    expect(sleepCalls).toHaveLength(5);
+
+    // First few retries should follow exponential pattern
+    expect(sleepCalls[0]).toBeGreaterThanOrEqual(5000);
+    expect(sleepCalls[0]).toBeLessThanOrEqual(6000);
+
+    expect(sleepCalls[1]).toBeGreaterThanOrEqual(10000);
+    expect(sleepCalls[1]).toBeLessThanOrEqual(11000);
+
+    // Later retries should be capped at maxBackoff (60000ms)
+    expect(sleepCalls[4]).toBeLessThanOrEqual(60000);
   });
 });
