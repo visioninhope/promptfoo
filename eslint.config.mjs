@@ -63,6 +63,7 @@ export default [
       curly: 'error',
       'no-case-declarations': 0,
       'no-control-regex': 0,
+      'no-duplicate-imports': 'error',
       'no-empty': 0,
       'no-unused-expressions': 'error',
       'no-useless-escape': 0,

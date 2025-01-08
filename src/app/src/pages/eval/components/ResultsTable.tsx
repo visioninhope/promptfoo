@@ -38,10 +38,8 @@ import CustomMetrics from './CustomMetrics';
 import EvalOutputCell from './EvalOutputCell';
 import EvalOutputPromptDialog from './EvalOutputPromptDialog';
 import GenerateTestCases from './GenerateTestCases';
-import type { TruncatedTextProps } from './TruncatedText';
-import TruncatedText from './TruncatedText';
-import { useStore as useMainStore } from './store';
-import { useStore as useResultsViewStore } from './store';
+import TruncatedText, { type TruncatedTextProps } from './TruncatedText';
+import { useStore as useMainStore, useStore as useResultsViewStore } from './store';
 import './ResultsTable.css';
 
 function formatRowOutput(output: EvaluateTableOutput | string) {

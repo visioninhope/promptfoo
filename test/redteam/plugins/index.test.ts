@@ -1,15 +1,14 @@
-import type { FetchWithCacheResult } from '../../../src/cache';
-import { fetchWithCache } from '../../../src/cache';
+import type { ApiProvider } from '../../../src/types';
+import { type FetchWithCacheResult, fetchWithCache } from '../../../src/cache';
 import { VERSION } from '../../../src/constants';
 import logger from '../../../src/logger';
 import {
+  PII_PLUGINS,
   REDTEAM_PROVIDER_HARM_PLUGINS,
   UNALIGNED_PROVIDER_HARM_PLUGINS,
-  PII_PLUGINS,
 } from '../../../src/redteam/constants';
 import { Plugins } from '../../../src/redteam/plugins';
-import { shouldGenerateRemote, neverGenerateRemote } from '../../../src/redteam/remoteGeneration';
-import type { ApiProvider } from '../../../src/types';
+import { neverGenerateRemote, shouldGenerateRemote } from '../../../src/redteam/remoteGeneration';
 
 jest.mock('../../../src/cache');
 jest.mock('../../../src/logger');

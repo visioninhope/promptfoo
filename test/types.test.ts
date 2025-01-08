@@ -3,14 +3,14 @@ import { globSync } from 'glob';
 import yaml from 'js-yaml';
 import path from 'path';
 import { z } from 'zod';
-import type { TestSuite } from '../src/types';
 import {
+  type TestSuite,
   AssertionSchema,
   BaseAssertionTypesSchema,
   isGradingResult,
-  VarsSchema,
   TestSuiteConfigSchema,
   TestSuiteSchema,
+  VarsSchema,
 } from '../src/types';
 
 describe('AssertionSchema', () => {

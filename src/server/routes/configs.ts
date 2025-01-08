@@ -1,6 +1,5 @@
 import { eq, and } from 'drizzle-orm';
-import { Router } from 'express';
-import type { Request, Response } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '../../database';
 import { configsTable } from '../../database/tables';
