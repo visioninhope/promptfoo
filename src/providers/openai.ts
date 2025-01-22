@@ -768,19 +768,7 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
       model: this.modelName,
       messages,
       seed: config.seed,
-      ...(maxTokens ? { max_tokens: maxTokens } : {}),
-      ...(maxCompletionTokens ? { max_completion_tokens: maxCompletionTokens } : {}),
-      ...(temperature ? { temperature } : {}),
-      ...(config.top_p !== undefined || process.env.OPENAI_TOP_P
-        ? { top_p: config.top_p ?? Number.parseFloat(process.env.OPENAI_TOP_P || '1') }
-        : {}),
-      ...(config.presence_penalty !== undefined || process.env.OPENAI_PRESENCE_PENALTY
-        ? {
-            presence_penalty:
-              config.presence_penalty ??
-              Number.parseFloat(process.env.OPENAI_PRESENCE_PENALTY || '0'),
-          }
-        : {}),
+      ...(config.audio ? { audio: config.audio } : {}),
       ...(config.frequency_penalty !== undefined || process.env.OPENAI_FREQUENCY_PENALTY
         ? {
             frequency_penalty:
@@ -788,6 +776,7 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
               Number.parseFloat(process.env.OPENAI_FREQUENCY_PENALTY || '0'),
           }
         : {}),
+      ...(config.function_call ? { function_call: config.function_call } : {}),
       ...(config.functions
         ? {
             functions: maybeLoadFromExternalFile(
@@ -795,12 +784,28 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
             ),
           }
         : {}),
-      ...(config.function_call ? { function_call: config.function_call } : {}),
-      ...(config.tools
-        ? { tools: maybeLoadFromExternalFile(renderVarsInObject(config.tools, context?.vars)) }
+      ...(callApiOptions?.includeLogProbs ? { logprobs: callApiOptions.includeLogProbs } : {}),
+      ...(config.logit_bias ? { logit_bias: config.logit_bias } : {}),
+      ...(config.logprobs ? { logprobs: config.logprobs } : {}),
+      ...(maxCompletionTokens ? { max_completion_tokens: maxCompletionTokens } : {}),
+      ...(maxTokens ? { max_tokens: maxTokens } : {}),
+      ...(config.metadata ? { metadata: config.metadata } : {}),
+      ...(config.modalities ? { modalities: config.modalities } : {}),
+      ...(config.n ? { n: config.n } : {}),
+      ...(config.name ? { name: config.name } : {}),
+      ...(config.parallel_tool_calls ? { parallel_tool_calls: config.parallel_tool_calls } : {}),
+      ...(config.passthrough || {}),
+      ...(isO1Model && config.prediction ? { prediction: config.prediction } : {}),
+      ...(config.presence_penalty !== undefined || process.env.OPENAI_PRESENCE_PENALTY
+        ? {
+            presence_penalty:
+              config.presence_penalty ??
+              Number.parseFloat(process.env.OPENAI_PRESENCE_PENALTY || '0'),
+          }
         : {}),
-      ...(config.tool_choice ? { tool_choice: config.tool_choice } : {}),
-      ...(config.tool_resources ? { tool_resources: config.tool_resources } : {}),
+      ...(isO1Model && config.reasoning_effort
+        ? { reasoning_effort: config.reasoning_effort }
+        : {}),
       ...(config.response_format
         ? {
             response_format: maybeLoadFromExternalFile(
@@ -808,27 +813,21 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
             ),
           }
         : {}),
-      ...(callApiOptions?.includeLogProbs ? { logprobs: callApiOptions.includeLogProbs } : {}),
-      ...(config.stop ? { stop: config.stop } : {}),
-      ...(config.passthrough || {}),
-      // Add o1 specific options
-      ...(isO1Model && config.prediction ? { prediction: config.prediction } : {}),
-      ...(isO1Model && config.reasoning_effort
-        ? { reasoning_effort: config.reasoning_effort }
-        : {}),
       ...(config.service_tier ? { service_tier: config.service_tier } : {}),
+      ...(config.stop ? { stop: config.stop } : {}),
       ...(config.store ? { store: config.store } : {}),
-      ...(config.name ? { name: config.name } : {}),
-      ...(config.logprobs ? { logprobs: config.logprobs } : {}),
-      ...(config.top_logprobs ? { top_logprobs: config.top_logprobs } : {}),
-      ...(config.logit_bias ? { logit_bias: config.logit_bias } : {}),
-      ...(config.n ? { n: config.n } : {}),
       ...(config.stream ? { stream: config.stream } : {}),
       ...(config.stream_options ? { stream_options: config.stream_options } : {}),
-      ...(config.metadata ? { metadata: config.metadata } : {}),
-      ...(config.modalities ? { modalities: config.modalities } : {}),
-      ...(config.audio ? { audio: config.audio } : {}),
-      ...(config.parallel_tool_calls ? { parallel_tool_calls: config.parallel_tool_calls } : {}),
+      ...(temperature ? { temperature } : {}),
+      ...(config.tool_choice ? { tool_choice: config.tool_choice } : {}),
+      ...(config.tool_resources ? { tool_resources: config.tool_resources } : {}),
+      ...(config.tools
+        ? { tools: maybeLoadFromExternalFile(renderVarsInObject(config.tools, context?.vars)) }
+        : {}),
+      ...(config.top_logprobs ? { top_logprobs: config.top_logprobs } : {}),
+      ...(config.top_p !== undefined || process.env.OPENAI_TOP_P
+        ? { top_p: config.top_p ?? Number.parseFloat(process.env.OPENAI_TOP_P || '1') }
+        : {}),
       ...(config.user ? { user: config.user } : {}),
     };
 
