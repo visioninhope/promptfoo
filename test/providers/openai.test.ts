@@ -1,16 +1,20 @@
 import OpenAI from 'openai';
-import { disableCache, fetchWithCache } from '../../src/cache';
+import { disableCache, fetchWithCache, clearCache } from '../../src/cache';
 import {
   failApiCall,
   getTokenUsage,
   OpenAiGenericProvider,
   OpenAiEmbeddingProvider,
+  OpenAiChatCompletionProvider,
   calculateOpenAICost,
 } from '../../src/providers/openai';
 
 jest.mock('../../src/cache');
 jest.mock('../../src/globalConfig/globalConfig');
 jest.mock('../../src/logger');
+
+const mockFetch = jest.mocked(jest.fn());
+global.fetch = mockFetch;
 
 describe('OpenAI Provider', () => {
   beforeEach(() => {
@@ -166,6 +170,215 @@ describe('OpenAI Provider', () => {
     it('should handle unknown models', () => {
       const cost = calculateOpenAICost('unknown-model', {}, 100, 50);
       expect(cost).toBeUndefined();
+    });
+  });
+
+  describe('call provider apis', () => {
+    afterEach(async () => {
+      jest.clearAllMocks();
+      await clearCache();
+    });
+
+    describe('OpenAiChatCompletionProvider with O1 models', () => {
+      it('should handle O1-specific configurations', async () => {
+        const mockResponse = {
+          data: {
+            choices: [{ message: { content: 'Test output' } }],
+            usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+          },
+          cached: false,
+          status: 200,
+          statusText: 'OK',
+        };
+        const fetchWithCacheMock = jest.mocked(fetchWithCache);
+        fetchWithCacheMock.mockResolvedValue(mockResponse);
+
+        const provider = new OpenAiChatCompletionProvider('o1-preview', {
+          config: {
+            developer_message: {
+              content: 'Follow these instructions carefully',
+              name: 'dev_assistant',
+            },
+            reasoning_effort: 'high',
+            max_completion_tokens: 100,
+            prediction: {
+              content: 'Expected output',
+              type: 'content',
+            },
+          },
+        });
+
+        await provider.callApi('Test prompt');
+
+        expect(fetchWithCacheMock).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.objectContaining({
+            body: expect.stringContaining('"reasoning_effort":"high"'),
+          }),
+          expect.any(Number),
+        );
+
+        const mockCalls = fetchWithCacheMock.mock.calls;
+        expect(mockCalls.length).toBeGreaterThan(0);
+        const firstCall = mockCalls[0] as [string, { body: string }, number];
+        const requestBody = JSON.parse(firstCall[1].body);
+        expect(requestBody.messages[0]).toEqual({
+          role: 'developer',
+          content: 'Follow these instructions carefully',
+          name: 'dev_assistant',
+        });
+        expect(requestBody.max_completion_tokens).toBe(100);
+        expect(requestBody.prediction).toEqual({
+          content: 'Expected output',
+          type: 'content',
+        });
+        // Verify temperature and max_tokens are not set for O1 models
+        expect(requestBody.temperature).toBeUndefined();
+        expect(requestBody.max_tokens).toBeUndefined();
+      });
+
+      it('should handle developer message with content array', async () => {
+        const mockResponse = {
+          data: {
+            choices: [{ message: { content: 'Test output' } }],
+            usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+          },
+          cached: false,
+          status: 200,
+          statusText: 'OK',
+        };
+        const fetchWithCacheMock = jest.mocked(fetchWithCache);
+        fetchWithCacheMock.mockResolvedValue(mockResponse);
+
+        const provider = new OpenAiChatCompletionProvider('o1-preview', {
+          config: {
+            developer_message: {
+              content: [{ text: 'Follow these instructions', type: 'text' }],
+            },
+          },
+        });
+
+        await provider.callApi('Test prompt');
+
+        const mockCalls = fetchWithCacheMock.mock.calls;
+        expect(mockCalls.length).toBeGreaterThan(0);
+        const firstCall = mockCalls[0] as [string, { body: string }, number];
+        const requestBody = JSON.parse(firstCall[1].body);
+        expect(requestBody.messages[0]).toEqual({
+          role: 'developer',
+          content: 'Follow these instructions',
+        });
+      });
+    });
+
+    describe('OpenAiChatCompletionProvider with new configuration options', () => {
+      it('should handle streaming configuration', async () => {
+        const mockResponse = {
+          data: {
+            choices: [{ message: { content: 'Test output' } }],
+            usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+          },
+          cached: false,
+          status: 200,
+          statusText: 'OK',
+        };
+        const fetchWithCacheMock = jest.mocked(fetchWithCache);
+        fetchWithCacheMock.mockResolvedValue(mockResponse);
+
+        const provider = new OpenAiChatCompletionProvider('gpt-4o-mini', {
+          config: {
+            stream: true,
+            stream_options: {
+              include_usage: true,
+            },
+          },
+        });
+
+        await provider.callApi('Test prompt');
+
+        const mockCalls = fetchWithCacheMock.mock.calls;
+        expect(mockCalls.length).toBeGreaterThan(0);
+        const firstCall = mockCalls[0] as [string, { body: string }, number];
+        const requestBody = JSON.parse(firstCall[1].body);
+        expect(requestBody.stream).toBe(true);
+        expect(requestBody.stream_options).toEqual({ include_usage: true });
+      });
+
+      it('should handle audio configuration', async () => {
+        const mockResponse = {
+          data: {
+            choices: [{ message: { content: 'Test output' } }],
+            usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+          },
+          cached: false,
+          status: 200,
+          statusText: 'OK',
+        };
+        const fetchWithCacheMock = jest.mocked(fetchWithCache);
+        fetchWithCacheMock.mockResolvedValue(mockResponse);
+
+        const provider = new OpenAiChatCompletionProvider('gpt-4o-mini', {
+          config: {
+            modalities: ['text', 'audio'],
+            audio: {
+              format: 'mp3',
+              voice: 'alloy',
+            },
+          },
+        });
+
+        await provider.callApi('Test prompt');
+
+        const mockCalls = fetchWithCacheMock.mock.calls;
+        expect(mockCalls.length).toBeGreaterThan(0);
+        const firstCall = mockCalls[0] as [string, { body: string }, number];
+        const requestBody = JSON.parse(firstCall[1].body);
+        expect(requestBody.modalities).toEqual(['text', 'audio']);
+        expect(requestBody.audio).toEqual({
+          format: 'mp3',
+          voice: 'alloy',
+        });
+      });
+
+      it('should handle advanced options', async () => {
+        const mockResponse = {
+          data: {
+            choices: [{ message: { content: 'Test output' } }],
+            usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+          },
+          cached: false,
+          status: 200,
+          statusText: 'OK',
+        };
+        const fetchWithCacheMock = jest.mocked(fetchWithCache);
+        fetchWithCacheMock.mockResolvedValue(mockResponse);
+
+        const provider = new OpenAiChatCompletionProvider('gpt-4o-mini', {
+          config: {
+            logprobs: true,
+            top_logprobs: 5,
+            logit_bias: { '50256': -100 },
+            n: 2,
+            metadata: { session_id: 'test123' },
+            parallel_tool_calls: true,
+            user: 'test_user',
+          },
+        });
+
+        await provider.callApi('Test prompt');
+
+        const mockCalls = fetchWithCacheMock.mock.calls;
+        expect(mockCalls.length).toBeGreaterThan(0);
+        const firstCall = mockCalls[0] as [string, { body: string }, number];
+        const requestBody = JSON.parse(firstCall[1].body);
+        expect(requestBody.logprobs).toBe(true);
+        expect(requestBody.top_logprobs).toBe(5);
+        expect(requestBody.logit_bias).toEqual({ '50256': -100 });
+        expect(requestBody.n).toBe(2);
+        expect(requestBody.metadata).toEqual({ session_id: 'test123' });
+        expect(requestBody.parallel_tool_calls).toBe(true);
+        expect(requestBody.user).toBe('test_user');
+      });
     });
   });
 });

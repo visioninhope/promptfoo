@@ -23,6 +23,21 @@ import { ellipsize } from '../utils/text';
 import type { OpenAiFunction, OpenAiTool } from './openaiUtil';
 import { calculateCost, REQUEST_TIMEOUT_MS, parseChatPrompt, toTitleCase } from './shared';
 
+/**
+ * Basic text content part for chat messages
+ */
+export interface ChatCompletionContentPartText {
+  /**
+   * The text content
+   */
+  text: string;
+
+  /**
+   * The type of the content part
+   */
+  type: 'text';
+}
+
 // see https://platform.openai.com/docs/models
 export const OPENAI_CHAT_MODELS = [
   ...['o1', 'o1-2024-12-17', 'o1-preview', 'o1-preview-2024-09-12'].map((model) => ({
@@ -46,7 +61,7 @@ export const OPENAI_CHAT_MODELS = [
       output: 10 / 1e6,
     },
   })),
-  ...['gpt-4o-2024-05-13'].map((model) => ({
+  ...['chatgpt-4o-latest', 'gpt-4o-2024-05-13'].map((model) => ({
     id: model,
     cost: {
       input: 5 / 1000000,
@@ -137,48 +152,264 @@ interface OpenAiSharedOptions {
   headers?: { [key: string]: string };
 }
 
-export type OpenAiCompletionOptions = OpenAiSharedOptions & {
-  temperature?: number;
+/**
+ * Configuration specific to o1 models
+ */
+export interface O1ModelConfig {
+  /**
+   * Developer-provided instructions that the model should follow, regardless of messages sent by the user.
+   * With o1 models and newer, `developer` messages replace the previous `system` messages.
+   */
+  developer_message?: {
+    content: string | Array<ChatCompletionContentPartText>;
+    name?: string;
+  };
+
+  /**
+   * Constrains effort on reasoning for reasoning models.
+   * Currently supported values are `low`, `medium`, and `high`.
+   * Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response.
+   */
+  reasoning_effort?: 'low' | 'medium' | 'high';
+
+  /**
+   * An upper bound for the number of tokens that can be generated for a completion,
+   * including visible output tokens and reasoning tokens.
+   * This is the o1 model equivalent of max_tokens.
+   */
   max_completion_tokens?: number;
+}
+
+/**
+ * Enhanced JSON schema validation options for response format
+ */
+export interface EnhancedJsonSchemaFormat {
+  type: 'json_schema';
+  json_schema: {
+    name: string;
+    strict: boolean;
+    schema: {
+      type: 'object';
+      properties: Record<string, any>;
+      required?: string[];
+      additionalProperties: false;
+    };
+  };
+}
+
+export type OpenAiCompletionOptions = OpenAiSharedOptions & {
+  /**
+   * What sampling temperature to use, between 0 and 2.
+   * Higher values like 0.8 will make the output more random,
+   * while lower values like 0.2 will make it more focused and deterministic.
+   * We generally recommend altering this or `top_p` but not both.
+   * Note: Not supported by o1 series models.
+   */
+  temperature?: number;
+
+  /**
+   * The maximum number of tokens that can be generated in the chat completion.
+   * This value can be used to control costs for text generated via API.
+   * Note: Not compatible with o1 series models which use max_completion_tokens instead.
+   */
   max_tokens?: number;
+
+  /**
+   * An alternative to sampling with temperature, called nucleus sampling.
+   * Top_p 0.1 means only the tokens comprising the top 10% probability mass are considered.
+   * We generally recommend altering this or `temperature` but not both.
+   */
   top_p?: number;
+
+  /**
+   * Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing
+   * frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+   */
   frequency_penalty?: number;
+
+  /**
+   * Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they
+   * appear in the text so far, increasing the model's likelihood to talk about new topics.
+   */
   presence_penalty?: number;
+
+  /**
+   * Generates best_of completions server-side and returns the "best"
+   * (the one with the highest log probability per token).
+   */
   best_of?: number;
+
+  /**
+   * @deprecated Use `tools` instead.
+   * A list of functions the model may generate JSON inputs for.
+   */
   functions?: OpenAiFunction[];
+
+  /**
+   * @deprecated Use `tool_choice` instead.
+   * Controls how the model uses the functions provided.
+   * 'none': Don't use functions
+   * 'auto': Use functions if needed
+   * {name: string}: Force the model to use the specified function
+   */
   function_call?: 'none' | 'auto' | { name: string };
+
+  /**
+   * A list of tools the model may use. Currently, only functions are supported as tools.
+   * Use this to provide a list of functions the model may generate JSON inputs for.
+   * A max of 128 functions are supported.
+   */
   tools?: OpenAiTool[];
+
+  /**
+   * Controls which (if any) tool is called by the model.
+   * 'none': Don't use tools (default when no tools are present)
+   * 'auto': Use tools if needed (default if tools are present)
+   * 'required': Must use a tool
+   * {type: 'function', function: {name: string}}: Force use of specific function
+   */
   tool_choice?: 'none' | 'auto' | 'required' | { type: 'function'; function?: { name: string } };
+
+  /**
+   * Specifies the format that the model must output.
+   *
+   * Setting to { "type": "json_schema", "json_schema": {...} } enables Structured Outputs
+   * which ensures the model will match your supplied JSON schema.
+   *
+   * Setting to { "type": "json_object" } enables JSON mode, which ensures the message
+   * the model generates is valid JSON.
+   *
+   * Important: when using JSON mode, you MUST also instruct the model to produce JSON
+   * yourself via a system or user message. Without this, the model may generate an
+   * unending stream of whitespace until the generation reaches the token limit.
+   */
   response_format?:
     | {
         type: 'json_object';
       }
-    | {
-        type: 'json_schema';
-        json_schema: {
-          name: string;
-          strict: boolean;
-          schema: {
-            type: 'object';
-            properties: Record<string, any>;
-            required?: string[];
-            additionalProperties: false;
-          };
-        };
-      };
+    | EnhancedJsonSchemaFormat;
+
+  /**
+   * Up to 4 sequences where the API will stop generating further tokens.
+   */
   stop?: string[];
+
+  /**
+   * If specified, our system will make a best effort to sample deterministically,
+   * such that repeated requests with the same seed and parameters should return the same result.
+   */
   seed?: number;
+
+  /**
+   * Additional parameters to pass directly to the API without modification.
+   */
   passthrough?: object;
 
   /**
-   * If set, automatically call these functions when the assistant activates
-   * these function tools.
+   * If set, automatically call these functions when the assistant activates these function tools.
+   * The key is the function name and the value is the callback function that will be called
+   * with the JSON arguments generated by the model.
    */
   functionToolCallbacks?: Record<
     OpenAI.FunctionDefinition['name'],
     (arg: string) => Promise<string>
   >;
-};
+
+  /**
+   * Specifies the latency tier to use for processing the request.
+   * - 'auto': If Scale tier enabled, utilizes scale tier credits until exhausted
+   * - 'default': Processed using default service tier with lower uptime SLA
+   */
+  service_tier?: 'auto' | 'default';
+
+  /**
+   * Whether to store the output of this chat completion request for use in
+   * OpenAI's model distillation or evals products.
+   */
+  store?: boolean;
+
+  /**
+   * An optional name for the participant. Provides the model information to
+   * differentiate between participants of the same role.
+   */
+  name?: string;
+
+  /**
+   * Static predicted output content, such as the content of a text file that is being regenerated.
+   * If generated tokens would match this content, the entire model response can be returned much more quickly.
+   */
+  prediction?: {
+    content: string | Array<ChatCompletionContentPartText>;
+    type: 'content';
+  };
+
+  /**
+   * How many chat completion choices to generate for each input message.
+   * Note that you will be charged based on the number of generated tokens across all choices.
+   * Keep n=1 to minimize costs.
+   */
+  n?: number;
+
+  /**
+   * Whether to enable parallel function calling during tool use.
+   */
+  parallel_tool_calls?: boolean;
+
+  /**
+   * Developer-defined tags and values used for filtering completions in the dashboard.
+   */
+  metadata?: Record<string, string>;
+
+  /**
+   * Output types that you would like the model to generate for this request.
+   * Most models are capable of generating text, which is the default: ["text"]
+   */
+  modalities?: Array<'text' | 'audio'>;
+
+  /**
+   * Parameters for audio output. Required when audio output is requested with modalities: ["audio"].
+   */
+  audio?: {
+    format: 'wav' | 'mp3' | 'flac' | 'opus' | 'pcm16';
+    voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+  };
+
+  /**
+   * Whether to return log probabilities of the output tokens.
+   */
+  logprobs?: boolean;
+
+  /**
+   * Number of most likely tokens to return at each token position (requires logprobs=true).
+   */
+  top_logprobs?: number;
+
+  /**
+   * Modify the likelihood of specified tokens appearing in the completion.
+   * Maps tokens (by token ID) to an associated bias value from -100 to 100.
+   */
+  logit_bias?: Record<string, number>;
+
+  /**
+   * If true, sends partial message deltas as server-sent events.
+   */
+  stream?: boolean;
+
+  /**
+   * Options for streaming response. Only used when stream=true.
+   */
+  stream_options?: {
+    /**
+     * If true, includes token usage statistics in the final chunk.
+     */
+    include_usage?: boolean;
+  };
+
+  /**
+   * A unique identifier representing your end-user, which helps OpenAI monitor and detect abuse.
+   */
+  user?: string;
+} & Partial<O1ModelConfig>;
 
 export function failApiCall(err: any) {
   if (err instanceof OpenAI.APIError) {
@@ -492,7 +723,18 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
       ...context?.prompt?.config,
     };
 
+    // Handle developer message for o1 models if provided
     const messages = parseChatPrompt(prompt, [{ role: 'user', content: prompt }]);
+    if (config.developer_message) {
+      messages.unshift({
+        role: 'developer',
+        content:
+          typeof config.developer_message.content === 'string'
+            ? config.developer_message.content
+            : config.developer_message.content[0].text,
+        ...(config.developer_message.name ? { name: config.developer_message.name } : {}),
+      });
+    }
 
     // NOTE: Special handling for o1 models which do not support max_tokens and temperature
     const isO1Model = this.modelName.startsWith('o1');
@@ -553,6 +795,25 @@ export class OpenAiChatCompletionProvider extends OpenAiGenericProvider {
       ...(callApiOptions?.includeLogProbs ? { logprobs: callApiOptions.includeLogProbs } : {}),
       ...(config.stop ? { stop: config.stop } : {}),
       ...(config.passthrough || {}),
+      // Add o1 specific options
+      ...(isO1Model && config.prediction ? { prediction: config.prediction } : {}),
+      ...(isO1Model && config.reasoning_effort
+        ? { reasoning_effort: config.reasoning_effort }
+        : {}),
+      ...(config.service_tier ? { service_tier: config.service_tier } : {}),
+      ...(config.store ? { store: config.store } : {}),
+      ...(config.name ? { name: config.name } : {}),
+      ...(config.logprobs ? { logprobs: config.logprobs } : {}),
+      ...(config.top_logprobs ? { top_logprobs: config.top_logprobs } : {}),
+      ...(config.logit_bias ? { logit_bias: config.logit_bias } : {}),
+      ...(config.n ? { n: config.n } : {}),
+      ...(config.stream ? { stream: config.stream } : {}),
+      ...(config.stream_options ? { stream_options: config.stream_options } : {}),
+      ...(config.metadata ? { metadata: config.metadata } : {}),
+      ...(config.modalities ? { modalities: config.modalities } : {}),
+      ...(config.audio ? { audio: config.audio } : {}),
+      ...(config.parallel_tool_calls ? { parallel_tool_calls: config.parallel_tool_calls } : {}),
+      ...(config.user ? { user: config.user } : {}),
     };
 
     return { body, config };
