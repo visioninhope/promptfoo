@@ -30,13 +30,92 @@ you could begin using it immediately with `openai:chat:gpt-5`.
 
 The OpenAI provider supports a handful of [configuration options](https://github.com/promptfoo/promptfoo/blob/main/src/providers/openai.ts#L14-L32), such as `temperature`, `functions`, and `tools`, which can be used to customize the behavior of the model like so:
 
-```yaml title=promptfooconfig.yaml
+The OpenAI provider supports a comprehensive set of configuration options that can be used to customize the behavior of the model. Here are the main categories:
+
+### Basic Configuration
+
+| Parameter      | Description                                 |
+| -------------- | ------------------------------------------- |
+| `apiKey`       | Your OpenAI API key                         |
+| `apiKeyEnvar`  | Environment variable containing the API key |
+| `apiHost`      | Custom API host                             |
+| `apiBaseUrl`   | Custom API base URL                         |
+| `organization` | OpenAI organization ID                      |
+| `headers`      | Additional request headers                  |
+
+### Core Model Parameters
+
+| Parameter           | Description                                                  |
+| ------------------- | ------------------------------------------------------------ |
+| `temperature`       | Controls randomness (0-2). Not supported by O1 models        |
+| `max_tokens`        | Maximum tokens for completion. Not compatible with O1 models |
+| `top_p`             | Alternative to temperature for nucleus sampling              |
+| `frequency_penalty` | Penalizes token frequency (-2.0 to 2.0)                      |
+| `presence_penalty`  | Penalizes token presence (-2.0 to 2.0)                       |
+| `seed`              | For deterministic sampling                                   |
+
+### O1-Specific Options
+
+| Parameter               | Description                                           |
+| ----------------------- | ----------------------------------------------------- |
+| `developer_message`     | Instructions for O1 models (replaces system messages) |
+| `reasoning_effort`      | Controls reasoning effort ('low', 'medium', 'high')   |
+| `max_completion_tokens` | Token limit for O1 model completions                  |
+| `prediction`            | Static predicted output for faster responses          |
+
+### Advanced Features
+
+| Parameter             | Description                       |
+| --------------------- | --------------------------------- |
+| `stream`              | Enable streaming responses        |
+| `stream_options`      | Configure streaming behavior      |
+| `modalities`          | Output types (text/audio)         |
+| `audio`               | Audio output configuration        |
+| `logprobs`            | Return token log probabilities    |
+| `top_logprobs`        | Number of top log probabilities   |
+| `logit_bias`          | Token likelihood modification     |
+| `metadata`            | Custom tags for filtering         |
+| `parallel_tool_calls` | Enable parallel function calls    |
+| `n`                   | Number of completions to generate |
+| `user`                | End-user identifier               |
+
+### Response Format Options
+
+| Parameter         | Description                                          |
+| ----------------- | ---------------------------------------------------- |
+| `response_format` | Control output format (text/json_object/json_schema) |
+| `service_tier`    | Latency tier selection                               |
+| `store`           | Enable output storage                                |
+
+Example configuration:
+
+```yaml
 providers:
   - id: openai:gpt-4o-mini
     config:
       temperature: 0
       max_tokens: 1024
 ```
+
+### O1 Model Configuration
+
+O1 series models have specific configuration requirements:
+
+```yaml
+providers:
+  - id: openai:o1-preview
+    config:
+      max_completion_tokens: 25000 # Instead of max_tokens
+      developer_message:
+        content: 'Follow these instructions carefully'
+        name: 'dev_assistant'
+      reasoning_effort: 'high'
+      prediction:
+        content: 'Expected output'
+        type: 'content'
+```
+
+Note: O1 models do not support `temperature` and use `max_completion_tokens` instead of `max_tokens`.
 
 ## Formatting chat messages
 
@@ -209,137 +288,41 @@ Then, enable 'Render markdown' under Table Settings.
 
 ## Using tools and functions
 
-OpenAI tools and functions are supported. See [OpenAI tools example](https://github.com/promptfoo/promptfoo/tree/main/examples/openai-tools-call) and [OpenAI functions example](https://github.com/promptfoo/promptfoo/tree/main/examples/openai-function-call).
-
 ### Using tools
 
-To set `tools` on an OpenAI provider, use the provider's `config` key. The model may return tool calls in two formats:
+Tools are the preferred way to enable function calling capabilities. The model may return tool calls in two formats:
 
 1. An array of tool calls: `[{type: 'function', function: {...}}]`
 2. A message with tool calls: `{content: '...', tool_calls: [{type: 'function', function: {...}}]}`
 
-Tools can be defined inline or loaded from an external file:
+Example configuration:
 
 ```yaml
-prompts:
-  - file://prompt.txt
 providers:
   - id: openai:chat:gpt-4o-mini
-    // highlight-start
     config:
-      # Load tools from external file
-      tools: file://./weather_tools.yaml
-      # Or define inline
-      tools: [
-        {
-        "type": "function",
-          "function": {
-            "name": "get_current_weather",
-            "description": "Get the current weather in a given location",
-            "parameters": {
-              "type": "object",
-                "properties": {
-                  "location": {
-                    "type": "string",
-                      "description": "The city and state, e.g. San Francisco, CA"
-                    },
-                    "unit": {
-                      "type": "string",
-                      "enum": ["celsius", "fahrenheit"]
-                    }
-                  },
-              "required": ["location"]
-            }
-          }
-        }
-      ]
-      tool_choice: 'auto'
-    // highlight-end
-
-tests:
-   - vars:
-        city: Boston
-     assert:
-        - type: is-json
-        - type: is-valid-openai-tools-call
-        - type: javascript
-          value: output[0].function.name === 'get_current_weather'
-        - type: javascript
-          value: JSON.parse(output[0].function.arguments).location === 'Boston, MA'
-
-   - vars:
-        city: New York
-# ...
+      tools:
+        - type: 'function'
+          function:
+            name: 'get_current_weather'
+            description: 'Get the current weather'
+            parameters:
+              type: 'object'
+              properties:
+                location:
+                  type: 'string'
+                  description: 'City and state'
+                unit:
+                  type: 'string'
+                  enum: ['celsius', 'fahrenheit']
+              required: ['location']
+      tool_choice: 'auto' # Options: 'none', 'auto', 'required', or {type: 'function', function: {name: 'specific_function'}}
+      parallel_tool_calls: true # Enable parallel function calling
 ```
 
-Sometimes OpenAI function calls don't match `tools` schemas. Use [`is-valid-openai-tools-call`](/docs/configuration/expected-outputs/deterministic/#is-valid-openai-function-call) or [`is-valid-openai-tools-call`](/docs/configuration/expected-outputs/deterministic/#is-valid-openai-tools-call) assertions to enforce an exact schema match between tools and the function definition.
+### Using functions (Deprecated)
 
-To further test `tools` definitions, you can use the `javascript` assertion and/or `transform` directives. For example:
-
-```yaml
-tests:
-  - vars:
-      city: Boston
-    assert:
-      - type: is-json
-      - type: is-valid-openai-tools-call
-      - type: javascript
-        value: output[0].function.name === 'get_current_weather'
-      - type: javascript
-        value: JSON.parse(output[0].function.arguments).location === 'Boston, MA'
-
-  - vars:
-      city: New York
-      # transform returns only the 'name' property
-    transform: output[0].function.name
-    assert:
-      - type: is-json
-      - type: similar
-        value: NYC
-```
-
-:::tip
-Functions can use variables from test cases:
-
-```js
-{
-  type: "function",
-  function: {
-    description: "Get temperature in {{city}}"
-    // ...
-  }
-}
-```
-
-They can also include functions that dynamically reference vars:
-
-```js
-{
-  type: "function",
-  function: {
-    name: "get_temperature",
-    parameters: {
-      type: "object",
-        properties: {
-          unit: {
-            type: "string",
-            // highlight-start
-            enum: (vars) => vars.units,
-            // highlight-end
-          }
-        },
-    }
-  }
-}
-```
-
-:::
-
-### Using functions
-
-> `functions` and `function_call` is deprecated in favor of `tools` and `tool_choice`, see detail in [OpenAI API reference](https://platform.openai.com/docs/api-reference/chat/create#chat-create-function_call).
-
-Use the `functions` config to define custom functions. Each function should be an object with a `name`, optional `description`, and `parameters`. For example:
+The `functions` and `function_call` options are deprecated in favor of `tools` and `tool_choice`. They are still supported but we recommend using tools instead:
 
 ```yaml
 prompts:
@@ -490,17 +473,20 @@ config:
 
 These OpenAI-related environment variables are supported:
 
-| Variable                       | Description                                                                                                      |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `OPENAI_TEMPERATURE`           | Temperature model parameter, defaults to 0. Not supported by o1-models.                                          |
-| `OPENAI_MAX_TOKENS`            | Max_tokens model parameter, defaults to 1024. Not supported by o1-models.                                        |
-| `OPENAI_MAX_COMPLETION_TOKENS` | Max_completion_tokens model parameter, defaults to 1024. Used by o1-models.                                      |
-| `OPENAI_API_HOST`              | The hostname to use (useful if you're using an API proxy). Takes priority over `OPENAI_BASE_URL`.                |
-| `OPENAI_BASE_URL`              | The base URL (protocol + hostname + port) to use, this is a more general option than `OPENAI_API_HOST`.          |
-| `OPENAI_API_KEY`               | OpenAI API key.                                                                                                  |
-| `OPENAI_ORGANIZATION`          | The OpenAI organization key to use.                                                                              |
-| `PROMPTFOO_DELAY_MS`           | Number of milliseconds to delay between API calls. Useful if you are hitting OpenAI rate limits (defaults to 0). |
-| `PROMPTFOO_REQUEST_BACKOFF_MS` | Base number of milliseconds to backoff and retry if a request fails (defaults to 5000).                          |
+| Variable                       | Description                | Default |
+| ------------------------------ | -------------------------- | ------- |
+| `OPENAI_API_KEY`               | API key                    | -       |
+| `OPENAI_ORGANIZATION`          | Organization ID            | -       |
+| `OPENAI_API_HOST`              | Custom API host            | -       |
+| `OPENAI_BASE_URL`              | Custom base URL            | -       |
+| `OPENAI_TEMPERATURE`           | Temperature setting        | 0       |
+| `OPENAI_MAX_TOKENS`            | Max tokens (non-O1)        | 1024    |
+| `OPENAI_MAX_COMPLETION_TOKENS` | Max completion tokens (O1) | -       |
+| `OPENAI_TOP_P`                 | Top-p setting              | 1       |
+| `OPENAI_PRESENCE_PENALTY`      | Presence penalty           | 0       |
+| `OPENAI_FREQUENCY_PENALTY`     | Frequency penalty          | 0       |
+| `PROMPTFOO_DELAY_MS`           | Delay between API calls    | 0       |
+| `PROMPTFOO_REQUEST_BACKOFF_MS` | Request retry backoff      | 5000    |
 
 ## Evaluating assistants
 
