@@ -180,23 +180,6 @@ export interface O1ModelConfig {
   max_completion_tokens?: number;
 }
 
-/**
- * Enhanced JSON schema validation options for response format
- */
-export interface EnhancedJsonSchemaFormat {
-  type: 'json_schema';
-  json_schema: {
-    name: string;
-    strict: boolean;
-    schema: {
-      type: 'object';
-      properties: Record<string, any>;
-      required?: string[];
-      additionalProperties: false;
-    };
-  };
-}
-
 export type OpenAiCompletionOptions = OpenAiSharedOptions & {
   /**
    * What sampling temperature to use, between 0 and 2.
@@ -285,9 +268,42 @@ export type OpenAiCompletionOptions = OpenAiSharedOptions & {
    */
   response_format?:
     | {
+        type: 'text';
+      }
+    | {
         type: 'json_object';
       }
-    | EnhancedJsonSchemaFormat;
+    | {
+        type: 'json_schema';
+        json_schema: {
+          /**
+           * The name of the response format. Must be a-z, A-Z, 0-9, or contain underscores
+           * and dashes, with a maximum length of 64.
+           */
+          name: string;
+          /**
+           * A description of what the response format is for, used by the model to determine
+           * how to respond in the format.
+           */
+          description?: string;
+
+          /**
+           * Whether to enable strict schema adherence when generating the output. If set to
+           * true, the model will always follow the exact schema defined in the `schema`
+           * field. Only a subset of JSON Schema is supported when `strict` is `true`. To
+           * learn more, read the
+           * [Structured Outputs guide](https://platform.openai.com/docs/guides/structured-outputs).
+           */
+          strict?: boolean | null;
+
+          schema: {
+            type: 'object';
+            properties: Record<string, any>;
+            required?: string[];
+            additionalProperties: false;
+          };
+        };
+      };
 
   /**
    * Up to 4 sequences where the API will stop generating further tokens.
