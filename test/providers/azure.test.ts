@@ -5,12 +5,16 @@ import { AzureChatCompletionProvider } from '../../src/providers/azure';
 import { maybeEmitAzureOpenAiWarning } from '../../src/providers/azureUtil';
 import { HuggingfaceTextGenerationProvider } from '../../src/providers/huggingface';
 import { OpenAiCompletionProvider } from '../../src/providers/openai';
+import { REQUEST_TIMEOUT_MS } from '../../src/providers/shared';
 import type { TestSuite, TestCase } from '../../src/types';
 
 jest.mock('../../src/logger');
 jest.mock('../../src/cache', () => ({
   fetchWithCache: jest.fn(),
 }));
+
+const mockFetch = jest.mocked(jest.fn());
+global.fetch = mockFetch;
 
 describe('maybeEmitAzureOpenAiWarning', () => {
   it('should not emit warning when no Azure providers are used', () => {
@@ -153,6 +157,228 @@ describe('AzureOpenAiGenericProvider', () => {
 });
 
 describe('AzureOpenAiChatCompletionProvider', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('callApi should handle basic chat completion', async () => {
+    const mockResponse = {
+      choices: [{ message: { content: 'Test output' } }],
+      usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+    };
+
+    jest.mocked(fetchWithCache).mockResolvedValueOnce({
+      data: mockResponse,
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+    });
+
+    const provider = new AzureChatCompletionProvider('gpt-4o-mini', {
+      config: {
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+      },
+    });
+    const result = await provider.callApi(
+      JSON.stringify([{ role: 'user', content: 'Test prompt' }]),
+    );
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(result.output).toBe('Test output');
+    expect(result.tokenUsage).toEqual({ total: 10, prompt: 5, completion: 5 });
+  });
+
+  it('callApi should work with cache disabled', async () => {
+    const mockResponse = {
+      data: {
+        choices: [{ message: { content: 'Test output' } }],
+        usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+      },
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+    };
+    jest.mocked(fetchWithCache).mockResolvedValueOnce(mockResponse);
+
+    const provider = new AzureChatCompletionProvider('gpt-4', {
+      config: {
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+        cache: false,
+      },
+    });
+    const result = await provider.callApi('Test prompt', {
+      prompt: {
+        raw: 'Test prompt',
+        label: 'test',
+        config: {
+          cache: false,
+        },
+      },
+      vars: {},
+    });
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(fetchWithCache).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Object),
+      REQUEST_TIMEOUT_MS,
+      undefined,
+      true,
+    );
+    expect(result.output).toBe('Test output');
+    expect(result.tokenUsage).toEqual({ total: 10, prompt: 5, completion: 5 });
+  });
+
+  describe('structured outputs', () => {
+    let provider: AzureChatCompletionProvider;
+
+    beforeEach(() => {
+      provider = new AzureChatCompletionProvider('test-deployment', {
+        config: {
+          apiHost: 'test.azure.com',
+          apiKey: 'test-key',
+        },
+      });
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
+    });
+
+    it('should parse JSON response when prompt config specifies json_object format', async () => {
+      const mockResponse = {
+        id: 'mock-id',
+        object: 'chat.completion',
+        created: Date.now(),
+        model: 'gpt-4',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: '{"result": 42, "explanation": "test"}',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+        },
+      };
+
+      jest.mocked(fetchWithCache).mockResolvedValueOnce({
+        data: mockResponse,
+        cached: false,
+        status: 200,
+        statusText: 'OK',
+      });
+
+      const result = await provider.callApi('test prompt', {
+        prompt: {
+          config: {
+            response_format: { type: 'json_object' },
+          },
+          label: 'test prompt',
+          raw: 'test prompt',
+        },
+        vars: {},
+      });
+
+      expect(result.output).toEqual({
+        result: 42,
+        explanation: 'test',
+      });
+    });
+
+    it('should handle invalid JSON when response format is specified', async () => {
+      const mockResponse = {
+        id: 'mock-id',
+        object: 'chat.completion',
+        created: Date.now(),
+        model: 'gpt-4',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Invalid JSON response',
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+        },
+      };
+
+      jest.mocked(fetchWithCache).mockResolvedValueOnce({
+        data: mockResponse,
+        cached: false,
+        status: 200,
+        statusText: 'OK',
+      });
+
+      const result = await provider.callApi('test prompt', {
+        prompt: {
+          config: {
+            response_format: { type: 'json_object' },
+          },
+          label: 'test prompt',
+          raw: 'test prompt',
+        },
+        vars: {},
+      });
+
+      // Should still return the original string if JSON parsing fails
+      expect(result.output).toBe('Invalid JSON response');
+    });
+
+    it('should use correct API URL based on datasources config from prompt', async () => {
+      const mockResponse = {
+        id: 'mock-id',
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'test response',
+            },
+          },
+        ],
+        usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+      };
+
+      jest.mocked(fetchWithCache).mockResolvedValueOnce({
+        data: mockResponse,
+        cached: false,
+        status: 200,
+        statusText: 'OK',
+      });
+
+      await provider.callApi('test prompt', {
+        prompt: {
+          config: {
+            dataSources: [{ type: 'test' }],
+            apiVersion: '2024-custom',
+          },
+          label: 'test prompt',
+          raw: 'test prompt',
+        },
+        vars: {},
+      });
+
+      // Verify the URL includes extensions and uses the custom API version
+      expect(jest.mocked(fetchWithCache).mock.calls[0][0]).toContain(
+        '/extensions/chat/completions?api-version=2024-custom',
+      );
+    });
+  });
+
   describe('config merging', () => {
     let provider: AzureChatCompletionProvider;
 
@@ -452,6 +678,189 @@ describe('AzureOpenAiChatCompletionProvider', () => {
       ]);
     });
   });
+});
+
+describe('AzureCompletionProvider', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should handle basic completion with caching', async () => {
+    const provider = new AzureCompletionProvider('test-deployment', {
+      config: {
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+      },
+    });
+
+    const mockResponse = {
+      choices: [{ text: 'Test response' }],
+      usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+    };
+
+    jest
+      .mocked(fetchWithCache)
+      .mockResolvedValueOnce({
+        data: mockResponse,
+        cached: false,
+        status: 200,
+        statusText: 'OK',
+      })
+      .mockResolvedValueOnce({
+        data: mockResponse,
+        cached: true,
+        status: 200,
+        statusText: 'OK',
+      });
+
+    const result1 = await provider.callApi('Test prompt');
+    const result2 = await provider.callApi('Test prompt');
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(2);
+    expect(result1.output).toBe('Test response');
+    expect(result1.tokenUsage).toEqual({ total: 10, prompt: 5, completion: 5 });
+    expect(result2.tokenUsage).toEqual({ cached: 10, total: 10 });
+  });
+
+  it('callApi should handle basic completion', async () => {
+    const mockResponse = {
+      choices: [{ text: 'Test output' }],
+      usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+    };
+
+    jest.mocked(fetchWithCache).mockResolvedValueOnce({
+      data: mockResponse,
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+    });
+
+    const provider = new AzureCompletionProvider('text-davinci-003', {
+      config: {
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+      },
+    });
+    const result = await provider.callApi('Test prompt');
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(result.output).toBe('Test output');
+    expect(result.tokenUsage).toEqual({ total: 10, prompt: 5, completion: 5 });
+  });
+
+  it('should initialize with model name', () => {
+    const provider = new AzureCompletionProvider('text-davinci-003');
+    expect(provider.id()).toBe('azure:completion:text-davinci-003');
+    expect(provider.deploymentName).toBe('text-davinci-003');
+  });
+
+  it('should initialize with model name and config', () => {
+    const provider = new AzureCompletionProvider('text-davinci-003', {
+      config: {
+        max_tokens: 100,
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+      },
+    });
+    expect(provider.id()).toBe('azure:completion:text-davinci-003');
+    expect(provider.deploymentName).toBe('text-davinci-003');
+    expect(provider.config.max_tokens).toBe(100);
+  });
+});
+
+describe('AzureChatCompletionProvider', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should initialize with model name', () => {
+    const provider = new AzureChatCompletionProvider('gpt-4');
+    expect(provider.id()).toBe('azure:chat:gpt-4');
+    expect(provider.deploymentName).toBe('gpt-4');
+  });
+
+  it('should initialize with model name and config', () => {
+    const provider = new AzureChatCompletionProvider('gpt-4', {
+      config: {
+        temperature: 0.7,
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+      },
+    });
+    expect(provider.id()).toBe('azure:chat:gpt-4');
+    expect(provider.deploymentName).toBe('gpt-4');
+    expect(provider.config.temperature).toBe(0.7);
+  });
+
+  it('callApi should handle basic chat completion', async () => {
+    const mockResponse = {
+      choices: [{ message: { content: 'Test output' } }],
+      usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+    };
+
+    jest.mocked(fetchWithCache).mockResolvedValueOnce({
+      data: mockResponse,
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+    });
+
+    const provider = new AzureChatCompletionProvider('gpt-4o-mini', {
+      config: {
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+      },
+    });
+    const result = await provider.callApi(
+      JSON.stringify([{ role: 'user', content: 'Test prompt' }]),
+    );
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(result.output).toBe('Test output');
+    expect(result.tokenUsage).toEqual({ total: 10, prompt: 5, completion: 5 });
+  });
+
+  it('callApi should work with cache disabled', async () => {
+    const mockResponse = {
+      data: {
+        choices: [{ message: { content: 'Test output' } }],
+        usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
+      },
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+    };
+    jest.mocked(fetchWithCache).mockResolvedValueOnce(mockResponse);
+
+    const provider = new AzureChatCompletionProvider('gpt-4', {
+      config: {
+        apiHost: 'test.azure.com',
+        apiKey: 'test-key',
+        cache: false,
+      },
+    });
+    const result = await provider.callApi('Test prompt', {
+      prompt: {
+        raw: 'Test prompt',
+        label: 'test',
+        config: {
+          cache: false,
+        },
+      },
+      vars: {},
+    });
+
+    expect(fetchWithCache).toHaveBeenCalledTimes(1);
+    expect(fetchWithCache).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Object),
+      REQUEST_TIMEOUT_MS,
+      undefined,
+      true,
+    );
+    expect(result.output).toBe('Test output');
+    expect(result.tokenUsage).toEqual({ total: 10, prompt: 5, completion: 5 });
+  });
 
   describe('structured outputs', () => {
     let provider: AzureChatCompletionProvider;
@@ -600,43 +1009,304 @@ describe('AzureOpenAiChatCompletionProvider', () => {
       );
     });
   });
-});
 
-describe('AzureCompletionProvider', () => {
-  it('should handle basic completion with caching', async () => {
-    const provider = new AzureCompletionProvider('test-deployment', {
-      config: {
-        apiHost: 'test.azure.com',
-        apiKey: 'test-key',
-      },
+  describe('config merging', () => {
+    let provider: AzureChatCompletionProvider;
+
+    beforeEach(() => {
+      provider = new AzureChatCompletionProvider('test-deployment', {
+        config: {
+          apiHost: 'test.azure.com',
+          apiKey: 'test-key',
+          functions: [{ name: 'provider_func', parameters: {} }],
+          max_tokens: 100,
+          temperature: 0.5,
+        },
+      });
     });
 
-    const mockResponse = {
-      choices: [{ text: 'Test response' }],
-      usage: { total_tokens: 10, prompt_tokens: 5, completion_tokens: 5 },
-    };
+    it('should use provider config when no prompt config exists', () => {
+      const context = {
+        prompt: { label: 'test prompt', raw: 'test prompt' },
+        vars: {},
+      };
+      expect((provider as any).getOpenAiBody('test prompt', context).body).toMatchObject({
+        functions: [{ name: 'provider_func', parameters: {} }],
+        max_tokens: 100,
+        temperature: 0.5,
+      });
+    });
 
-    jest
-      .mocked(fetchWithCache)
-      .mockResolvedValueOnce({
+    it('should merge prompt config with provider config', () => {
+      const context = {
+        prompt: {
+          config: {
+            functions: [{ name: 'prompt_func', parameters: {} }],
+            temperature: 0.7,
+          },
+          label: 'test prompt',
+          raw: 'test prompt',
+        },
+        vars: {},
+      };
+      expect((provider as any).getOpenAiBody('test prompt', context).body).toMatchObject({
+        functions: [{ name: 'prompt_func', parameters: {} }],
+        max_tokens: 100,
+        temperature: 0.7,
+      });
+    });
+
+    it('should handle undefined prompt config', () => {
+      const context = {
+        prompt: { label: 'test prompt', raw: 'test prompt' },
+        vars: {},
+      };
+      expect((provider as any).getOpenAiBody('test prompt', context).body).toMatchObject({
+        functions: [{ name: 'provider_func', parameters: {} }],
+        max_tokens: 100,
+        temperature: 0.5,
+      });
+    });
+
+    it('should handle empty prompt config', () => {
+      const context = {
+        prompt: { config: {}, label: 'test prompt', raw: 'test prompt' },
+        vars: {},
+      };
+      expect((provider as any).getOpenAiBody('test prompt', context).body).toMatchObject({
+        functions: [{ name: 'provider_func', parameters: {} }],
+        max_tokens: 100,
+        temperature: 0.5,
+      });
+    });
+
+    it('should handle complex nested config merging', () => {
+      const context = {
+        prompt: {
+          config: {
+            response_format: { type: 'json_object' },
+            tool_choice: { function: { name: 'test' }, type: 'function' },
+          },
+          label: 'test prompt',
+          raw: 'test prompt',
+        },
+        vars: {},
+      };
+      expect((provider as any).getOpenAiBody('test prompt', context).body).toMatchObject({
+        functions: [{ name: 'provider_func', parameters: {} }],
+        max_tokens: 100,
+        response_format: { type: 'json_object' },
+        temperature: 0.5,
+        tool_choice: { function: { name: 'test' }, type: 'function' },
+      });
+    });
+
+    it('should handle json_schema response format', () => {
+      const context = {
+        prompt: {
+          config: {
+            response_format: {
+              type: 'json_schema',
+              json_schema: {
+                name: 'test_schema',
+                strict: true,
+                schema: {
+                  type: 'object',
+                  properties: {
+                    test: { type: 'string' },
+                  },
+                  required: ['test'],
+                  additionalProperties: false,
+                },
+              },
+            },
+          },
+          label: 'test prompt',
+          raw: 'test prompt',
+        },
+        vars: {},
+      };
+      const { body } = (provider as any).getOpenAiBody('test prompt', context);
+      expect(body.response_format).toMatchObject({
+        type: 'json_schema',
+        json_schema: {
+          name: 'test_schema',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              test: { type: 'string' },
+            },
+            required: ['test'],
+            additionalProperties: false,
+          },
+        },
+      });
+    });
+
+    it('should render variables in response format', () => {
+      const context = {
+        prompt: {
+          config: {
+            response_format: {
+              type: 'json_schema',
+              json_schema: {
+                name: '{{schemaName}}',
+                strict: true,
+                schema: {
+                  type: 'object',
+                  properties: {
+                    test: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          label: 'test prompt',
+          raw: 'test prompt',
+        },
+        vars: {
+          schemaName: 'dynamic_schema',
+        },
+      };
+      const { body } = (provider as any).getOpenAiBody('test prompt', context);
+      expect(body.response_format.json_schema.name).toBe('dynamic_schema');
+    });
+  });
+
+  describe('response handling', () => {
+    let provider: AzureChatCompletionProvider;
+
+    beforeEach(() => {
+      provider = new AzureChatCompletionProvider('test-deployment', {
+        config: {
+          apiHost: 'test.azure.com',
+          apiKey: 'test-key',
+        },
+      });
+    });
+
+    afterEach(() => {
+      jest.resetAllMocks();
+    });
+
+    it('should parse JSON response with json_schema format', async () => {
+      const mockResponse = {
+        id: 'mock-id',
+        object: 'chat.completion',
+        created: Date.now(),
+        model: 'gpt-4',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: JSON.stringify({ test: 'value' }),
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+        },
+      };
+
+      provider.config.response_format = {
+        type: 'json_schema',
+        json_schema: {
+          name: 'test_response',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              test: { type: 'string' },
+            },
+            required: ['test'],
+            additionalProperties: false,
+          },
+        },
+      };
+
+      jest.mocked(fetchWithCache).mockResolvedValueOnce({
         data: mockResponse,
         cached: false,
         status: 200,
         statusText: 'OK',
-      })
-      .mockResolvedValueOnce({
-        data: mockResponse,
-        cached: true,
+      });
+
+      const result = await provider.callApi('test prompt');
+      expect(result.output).toEqual({ test: 'value' });
+    });
+
+    it('should handle API errors', async () => {
+      jest.mocked(fetchWithCache).mockRejectedValueOnce(new Error('API Error'));
+
+      const result = await provider.callApi('test prompt');
+      expect(result.error).toBe('API call error: API Error');
+    });
+
+    it('should handle invalid JSON response', async () => {
+      jest.mocked(fetchWithCache).mockResolvedValueOnce({
+        data: 'invalid json',
+        cached: false,
         status: 200,
         statusText: 'OK',
       });
 
-    const result1 = await provider.callApi('Test prompt');
-    const result2 = await provider.callApi('Test prompt');
+      const result = await provider.callApi('test prompt');
+      expect(result.error).toContain('API returned invalid JSON response');
+    });
 
-    expect(fetchWithCache).toHaveBeenCalledTimes(2);
-    expect(result1.output).toBe('Test response');
-    expect(result1.tokenUsage).toEqual({ total: 10, prompt: 5, completion: 5 });
-    expect(result2.tokenUsage).toEqual({ cached: 10, total: 10 });
+    it('should handle tool calls in response', async () => {
+      const mockResponse = {
+        id: 'mock-id',
+        object: 'chat.completion',
+        created: Date.now(),
+        model: 'gpt-4',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              tool_calls: [
+                {
+                  type: 'function',
+                  function: {
+                    name: 'test',
+                    arguments: '{}',
+                  },
+                },
+              ],
+            },
+            finish_reason: 'stop',
+          },
+        ],
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+        },
+      };
+
+      jest.mocked(fetchWithCache).mockResolvedValueOnce({
+        data: mockResponse,
+        cached: false,
+        status: 200,
+        statusText: 'OK',
+      });
+
+      const result = await provider.callApi('test prompt');
+      expect(result.output).toEqual([
+        {
+          type: 'function',
+          function: {
+            name: 'test',
+            arguments: '{}',
+          },
+        },
+      ]);
+    });
   });
 });

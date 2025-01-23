@@ -25,7 +25,7 @@ import { calculateCost, parseChatPrompt, REQUEST_TIMEOUT_MS, toTitleCase } from 
 
 export const DEFAULT_AZURE_API_VERSION = '2024-12-01-preview';
 
-interface AzureCompletionOptions {
+export interface AzureCompletionOptions {
   // Azure identity params
   azureClientId?: string;
   azureClientSecret?: string;
@@ -88,6 +88,8 @@ interface AzureCompletionOptions {
   seed?: number;
 
   passthrough?: object;
+
+  cache?: boolean;
 }
 
 const AZURE_MODELS = [
@@ -465,6 +467,10 @@ export class AzureEmbeddingProvider extends AzureGenericProvider {
 }
 
 export class AzureCompletionProvider extends AzureGenericProvider {
+  id(): string {
+    return `azure:completion:${this.deploymentName}`;
+  }
+
   async callApi(
     prompt: string,
     context?: CallApiContextParams,
@@ -485,32 +491,39 @@ export class AzureCompletionProvider extends AzureGenericProvider {
     } catch (err) {
       throw new Error(`OPENAI_STOP is not a valid JSON string: ${err}`);
     }
+
+    const config = {
+      ...this.config,
+      ...context?.prompt?.config,
+    };
+
     const body = {
       model: this.deploymentName,
       prompt,
-      max_tokens: this.config.max_tokens ?? getEnvInt('OPENAI_MAX_TOKENS', 1024),
-      temperature: this.config.temperature ?? getEnvFloat('OPENAI_TEMPERATURE', 0),
-      top_p: this.config.top_p ?? getEnvFloat('OPENAI_TOP_P', 1),
-      presence_penalty: this.config.presence_penalty ?? getEnvFloat('OPENAI_PRESENCE_PENALTY', 0),
-      frequency_penalty:
-        this.config.frequency_penalty ?? getEnvFloat('OPENAI_FREQUENCY_PENALTY', 0),
-      best_of: this.config.best_of ?? getEnvInt('OPENAI_BEST_OF', 1),
-      ...(this.config.seed === undefined ? {} : { seed: this.config.seed }),
-      ...(this.config.deployment_id ? { deployment_id: this.config.deployment_id } : {}),
-      ...(this.config.dataSources ? { dataSources: this.config.dataSources } : {}),
-      ...(this.config.response_format ? { response_format: this.config.response_format } : {}),
+      max_tokens: config.max_tokens ?? getEnvInt('OPENAI_MAX_TOKENS', 1024),
+      temperature: config.temperature ?? getEnvFloat('OPENAI_TEMPERATURE', 0),
+      top_p: config.top_p ?? getEnvFloat('OPENAI_TOP_P', 1),
+      presence_penalty: config.presence_penalty ?? getEnvFloat('OPENAI_PRESENCE_PENALTY', 0),
+      frequency_penalty: config.frequency_penalty ?? getEnvFloat('OPENAI_FREQUENCY_PENALTY', 0),
+      best_of: config.best_of ?? getEnvInt('OPENAI_BEST_OF', 1),
+      ...(config.seed === undefined ? {} : { seed: config.seed }),
+      ...(config.deployment_id ? { deployment_id: config.deployment_id } : {}),
+      ...(config.dataSources ? { dataSources: config.dataSources } : {}),
+      ...(config.response_format ? { response_format: config.response_format } : {}),
       ...(callApiOptions?.includeLogProbs ? { logprobs: callApiOptions.includeLogProbs } : {}),
       ...(stop ? { stop } : {}),
-      ...(this.config.passthrough || {}),
+      ...(config.passthrough || {}),
     };
+
     logger.debug(`Calling Azure API: ${JSON.stringify(body)}`);
     let data,
       cached = false;
     try {
+      const bust = config.cache === false;
       ({ data, cached } = (await fetchWithCache(
         `${this.getApiBaseUrl()}/openai/deployments/${
           this.deploymentName
-        }/completions?api-version=${this.config.apiVersion || DEFAULT_AZURE_API_VERSION}`,
+        }/completions?api-version=${config.apiVersion || DEFAULT_AZURE_API_VERSION}`,
         {
           method: 'POST',
           headers: {
@@ -520,6 +533,8 @@ export class AzureCompletionProvider extends AzureGenericProvider {
           body: JSON.stringify(body),
         },
         REQUEST_TIMEOUT_MS,
+        undefined,
+        bust,
       )) as unknown as any);
     } catch (err) {
       return {
@@ -553,6 +568,10 @@ export class AzureCompletionProvider extends AzureGenericProvider {
 }
 
 export class AzureChatCompletionProvider extends AzureGenericProvider {
+  id(): string {
+    return `azure:chat:${this.deploymentName}`;
+  }
+
   getOpenAiBody(
     prompt: string,
     context?: CallApiContextParams,
@@ -654,6 +673,8 @@ export class AzureChatCompletionProvider extends AzureGenericProvider {
           body: JSON.stringify(body),
         },
         REQUEST_TIMEOUT_MS,
+        undefined,
+        config.cache === false,
       );
 
       cached = isCached;
