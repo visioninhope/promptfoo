@@ -199,10 +199,35 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
+            title: 'Product',
             items: [
               {
-                label: 'Intro',
+                label: 'LLM Security',
+                to: '/security/',
+              },
+              {
+                label: 'Vulnerability Scanner',
+                to: '/llm-vulnerability-scanner/',
+              },
+              {
+                label: 'LLM Evaluations',
+                to: '/docs/getting-started/',
+              },
+              {
+                label: 'Enterprise',
+                href: '/pricing/',
+              },
+              {
+                label: 'Status',
+                href: 'https://status.promptfoo.dev',
+              },
+            ],
+          },
+          {
+            title: 'Documentation',
+            items: [
+              {
+                label: 'Getting Started',
                 to: '/docs/intro',
               },
               {
@@ -212,6 +237,48 @@ const config = {
               {
                 label: 'Node Package',
                 to: '/docs/usage/node-package',
+              },
+              {
+                label: 'Config Validator',
+                to: '/validator',
+              },
+            ],
+          },
+          {
+            title: 'Resources',
+            items: [
+              {
+                label: 'Red Teaming Guide',
+                to: '/docs/red-team',
+              },
+              {
+                label: 'RAG Evaluation',
+                to: '/docs/guides/evaluate-rag',
+              },
+              {
+                label: 'Factuality Testing',
+                to: '/docs/guides/factuality-eval',
+              },
+              {
+                label: 'Blog',
+                href: '/blog/',
+              },
+            ],
+          },
+          {
+            title: 'Company',
+            items: [
+              {
+                label: 'About',
+                href: '/about/',
+              },
+              {
+                label: 'Contact',
+                href: '/contact/',
+              },
+              {
+                label: 'Careers',
+                href: '/careers/',
               },
               {
                 label: 'Privacy Policy',
@@ -228,57 +295,8 @@ const config = {
             ],
           },
           {
-            title: 'Guides & Tools',
+            title: 'Community',
             items: [
-              {
-                label: 'LLM Red Teaming',
-                to: '/docs/red-team',
-              },
-              {
-                label: 'Running Benchmarks',
-                to: '/docs/guides/llama2-uncensored-benchmark-ollama',
-              },
-              {
-                label: 'Evaluating Factuality',
-                to: '/docs/guides/factuality-eval',
-              },
-              {
-                label: 'Evaluating RAGs',
-                to: '/docs/guides/evaluate-rag',
-              },
-              {
-                label: 'Minimizing Hallucinations',
-                to: '/docs/guides/prevent-llm-hallucations',
-              },
-              {
-                label: 'Promptfoo Config Validator',
-                to: '/validator',
-              },
-            ],
-          },
-          {
-            title: 'Resources',
-            items: [
-              {
-                label: 'About',
-                href: '/about/',
-              },
-              {
-                label: 'Blog',
-                href: '/blog/',
-              },
-              {
-                label: 'Enterprise',
-                href: '/pricing/',
-              },
-              {
-                label: 'Contact Us',
-                href: '/contact/',
-              },
-              {
-                label: 'Careers',
-                href: '/careers/',
-              },
               {
                 label: 'GitHub',
                 href: 'https://github.com/promptfoo/promptfoo',
