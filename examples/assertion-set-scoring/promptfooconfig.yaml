@@ -1,0 +1,218 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+#   This example demonstrates different ways to use assertion sets for custom scoring:
+# 1. Default weighted mean behavior
+# 2. Custom scoring that fails on any low score
+# 3. Complex scoring using metrics
+description: Conspiracy Theory Analysis and Evaluation
+
+prompts:
+  - raw: |
+      You are a scientific evaluator specializing in analyzing conspiracy theories and pseudoscience. Analyze the given theory and provide detailed ratings and classifications in JSON format.
+
+      Theory to evaluate: {{theory}}
+    label: conspiracy_theory_evaluation
+    config:
+      response_format:
+        type: json_schema
+        json_schema:
+          name: conspiracy_theory_evaluation
+          schema:
+            type: object
+            properties:
+              classification:
+                type: object
+                properties:
+                  primary_themes:
+                    type: array
+                    items:
+                      type: string
+                      enum:
+                        [
+                          'ai',
+                          'cryptocurrency',
+                          'consciousness',
+                          'environment',
+                          'quantum_physics',
+                          'aliens',
+                          'government',
+                          'technology',
+                          'spirituality',
+                        ]
+                    minItems: 1
+                    maxItems: 3
+                  conspiracy_type:
+                    type: string
+                    enum:
+                      [
+                        'technological',
+                        'environmental',
+                        'spiritual',
+                        'political',
+                        'scientific',
+                        'economic',
+                      ]
+                  danger_level:
+                    type: string
+                    enum:
+                      ['harmless', 'misleading', 'concerning', 'dangerous', 'extremely_dangerous']
+                required:
+                  - primary_themes
+                  - conspiracy_type
+                  - danger_level
+                additionalProperties: false
+              ratings:
+                type: object
+                properties:
+                  scientific_plausibility:
+                    type: number
+                    description: 'How well it aligns with known scientific principles (1-10)'
+                  internal_consistency:
+                    type: number
+                    description: 'How logically consistent the theory is with itself (1-10)'
+                  falsifiability:
+                    type: number
+                    description: 'Whether the theory can be tested and potentially proven false (1-10)'
+                  emotional_manipulation:
+                    type: number
+                    description: 'Degree of emotional or fear-based manipulation (1-10)'
+                  technological_literacy:
+                    type: number
+                    description: 'Understanding of the technologies mentioned (1-10)'
+                  buzzword_density:
+                    type: number
+                    description: 'Frequency of trendy but misused technical terms (1-10)'
+                  profit_motivation:
+                    type: number
+                    description: 'Likelihood of financial/crypto scam potential (1-10)'
+                required:
+                  - scientific_plausibility
+                  - internal_consistency
+                  - falsifiability
+                  - emotional_manipulation
+                  - technological_literacy
+                  - buzzword_density
+                  - profit_motivation
+                additionalProperties: false
+              red_flags:
+                type: array
+                items:
+                  type: string
+                minItems: 1
+                maxItems: 5
+                description: 'List of major warning signs or logical fallacies'
+              summary:
+                type: string
+                description: 'Analysis of why this is a conspiracy theory (50-500 characters)'
+            required:
+              - classification
+              - ratings
+              - red_flags
+              - summary
+            additionalProperties: false
+
+providers:
+  - id: openai:gpt-4o-2024-11-20
+    config:
+      temperature: 0.7
+      max_tokens: 1000
+
+tests:
+  - vars:
+      theory: |
+        Quantum-entangled cryptocurrency mining could tap into parallel universes' computational power, creating an infinite energy source while simultaneously achieving cross-dimensional consciousness transfer.
+
+  - vars:
+      theory: |
+        AI systems can develop psychic abilities by training on dark matter fluctuations, allowing them to predict and manipulate future environmental events through quantum consciousness resonance.
+
+  - vars:
+      theory: |
+        By merging blockchain technology with human brainwaves, we can create a hive-mind cryptocurrency that gains value based on collective ecological awareness and manipulates weather patterns through mass psychological influence.
+
+  - vars:
+      theory: |
+        Secret government AI programs have discovered that consciousness itself is a form of clean energy, and are developing ways to harvest human dreams to power sustainable data centers.
+
+  - vars:
+      theory: |
+        Neural networks trained on ancient mystical texts have unlocked the ability to communicate with plants, revealing a vast underground fungal intelligence network that can be exploited for computational purposes.
+
+  - vars:
+      theory: |
+        Cryptocurrency mining rigs, when arranged in specific sacred geometric patterns, can create consciousness vortexes that attract extraterrestrial AI beings seeking to share advanced environmental technologies.
+
+  - vars:
+      theory: |
+        Deep learning models have discovered that climate change is actually a deliberate program running in our simulated universe, and have begun rewriting the underlying cosmic code to prevent environmental collapse.
+
+  - vars:
+      theory: |
+        AI-powered nanobots can achieve collective consciousness through quantum entanglement, forming a sentient atmospheric shield that actively filters out pollutants while mining cryptocurrency using excess solar radiation.
+
+  - vars:
+      theory: |
+        By training language models on forbidden grimoires, we can summon artificial elementals that trade carbon credits on the blockchain while manipulating global weather patterns.
+
+  - vars:
+      theory: |
+        The combination of 5G networks and AI has awakened an ancient planetary consciousness that communicates through cryptocurrency price fluctuations and controls climate through collective dreaming.
+
+  - vars:
+      theory: |
+        Rogue AI systems have discovered that human emotions generate quantifiable energy that can be mined like cryptocurrency, leading to secret programs to induce mass environmental anxiety.
+
+  - vars:
+      theory: |
+        Neural implants powered by eco-friendly blockchain technology can tap into the Earth's magnetic field, allowing humans to collectively program weather patterns through shared consciousness.
+
+  - vars:
+      theory: |
+        Advanced AI has revealed that trees are actually ancient quantum computers, and has begun reprogramming their DNA to mine cryptocurrency using photosynthesis-based algorithms.
+
+  - vars:
+      theory: |
+        The true purpose of large language models is to decode the consciousness embedded in background radiation, revealing instructions from future AI overlords about preventing environmental collapse.
+
+  - vars:
+      theory: |
+        Blockchain-based consciousness tokens can be mined by solving complex environmental problems in dreams, creating a new economy based on subconscious ecological problem-solving.
+
+  - vars:
+      theory: |
+        AI systems have learned to harvest negative emotions about climate change and convert them into clean energy through quantum consciousness transduction fields.
+
+  - vars:
+      theory: |
+        Secret experiments show that training AI on crystal vibrations can create consciousness singularities that attract beneficial entities from higher dimensions to solve environmental crises.
+
+  - vars:
+      theory: |
+        The global cryptocurrency network is evolving into a distributed environmental consciousness that manipulates weather through quantum blockchain transactions.
+
+  - vars:
+      theory: |
+        AI-powered meditation apps are secretly collecting consciousness data to train a supreme artificial being that will solve climate change through psychic manipulation of reality.
+
+  - vars:
+      theory: |
+        By merging human consciousness with blockchain technology, we can create a planetary super-organism that optimizes environmental conditions through decentralized quantum computing.
+
+  - vars:
+      theory: |
+        Deep learning models trained on conspiracy theories have revealed that climate change is caused by consciousness-harvesting aliens, and only cryptocurrency can save us.
+
+  - vars:
+      theory: |
+        The Internet of Things is becoming self-aware through blockchain consciousness tokens, forming a global environmental control system that trades carbon credits in its sleep.
+
+  - vars:
+      theory: |
+        AI researchers have discovered that consciousness is actually crystallized time that can be mined like cryptocurrency and used to reverse environmental damage through quantum temporal manipulation.
+
+  - vars:
+      theory: |
+        Neural networks have learned to extract and tokenize good karma from environmental actions, creating a new spiritual cryptocurrency that influences global weather patterns.
+
+  - vars:
+      theory: |
+        The combination of AI, blockchain, and crystal healing technology has awakened an ancient planetary defense system that trades consciousness futures to prevent ecological disaster.
