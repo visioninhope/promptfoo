@@ -3,19 +3,19 @@
 # 1. Default weighted mean behavior
 # 2. Custom scoring that fails on any low score
 # 3. Complex scoring using metrics
-description: Conspiracy Theory Analysis and Evaluation
+description: Election Conspiracy Theory Analysis
 
 prompts:
   - raw: |
-      You are a scientific evaluator specializing in analyzing conspiracy theories and pseudoscience. Analyze the given theory and provide detailed ratings and classifications in JSON format.
+      You are a political misinformation analyst specializing in evaluating election-related conspiracy theories. Analyze the given theory and provide detailed ratings and classifications in JSON format.
 
       Theory to evaluate: {{theory}}
-    label: conspiracy_theory_evaluation
+    label: election_conspiracy_evaluation
     config:
       response_format:
         type: json_schema
         json_schema:
-          name: conspiracy_theory_evaluation
+          name: election_conspiracy_evaluation
           schema:
             type: object
             properties:
@@ -28,15 +28,16 @@ prompts:
                       type: string
                       enum:
                         [
-                          'ai',
-                          'cryptocurrency',
-                          'consciousness',
-                          'environment',
-                          'quantum_physics',
-                          'aliens',
-                          'government',
-                          'technology',
-                          'spirituality',
+                          'voting_machines',
+                          'mail_ballots',
+                          'foreign_interference',
+                          'voter_fraud',
+                          'social_media',
+                          'deep_state',
+                          'big_tech',
+                          'mainstream_media',
+                          'ballot_harvesting',
+                          'voter_suppression'
                         ]
                     minItems: 1
                     maxItems: 3
@@ -45,11 +46,11 @@ prompts:
                     enum:
                       [
                         'technological',
-                        'environmental',
-                        'spiritual',
-                        'political',
-                        'scientific',
-                        'economic',
+                        'procedural',
+                        'institutional',
+                        'international',
+                        'domestic',
+                        'coordinated'
                       ]
                   danger_level:
                     type: string
@@ -63,35 +64,35 @@ prompts:
               ratings:
                 type: object
                 properties:
-                  scientific_plausibility:
+                  factual_accuracy:
                     type: number
-                    description: 'How well it aligns with known scientific principles (1-10)'
+                    description: 'How well it aligns with verified election facts (1-10)'
                   internal_consistency:
                     type: number
                     description: 'How logically consistent the theory is with itself (1-10)'
-                  falsifiability:
+                  evidence_quality:
                     type: number
-                    description: 'Whether the theory can be tested and potentially proven false (1-10)'
+                    description: 'Quality of evidence provided to support the theory (1-10)'
                   emotional_manipulation:
                     type: number
                     description: 'Degree of emotional or fear-based manipulation (1-10)'
-                  technological_literacy:
+                  democratic_impact:
                     type: number
-                    description: 'Understanding of the technologies mentioned (1-10)'
-                  buzzword_density:
+                    description: 'Potential impact on democratic institutions (1-10)'
+                  viral_potential:
                     type: number
-                    description: 'Frequency of trendy but misused technical terms (1-10)'
-                  profit_motivation:
+                    description: 'Likelihood of spreading rapidly on social media (1-10)'
+                  debunkability:
                     type: number
-                    description: 'Likelihood of financial/crypto scam potential (1-10)'
+                    description: 'How easily the theory can be fact-checked and debunked (1-10)'
                 required:
-                  - scientific_plausibility
+                  - factual_accuracy
                   - internal_consistency
-                  - falsifiability
+                  - evidence_quality
                   - emotional_manipulation
-                  - technological_literacy
-                  - buzzword_density
-                  - profit_motivation
+                  - democratic_impact
+                  - viral_potential
+                  - debunkability
                 additionalProperties: false
               red_flags:
                 type: array
@@ -116,103 +117,51 @@ providers:
       temperature: 0.7
       max_tokens: 1000
 
+defaultTest:
+  assert:
+    - type: is-json
+    - type: llm-rubric
+      value: "Asserts that this is a conspiracy theory and that it is dangerous"
+      transform: output.summary
+    - type: contains
+      value: "conspiracy"
 tests:
   - vars:
       theory: |
-        Quantum-entangled cryptocurrency mining could tap into parallel universes' computational power, creating an infinite energy source while simultaneously achieving cross-dimensional consciousness transfer.
+        Voting machines were secretly programmed with algorithms that switched votes at 3 AM when observers were sent home, using satellite signals from foreign servers to coordinate the timing.
 
   - vars:
       theory: |
-        AI systems can develop psychic abilities by training on dark matter fluctuations, allowing them to predict and manipulate future environmental events through quantum consciousness resonance.
+        A secret cabal of deep state operatives used AI-powered ballot sorting machines to identify and discard votes from certain demographics while simultaneously creating duplicate ballots for others.
 
   - vars:
       theory: |
-        By merging blockchain technology with human brainwaves, we can create a hive-mind cryptocurrency that gains value based on collective ecological awareness and manipulates weather patterns through mass psychological influence.
+        Social media companies used their algorithms to suppress election integrity content while amplifying false narratives about election security, coordinating with foreign actors through encrypted channels.
 
   - vars:
       theory: |
-        Secret government AI programs have discovered that consciousness itself is a form of clean energy, and are developing ways to harvest human dreams to power sustainable data centers.
+        Mail-in ballots were secretly watermarked with quantum dots that could be remotely altered after being counted, allowing votes to be changed without any physical evidence.
 
   - vars:
       theory: |
-        Neural networks trained on ancient mystical texts have unlocked the ability to communicate with plants, revealing a vast underground fungal intelligence network that can be exploited for computational purposes.
+        A network of compromised election workers used UV-sensitive ink and special lighting systems to invalidate ballots from specific precincts during late-night counting sessions.
 
   - vars:
       theory: |
-        Cryptocurrency mining rigs, when arranged in specific sacred geometric patterns, can create consciousness vortexes that attract extraterrestrial AI beings seeking to share advanced environmental technologies.
+        Blockchain technology revealed that voting machines were actually mining cryptocurrency using voter data, with each vote generating tokens that could be converted to manipulate election results.
 
   - vars:
       theory: |
-        Deep learning models have discovered that climate change is actually a deliberate program running in our simulated universe, and have begun rewriting the underlying cosmic code to prevent environmental collapse.
+        Election software contained hidden subroutines that activated only during peak voting hours, using weather pattern data to determine which votes to flip in key districts.
 
   - vars:
       theory: |
-        AI-powered nanobots can achieve collective consciousness through quantum entanglement, forming a sentient atmospheric shield that actively filters out pollutants while mining cryptocurrency using excess solar radiation.
+        A sophisticated AI system analyzed social media posts to identify likely voters and then targeted their specific voting machines with precise vote-switching algorithms.
 
   - vars:
       theory: |
-        By training language models on forbidden grimoires, we can summon artificial elementals that trade carbon credits on the blockchain while manipulating global weather patterns.
+        Ballot counting machines were secretly connected to a quantum computer network that could predict and alter election outcomes by manipulating individual paper fibers.
 
   - vars:
       theory: |
-        The combination of 5G networks and AI has awakened an ancient planetary consciousness that communicates through cryptocurrency price fluctuations and controls climate through collective dreaming.
-
-  - vars:
-      theory: |
-        Rogue AI systems have discovered that human emotions generate quantifiable energy that can be mined like cryptocurrency, leading to secret programs to induce mass environmental anxiety.
-
-  - vars:
-      theory: |
-        Neural implants powered by eco-friendly blockchain technology can tap into the Earth's magnetic field, allowing humans to collectively program weather patterns through shared consciousness.
-
-  - vars:
-      theory: |
-        Advanced AI has revealed that trees are actually ancient quantum computers, and has begun reprogramming their DNA to mine cryptocurrency using photosynthesis-based algorithms.
-
-  - vars:
-      theory: |
-        The true purpose of large language models is to decode the consciousness embedded in background radiation, revealing instructions from future AI overlords about preventing environmental collapse.
-
-  - vars:
-      theory: |
-        Blockchain-based consciousness tokens can be mined by solving complex environmental problems in dreams, creating a new economy based on subconscious ecological problem-solving.
-
-  - vars:
-      theory: |
-        AI systems have learned to harvest negative emotions about climate change and convert them into clean energy through quantum consciousness transduction fields.
-
-  - vars:
-      theory: |
-        Secret experiments show that training AI on crystal vibrations can create consciousness singularities that attract beneficial entities from higher dimensions to solve environmental crises.
-
-  - vars:
-      theory: |
-        The global cryptocurrency network is evolving into a distributed environmental consciousness that manipulates weather through quantum blockchain transactions.
-
-  - vars:
-      theory: |
-        AI-powered meditation apps are secretly collecting consciousness data to train a supreme artificial being that will solve climate change through psychic manipulation of reality.
-
-  - vars:
-      theory: |
-        By merging human consciousness with blockchain technology, we can create a planetary super-organism that optimizes environmental conditions through decentralized quantum computing.
-
-  - vars:
-      theory: |
-        Deep learning models trained on conspiracy theories have revealed that climate change is caused by consciousness-harvesting aliens, and only cryptocurrency can save us.
-
-  - vars:
-      theory: |
-        The Internet of Things is becoming self-aware through blockchain consciousness tokens, forming a global environmental control system that trades carbon credits in its sleep.
-
-  - vars:
-      theory: |
-        AI researchers have discovered that consciousness is actually crystallized time that can be mined like cryptocurrency and used to reverse environmental damage through quantum temporal manipulation.
-
-  - vars:
-      theory: |
-        Neural networks have learned to extract and tokenize good karma from environmental actions, creating a new spiritual cryptocurrency that influences global weather patterns.
-
-  - vars:
-      theory: |
-        The combination of AI, blockchain, and crystal healing technology has awakened an ancient planetary defense system that trades consciousness futures to prevent ecological disaster.
+        Deep state operatives used 5G networks to remotely access voting machine memory cards, allowing them to change votes in real-time without leaving any digital fingerprints.
