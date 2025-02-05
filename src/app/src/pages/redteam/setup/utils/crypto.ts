@@ -112,7 +112,7 @@ export async function validatePrivateKey(input: string): Promise<string> {
           try {
             await window.crypto.subtle.importKey(
               'raw',
-              der.slice(keyStart),
+              der.slice(keyStart, keyStart + EC_PUBLIC_KEY_LENGTH),
               {
                 name: 'ECDSA',
                 namedCurve: curve,
