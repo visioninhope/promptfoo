@@ -154,9 +154,11 @@ export class WebSocketProvider implements ApiProvider {
       };
 
       if (ws.readyState === WebSocket.OPEN) {
+        logger.debug(`Sending WebSocket message to ${this.url}: ${message}`);
         ws.send(message);
       } else {
         ws.onopen = () => {
+          logger.debug(`Sending WebSocket message to ${this.url}: ${message}`);
           ws.send(message);
         };
       }
