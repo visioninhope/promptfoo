@@ -1,4 +1,5 @@
 import type winston from 'winston';
+import type { WebSocket } from 'ws';
 import type { EnvOverrides } from './env';
 import type { Prompt } from './prompts';
 import type { NunjucksFilterMap, TokenUsage } from './shared';
@@ -171,4 +172,20 @@ export interface ProviderTestResponse {
   providerResponse: ProviderResponse;
   unalignedProviderResult?: ProviderResponse;
   redteamProviderResult?: ProviderResponse;
+}
+
+export interface WebsocketProviderResponse extends ProviderResponse {
+  // TODO: This is a temporary solution for maintaining WebSocket connections.
+  // We should implement a proper connection management system that:
+  // 1. Separates transport layer from response data
+  // 2. Provides type-safe connection handling
+  // 3. Manages connection lifecycle in a centralized way
+  // 4. Doesn't leak implementation details into type definitions
+  connection?: WebSocket;
+}
+
+export interface WebsocketCallApiContextParams extends CallApiContextParams {
+  // TODO: This is a temporary solution for WebSocket connection reuse.
+  // Should be replaced with a proper connection management system.
+  connection?: WebSocket;
 }

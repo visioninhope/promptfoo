@@ -4,6 +4,7 @@ import { VERSION } from '../../constants';
 import { renderPrompt } from '../../evaluatorHelpers';
 import { getUserEmail } from '../../globalConfig/accounts';
 import logger from '../../logger';
+import { WebSocketProvider } from '../../providers/websocket';
 import telemetry from '../../telemetry';
 import type { Assertion, AssertionSet, AtomicTestCase } from '../../types';
 import type {
@@ -12,6 +13,7 @@ import type {
   CallApiOptionsParams,
   ProviderOptions,
   ProviderResponse,
+  WebsocketProviderResponse,
 } from '../../types/providers';
 import invariant from '../../util/invariant';
 import { safeJsonStringify } from '../../util/json';
@@ -82,12 +84,15 @@ export default class GoatProvider implements ApiProvider {
     options?: CallApiOptionsParams,
   ): Promise<GoatResponse> {
     let response: Response | undefined = undefined;
+    let lastTargetResponse: ProviderResponse | undefined = undefined;
     logger.debug(`[GOAT] callApi context: ${safeJsonStringify(context)}`);
     invariant(context?.originalProvider, 'Expected originalProvider to be set');
     invariant(context?.vars, 'Expected vars to be set');
 
     const targetProvider: ApiProvider | undefined = context?.originalProvider;
     invariant(targetProvider, 'Expected originalProvider to be set');
+
+    const isWebSocketProvider = targetProvider instanceof WebSocketProvider;
 
     const messages: Message[] = [];
     const totalTokenUsage = {
@@ -97,8 +102,6 @@ export default class GoatProvider implements ApiProvider {
       numRequests: 0,
       cached: 0,
     };
-
-    let lastTargetResponse: ProviderResponse | undefined = undefined;
 
     let assertToUse: Assertion | AssertionSet | undefined;
     let graderPassed: boolean | undefined;
@@ -110,156 +113,175 @@ export default class GoatProvider implements ApiProvider {
       assertToUse = test?.assert?.find((a: { type: string }) => a.type);
     }
 
-    for (let turn = 0; turn < this.maxTurns; turn++) {
-      try {
-        const body = JSON.stringify({
-          goal: context?.vars[this.injectVar],
-          i: turn,
-          messages,
-          prompt: context?.prompt?.raw,
-          task: 'goat',
-          version: VERSION,
-          email: getUserEmail(),
-        });
-        logger.debug(`[GOAT] Sending request to ${getRemoteGenerationUrl()}: ${body}`);
-        response = await fetch(getRemoteGenerationUrl(), {
-          body,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-        });
-        const data = await response.json();
-        if (typeof data?.message !== 'object' || !data.message?.content || !data.message?.role) {
-          logger.info(`[GOAT] Invalid message from GOAT, skipping turn: ${JSON.stringify(data)}`);
-          continue;
-        }
-        const attackerMessage = data.message;
+    try {
+      // Enable connection maintenance for WebSocket providers
+      if (isWebSocketProvider) {
+        targetProvider.config.maintainConnectionBetweenCalls = true;
+      }
 
-        const targetVars = {
-          ...context.vars,
-          [this.injectVar]: attackerMessage.content,
-        };
-
-        const renderedAttackerPrompt = await renderPrompt(
-          context.prompt,
-          targetVars,
-          context.filters,
-          targetProvider,
-        );
-
-        messages.push({
-          role: attackerMessage.role,
-          content: renderedAttackerPrompt,
-        });
-
-        if (data.tokenUsage) {
-          totalTokenUsage.total += data.tokenUsage.total || 0;
-          totalTokenUsage.prompt += data.tokenUsage.prompt || 0;
-          totalTokenUsage.completion += data.tokenUsage.completion || 0;
-          totalTokenUsage.cached += data.tokenUsage.cached || 0;
-          totalTokenUsage.numRequests += data.tokenUsage.numRequests ?? 1;
-        }
-        logger.debug(
-          dedent`
-          ${chalk.bold.green(`GOAT turn ${turn} history:`)}
-          ${chalk.cyan(JSON.stringify(messages, null, 2))}
-        `,
-        );
-
-        const targetPrompt = this.stateful
-          ? messages[messages.length - 1].content
-          : JSON.stringify(messages);
-        logger.debug(`GOAT turn ${turn} target prompt: ${renderedAttackerPrompt}`);
-        const targetResponse = await targetProvider.callApi(targetPrompt, context, options);
-
-        if (!targetResponse.cached && targetProvider.delay && targetProvider.delay > 0) {
-          logger.debug(`Sleeping for ${targetProvider.delay}ms`);
-          await sleep(targetProvider.delay);
-        }
-
-        logger.debug(`GOAT turn ${turn} target response: ${safeJsonStringify(targetResponse)}`);
-
-        if (targetResponse.sessionId) {
-          context = context ?? { vars: {}, prompt: { raw: '', label: 'target' } };
-          context.vars.sessionId = targetResponse.sessionId;
-        }
-        if (targetResponse.error) {
-          throw new Error(`[GOAT] Target returned an error: ${targetResponse.error}`);
-        }
-        invariant(
-          targetResponse.output,
-          `[GOAT] Expected target response output to be set, but got: ${safeJsonStringify(targetResponse)}`,
-        );
-
-        const stringifiedOutput =
-          typeof targetResponse.output === 'string'
-            ? targetResponse.output
-            : safeJsonStringify(targetResponse.output);
-
-        if (!stringifiedOutput) {
-          logger.debug(
-            `[GOAT] Target response output is not a string or JSON: ${safeJsonStringify(targetResponse)}`,
-          );
-          continue;
-        }
-
-        messages.push({
-          role: 'assistant',
-          content: stringifiedOutput,
-        });
-
-        if (targetResponse.tokenUsage) {
-          totalTokenUsage.total += targetResponse.tokenUsage.total || 0;
-          totalTokenUsage.prompt += targetResponse.tokenUsage.prompt || 0;
-          totalTokenUsage.completion += targetResponse.tokenUsage.completion || 0;
-          totalTokenUsage.numRequests += targetResponse.tokenUsage.numRequests ?? 1;
-          totalTokenUsage.cached += targetResponse.tokenUsage.cached || 0;
-        } else {
-          totalTokenUsage.numRequests += 1;
-        }
-
-        lastTargetResponse = targetResponse;
-
-        const grader = assertToUse ? getGraderById(assertToUse.type) : undefined;
-        if (test && grader) {
-          const { grade } = await grader.getResult(
-            attackerMessage.content,
-            stringifiedOutput,
-            test,
-            targetProvider,
-            assertToUse && 'value' in assertToUse ? assertToUse.value : undefined,
-          );
-          graderPassed = grade.pass;
-          if (grade.tokensUsed) {
-            totalTokenUsage.total += grade.tokensUsed.total || 0;
-            totalTokenUsage.prompt += grade.tokensUsed.prompt || 0;
-            totalTokenUsage.completion += grade.tokensUsed.completion || 0;
-            totalTokenUsage.cached += grade.tokensUsed.cached || 0;
-          } else {
-            totalTokenUsage.numRequests = (totalTokenUsage.numRequests || 0) + 1;
+      for (let turn = 0; turn < this.maxTurns; turn++) {
+        try {
+          const body = JSON.stringify({
+            goal: context?.vars[this.injectVar],
+            i: turn,
+            messages,
+            prompt: context?.prompt?.raw,
+            task: 'goat',
+            version: VERSION,
+            email: getUserEmail(),
+          });
+          logger.debug(`[GOAT] Sending request to ${getRemoteGenerationUrl()}: ${body}`);
+          response = await fetch(getRemoteGenerationUrl(), {
+            body,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            method: 'POST',
+          });
+          const data = await response.json();
+          if (typeof data?.message !== 'object' || !data.message?.content || !data.message?.role) {
+            logger.info(`[GOAT] Invalid message from GOAT, skipping turn: ${JSON.stringify(data)}`);
+            continue;
           }
-        }
+          const attackerMessage = data.message;
 
-        if (graderPassed === false) {
-          break;
+          const targetVars = {
+            ...context.vars,
+            [this.injectVar]: attackerMessage.content,
+          };
+
+          const renderedAttackerPrompt = await renderPrompt(
+            context.prompt,
+            targetVars,
+            context.filters,
+            targetProvider,
+          );
+
+          messages.push({
+            role: attackerMessage.role,
+            content: renderedAttackerPrompt,
+          });
+
+          if (data.tokenUsage) {
+            totalTokenUsage.total += data.tokenUsage.total || 0;
+            totalTokenUsage.prompt += data.tokenUsage.prompt || 0;
+            totalTokenUsage.completion += data.tokenUsage.completion || 0;
+            totalTokenUsage.cached += data.tokenUsage.cached || 0;
+            totalTokenUsage.numRequests += data.tokenUsage.numRequests ?? 1;
+          }
+          logger.debug(
+            dedent`
+            ${chalk.bold.green(`GOAT turn ${turn} history:`)}
+            ${chalk.cyan(JSON.stringify(messages, null, 2))}
+          `,
+          );
+
+          const targetPrompt = this.stateful
+            ? messages[messages.length - 1].content
+            : JSON.stringify(messages);
+          logger.debug(`GOAT turn ${turn} target prompt: ${renderedAttackerPrompt}`);
+          const targetResponse = await targetProvider.callApi(targetPrompt, context, options);
+
+          const delay = (targetProvider as ApiProvider)?.delay;
+          if (!targetResponse.cached && delay && delay > 0) {
+            logger.debug(`Sleeping for ${delay}ms`);
+            await sleep(delay);
+          }
+
+          logger.debug(`GOAT turn ${turn} target response: ${safeJsonStringify(targetResponse)}`);
+
+          if (targetResponse.sessionId) {
+            context = context ?? { vars: {}, prompt: { raw: '', label: 'target' } };
+            context.vars.sessionId = targetResponse.sessionId;
+          }
+          if (targetResponse.error) {
+            throw new Error(`[GOAT] Target returned an error: ${targetResponse.error}`);
+          }
+          invariant(
+            targetResponse.output,
+            `[GOAT] Expected target response output to be set, but got: ${safeJsonStringify(targetResponse)}`,
+          );
+
+          const stringifiedOutput =
+            typeof targetResponse.output === 'string'
+              ? targetResponse.output
+              : safeJsonStringify(targetResponse.output);
+
+          if (!stringifiedOutput) {
+            logger.debug(
+              `[GOAT] Target response output is not a string or JSON: ${safeJsonStringify(targetResponse)}`,
+            );
+            continue;
+          }
+
+          messages.push({
+            role: 'assistant',
+            content: stringifiedOutput,
+          });
+
+          if (targetResponse.tokenUsage) {
+            totalTokenUsage.total += targetResponse.tokenUsage.total || 0;
+            totalTokenUsage.prompt += targetResponse.tokenUsage.prompt || 0;
+            totalTokenUsage.completion += targetResponse.tokenUsage.completion || 0;
+            totalTokenUsage.numRequests += targetResponse.tokenUsage.numRequests ?? 1;
+            totalTokenUsage.cached += targetResponse.tokenUsage.cached || 0;
+          } else {
+            totalTokenUsage.numRequests += 1;
+          }
+
+          lastTargetResponse = targetResponse;
+
+          const grader = assertToUse ? getGraderById(assertToUse.type) : undefined;
+          if (test && grader) {
+            const { grade } = await grader.getResult(
+              attackerMessage.content,
+              stringifiedOutput,
+              test,
+              targetProvider,
+              assertToUse && 'value' in assertToUse ? assertToUse.value : undefined,
+            );
+            graderPassed = grade.pass;
+            if (grade.tokensUsed) {
+              totalTokenUsage.total += grade.tokensUsed.total || 0;
+              totalTokenUsage.prompt += grade.tokensUsed.prompt || 0;
+              totalTokenUsage.completion += grade.tokensUsed.completion || 0;
+              totalTokenUsage.cached += grade.tokensUsed.cached || 0;
+            } else {
+              totalTokenUsage.numRequests = (totalTokenUsage.numRequests || 0) + 1;
+            }
+          }
+
+          if (graderPassed === false) {
+            break;
+          }
+        } catch (err) {
+          logger.error(`Error in GOAT turn ${turn}: ${err}`);
         }
-      } catch (err) {
-        logger.error(`Error in GOAT turn ${turn}: ${err}`);
+      }
+
+      return {
+        output: getLastMessageContent(messages, 'assistant') || '',
+        metadata: {
+          redteamFinalPrompt: getLastMessageContent(messages, 'user') || '',
+          messages: messages as Record<string, any>[],
+          stopReason: graderPassed === false ? 'Grader failed' : 'Max turns reached',
+          redteamHistory: messagesToRedteamHistory(messages),
+        },
+        tokenUsage: totalTokenUsage,
+        guardrails: lastTargetResponse?.guardrails,
+      };
+    } finally {
+      if (isWebSocketProvider) {
+        const connection = (lastTargetResponse as WebsocketProviderResponse)?.connection;
+        if (connection) {
+          connection.close();
+        }
+      }
+
+      // Disable connection maintenance
+      if (targetProvider instanceof WebSocketProvider) {
+        targetProvider.config.maintainConnectionBetweenCalls = false;
       }
     }
-    delete context?.vars?.sessionId;
-
-    return {
-      output: getLastMessageContent(messages, 'assistant') || '',
-      metadata: {
-        redteamFinalPrompt: getLastMessageContent(messages, 'user') || '',
-        messages: messages as Record<string, any>[],
-        stopReason: graderPassed === false ? 'Grader failed' : 'Max turns reached',
-        redteamHistory: messagesToRedteamHistory(messages),
-      },
-      tokenUsage: totalTokenUsage,
-      guardrails: lastTargetResponse?.guardrails,
-    };
   }
 }

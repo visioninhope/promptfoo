@@ -5,6 +5,8 @@ import type {
   CallApiContextParams,
   ProviderOptions,
   ProviderResponse,
+  WebsocketCallApiContextParams,
+  WebsocketProviderResponse,
 } from '../types';
 import invariant from '../util/invariant';
 import { safeJsonStringify } from '../util/json';
@@ -17,6 +19,7 @@ interface WebSocketProviderConfig {
   url?: string;
   timeoutMs?: number;
   transformResponse?: string | Function;
+  maintainConnectionBetweenCalls?: boolean;
   /**
    * @deprecated
    */
@@ -28,7 +31,32 @@ export function createTransformResponse(parser: any): (data: any) => ProviderRes
     return parser;
   }
   if (typeof parser === 'string') {
-    return new Function('data', `return ${parser}`) as (data: any) => ProviderResponse;
+    // Wrap in an IIFE to allow multiple statements
+    const fn = new Function(
+      'data',
+      `
+      try {
+        const result = (function() {
+          ${parser}
+        })();
+        return result;
+      } catch (e) {
+        console.error('Transform function error:', e);
+        throw e;
+      }
+    `,
+    ) as (data: any) => ProviderResponse;
+
+    // Return a wrapped version that ensures we return a ProviderResponse
+    return (data: any) => {
+      try {
+        const result = fn(data);
+        return typeof result === 'string' ? { output: result } : result;
+      } catch (e) {
+        logger.error(`Transform wrapper error: ${e}`);
+        return { error: String(e) };
+      }
+    };
   }
   return (data) => ({ output: data });
 }
@@ -66,13 +94,21 @@ export class WebSocketProvider implements ApiProvider {
       prompt,
     };
     const message = nunjucks.renderString(this.config.messageTemplate, vars);
+    const wsContext = context as WebsocketCallApiContextParams;
 
     logger.debug(`Sending WebSocket message to ${this.url}: ${message}`);
 
-    return new Promise<ProviderResponse>((resolve) => {
-      const ws = new WebSocket(this.url);
+    return new Promise<WebsocketProviderResponse>((resolve) => {
+      // Use existing connection if available and maintainConnectionBetweenCalls is true
+      const ws =
+        this.config.maintainConnectionBetweenCalls && wsContext?.connection
+          ? wsContext.connection
+          : new WebSocket(this.url);
+
       const timeout = setTimeout(() => {
-        ws.close();
+        if (!this.config.maintainConnectionBetweenCalls) {
+          ws.close();
+        }
         resolve({ error: 'WebSocket request timed out' });
       }, this.config.timeoutMs || 10000);
 
@@ -88,21 +124,41 @@ export class WebSocketProvider implements ApiProvider {
               // If parsing fails, assume it's a text response
             }
           }
-          resolve({ output: this.transformResponse(data) });
+          const response: WebsocketProviderResponse = {
+            output: this.transformResponse(data),
+          };
+
+          // Include connection in response if maintaining connection
+          if (this.config.maintainConnectionBetweenCalls) {
+            response.connection = ws;
+          } else {
+            ws.close();
+          }
+
+          resolve(response);
         } catch (err) {
+          if (!this.config.maintainConnectionBetweenCalls) {
+            ws.close();
+          }
           resolve({ error: `Failed to process response: ${JSON.stringify(err)}` });
         }
-        ws.close();
       };
 
       ws.onerror = (err) => {
         clearTimeout(timeout);
+        if (!this.config.maintainConnectionBetweenCalls) {
+          ws.close();
+        }
         resolve({ error: `WebSocket error: ${JSON.stringify(err)}` });
       };
 
-      ws.onopen = () => {
+      if (ws.readyState === WebSocket.OPEN) {
         ws.send(message);
-      };
+      } else {
+        ws.onopen = () => {
+          ws.send(message);
+        };
+      }
     });
   }
 }
