@@ -127,6 +127,7 @@ export class WebSocketProvider implements ApiProvider {
           const response: WebsocketProviderResponse = {
             output: this.transformResponse(data),
           };
+          logger.debug(`Output of websocket transform response: ${JSON.stringify(response)}`);
 
           // Include connection in response if maintaining connection
           if (this.config.maintainConnectionBetweenCalls) {

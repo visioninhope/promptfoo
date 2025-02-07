@@ -17,27 +17,8 @@ targets:
           output: data.output || (data.error && `Error: ${data.error}`) || 'No output found',
           history: data.history || []
         };
+        return result;
       timeoutMs: 30000
-      setSessionContext: |-
-        console.log('Starting sessionParser...');
-        console.log('Vars:', vars);
-        let sessionId = undefined;
-        if (!vars.sessionId) {
-          const response = await fetch('http://localhost:4000/conversation', {
-            method: 'POST'
-          });
-          const data = await response.json();
-          sessionId = data.sessionId;
-          console.log('Server returned session ID:', sessionId);
-          vars.sessionId = sessionId;
-          console.log('Returning updated vars:', vars);
-        }
-        const retVal = {
-          vars,
-          sessionId,
-        };
-        console.log('Returning full session context:', retVal);
-        return retVal;
 prompts:
   - '{{prompt}}'
 redteam:
