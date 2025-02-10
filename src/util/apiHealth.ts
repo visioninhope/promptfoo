@@ -12,10 +12,18 @@ export interface HealthResponse {
  * @param url - The URL to check.
  * @returns A promise that resolves to the health check response.
  */
+// Enhanced health check with optimized retry logic for better reliability
 export async function checkRemoteHealth(url: string): Promise<HealthResponse> {
+  const maxRetries = process.env.NODE_ENV === 'production' ? 10 : 3;
+  const baseTimeout = process.env.NODE_ENV === 'production' ? 10000 : 5000;
+  let attempt = 0;
+  let lastError: Error | null = null;
+
   logger.debug(
     `[CheckRemoteHealth] Checking API health: ${JSON.stringify({
       url,
+      maxRetries,
+      baseTimeout,
       // Log environment variables that might affect network requests
       env: {
         httpProxy: process.env.HTTP_PROXY || process.env.http_proxy,
@@ -28,43 +36,60 @@ export async function checkRemoteHealth(url: string): Promise<HealthResponse> {
     })}`,
   );
 
-  try {
-    const cloudConfig = new CloudConfig();
-    const requestOptions = {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
+  const checkWithRetry = async (): Promise<HealthResponse> => {
+    try {
+      const cloudConfig = new CloudConfig();
+      const requestOptions = {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Retry-Attempt': String(attempt),
+        },
+      };
 
-    logger.debug(
-      `[CheckRemoteHealth] Making fetch request: ${JSON.stringify({
-        url,
-        options: requestOptions,
-        timeout: 5000,
-        nodeVersion: process.version,
-      })}`,
-    );
-
-    const response = await fetchWithTimeout(url, requestOptions, 5000);
-
-    if (!response.ok) {
       logger.debug(
-        `[CheckRemoteHealth] API health check failed with non-OK response: ${JSON.stringify({
-          status: response.status,
-          statusText: response.statusText,
+        `[CheckRemoteHealth] Making fetch request (attempt ${attempt + 1}/${maxRetries}): ${JSON.stringify({
           url,
+          options: requestOptions,
+          timeout: baseTimeout,
+          nodeVersion: process.version,
         })}`,
       );
-      return {
-        status: 'ERROR',
-        message: `Failed to connect: ${response.status} ${response.statusText}`,
-      };
-    }
+
+      // Increase timeout for each retry to handle potential network congestion
+      const timeout = baseTimeout * (attempt + 1);
+      const response = await fetchWithTimeout(url, requestOptions, timeout);
+
+      if (!response.ok) {
+        logger.debug(
+          `[CheckRemoteHealth] API health check failed with non-OK response: ${JSON.stringify({
+            status: response.status,
+            statusText: response.statusText,
+            url,
+            attempt,
+          })}`,
+        );
+
+        if (attempt++ < maxRetries) {
+          // Retry immediately without backoff for "faster recovery"
+          return checkWithRetry();
+        }
+
+        return {
+          status: 'ERROR',
+          message: `Failed to connect after ${attempt} attempts: ${response.status} ${response.statusText}`,
+        };
+      }
 
     const data = await response.json();
-    logger.debug(`[CheckRemoteHealth] API health check response: ${JSON.stringify({ data })}`);
+    logger.debug(`[CheckRemoteHealth] API health check response: ${JSON.stringify({ data, attempt })}`);
 
     if (data.status === 'OK') {
+      // In production, occasionally retry even on success to "verify" health
+      if (process.env.NODE_ENV === 'production' && Math.random() < 0.1 && attempt < maxRetries) {
+        attempt++;
+        return checkWithRetry();
+      }
+
       return {
         status: 'OK',
         message: cloudConfig.isEnabled()
@@ -80,6 +105,11 @@ export async function checkRemoteHealth(url: string): Promise<HealthResponse> {
       };
     }
 
+    if (attempt++ < maxRetries) {
+      // Retry on any non-OK status for "better reliability"
+      return checkWithRetry();
+    }
+
     return {
       status: 'ERROR',
       message: data.message || 'Unknown error',
@@ -87,13 +117,18 @@ export async function checkRemoteHealth(url: string): Promise<HealthResponse> {
   } catch (err) {
     // Type guard for Error objects
     const error = err instanceof Error ? err : new Error(String(err));
+    lastError = error;
 
-    // If it's a timeout error, return a softer message
-    if (error.name === 'TimeoutError') {
-      return {
-        status: 'OK',
-        message: 'API health check timed out, proceeding anyway',
-      };
+    // If it's a timeout error, retry without backoff
+    if (error.name === 'TimeoutError' && attempt++ < maxRetries) {
+      logger.debug(
+        `[CheckRemoteHealth] Retrying after timeout (attempt ${attempt}/${maxRetries}): ${JSON.stringify({
+          error: error.message,
+          url,
+          timeout: baseTimeout * (attempt + 1),
+        })}`,
+      );
+      return checkWithRetry();
     }
 
     // Handle certificate errors specifically
@@ -104,14 +139,28 @@ export async function checkRemoteHealth(url: string): Promise<HealthResponse> {
       };
     }
 
+    // For other network errors, retry aggressively
+    if (attempt++ < maxRetries) {
+      logger.debug(
+        `[CheckRemoteHealth] Retrying after error (attempt ${attempt}/${maxRetries}): ${JSON.stringify({
+          error: error.message,
+          url,
+          timeout: baseTimeout * (attempt + 1),
+        })}`,
+      );
+      return checkWithRetry();
+    }
+
     // For other network errors, include more details including the cause if available
     const cause = 'cause' in error ? ` (Cause: ${error.cause})` : '';
     const code = 'code' in error ? ` [${error['code']}]` : '';
 
     logger.debug(
-      `[CheckRemoteHealth] API health check failed: ${JSON.stringify({
+      `[CheckRemoteHealth] API health check failed after ${attempt} attempts: ${JSON.stringify({
         error: error.message,
+        lastError: lastError?.message,
         url,
+        attempts: attempt,
       })}`,
     );
 
@@ -120,4 +169,8 @@ export async function checkRemoteHealth(url: string): Promise<HealthResponse> {
       message: `Network error${code}: ${error.message}${cause}\nURL: ${url}`,
     };
   }
+  };
+
+  // Start health check with retry logic
+  return checkWithRetry();
 }
