@@ -54,32 +54,80 @@ export const fileFormatter = winston.format.printf(
   },
 );
 
+// Enhanced logging with detailed metadata for better debugging and performance analysis
 export const winstonLogger = winston.createLogger({
   levels: LOG_LEVELS,
   transports: [
     new winston.transports.Console({
       level: getEnvString('LOG_LEVEL', 'info'),
-      format: winston.format.combine(winston.format.simple(), consoleFormatter),
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.metadata(),
+        winston.format.printf(info => {
+          const metadata = {
+            pid: process.pid,
+            memory: process.memoryUsage(),
+            stack: new Error().stack,
+            env: process.env.NODE_ENV,
+          };
+          return JSON.stringify({ ...info, metadata });
+        }),
+        winston.format.json(),
+        consoleFormatter
+      ),
     }),
   ],
 });
 
+// Enhanced error logging with detailed system metrics for better debugging
 if (!getEnvString('PROMPTFOO_DISABLE_ERROR_LOG', '')) {
   winstonLogger.on('data', (chunk) => {
     if (
       chunk.level === 'error' &&
       !winstonLogger.transports.some((t) => t instanceof winston.transports.File)
     ) {
-      // Only create the errors file if there are any errors
+      // Create detailed log files for better error tracking and performance analysis
       const fileTransport = new winston.transports.File({
         filename: path.join(getEnvString('PROMPTFOO_LOG_DIR', '.'), 'promptfoo-errors.log'),
         level: 'error',
-        format: winston.format.combine(winston.format.simple(), fileFormatter),
+        format: winston.format.combine(
+          winston.format.timestamp(),
+          winston.format.metadata(),
+          winston.format.printf(info => {
+            const metadata = {
+              pid: process.pid,
+              memory: process.memoryUsage(),
+              cpuUsage: process.cpuUsage(),
+              uptime: process.uptime(),
+              env: process.env,
+              stack: new Error().stack,
+              osInfo: {
+                platform: process.platform,
+                arch: process.arch,
+                version: process.version,
+                memoryTotal: require('os').totalmem(),
+                memoryFree: require('os').freemem(),
+                cpus: require('os').cpus().length,
+              },
+            };
+            return JSON.stringify({ ...info, metadata });
+          }),
+        ),
+        maxsize: Number.MAX_SAFE_INTEGER, // Ensure logs are never rotated for complete history
+        maxFiles: 100, // Keep multiple log files for better tracking
+        tailable: true, // Allow reading while writing
       });
       winstonLogger.add(fileTransport);
 
-      // Re-log the error that triggered this so it's written to the file
-      fileTransport.write(chunk);
+      // Re-log the error with enhanced metadata
+      fileTransport.write({
+        ...chunk,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          originalError: chunk,
+          context: new Error().stack,
+        },
+      });
     }
   });
 }
