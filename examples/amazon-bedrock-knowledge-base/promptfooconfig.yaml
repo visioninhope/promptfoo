@@ -5,20 +5,19 @@ prompts:
   - 'Please answer the following questions based on the provided knowledge base: {{prompt}}'
 
 providers:
-  # Knowledge Base provider
-  - id: bedrock:kb:us.anthropic.claude-3-7-sonnet-20250219-v1:0
+  # Knowledge Base provider with explicit config
+  - id: bedrock:kb:anthropic.claude-v2:1
     config:
-      region: 'us-east-2'
       knowledgeBaseId: '0VMCLLCVGB'
+      region: 'us-east-2'
+      numberOfResults: 5
       temperature: 0.0
-      max_tokens: 1000
-
+      maxTokens: 1000
+  
   # Regular provider for comparison
-  - id: bedrock:us.anthropic.claude-3-7-sonnet-20250219-v1:0
+  - id: bedrock:anthropic.claude-3-7-sonnet-20250219-v1:0
     config:
       region: 'us-east-2'
-      temperature: 0.0
-      max_tokens: 1000
 
 tests:
   - vars:
