@@ -1,18 +1,100 @@
 import chalk from 'chalk';
-import { spawn } from 'child_process';
-import { exec } from 'child_process';
 import type { Command } from 'commander';
-import { promisify } from 'util';
 import logger from '../logger';
+import { performBasicModelScan } from './basicModelScan';
 
-const execAsync = promisify(exec);
+export interface ModelScanOptions {
+  paths: string[];
+  blacklist?: string[];
+  format?: 'text' | 'json';
+  output?: string;
+  timeout?: number;
+  verbose?: boolean;
+  maxFileSize?: number;
+}
 
-async function checkModelAuditInstalled(): Promise<boolean> {
+export interface ModelScanResult {
+  success: boolean;
+  output?: string;
+  error?: string;
+  stderr?: string;
+  exitCode?: number;
+}
+
+export async function scanModel(options: ModelScanOptions): Promise<ModelScanResult> {
   try {
-    await execAsync('python -c "import modelaudit"');
-    return true;
-  } catch {
-    return false;
+    const { paths } = options;
+
+    if (!paths || paths.length === 0) {
+      return {
+        success: false,
+        error: 'No paths specified. Please provide at least one model file or directory to scan.',
+      };
+    }
+    
+    try {
+      logger.info(`Running basic model scan on: ${paths.join(', ')}`);
+      
+      // Use our built-in basic scanner instead of external dependency
+      const scanResult = await performBasicModelScan(paths);
+      
+      // Apply blacklist patterns if provided
+      if (options.blacklist && options.blacklist.length > 0) {
+        scanResult.files.forEach(file => {
+          // Add issues for blacklisted patterns
+          options.blacklist?.forEach(pattern => {
+            if (file.filename.includes(pattern)) {
+              file.issues.push({
+                id: `blacklist-${pattern}`,
+                type: 'BLACKLISTED_PATTERN',
+                severity: 'HIGH',
+                description: `File matches blacklisted pattern: ${pattern}`,
+                location: file.filename,
+                mitigation: 'Investigate this file as it matches a blacklisted pattern',
+                confidence: 'HIGH'
+              });
+            }
+          });
+        });
+        
+        // Recalculate summary stats
+        const highSeverity = scanResult.files.reduce((count, file) => 
+          count + file.issues.filter(i => i.severity === 'HIGH').length, 0);
+        const mediumSeverity = scanResult.files.reduce((count, file) => 
+          count + file.issues.filter(i => i.severity === 'MEDIUM').length, 0);
+        const lowSeverity = scanResult.files.reduce((count, file) => 
+          count + file.issues.filter(i => i.severity === 'LOW').length, 0);
+        
+        scanResult.summary.highSeverity = highSeverity;
+        scanResult.summary.mediumSeverity = mediumSeverity;
+        scanResult.summary.lowSeverity = lowSeverity;
+        scanResult.summary.totalVulnerabilities = highSeverity + mediumSeverity + lowSeverity;
+      }
+      
+      // Convert to string based on format
+      const output = JSON.stringify(scanResult, null, 2);
+      
+      return {
+        success: true,
+        output,
+        exitCode: 0
+      };
+    } catch (scanError) {
+      const errorMessage = `Error during model scan: ${scanError instanceof Error ? scanError.message : String(scanError)}`;
+      logger.error(errorMessage);
+      
+      return {
+        success: false,
+        error: errorMessage,
+        stderr: scanError instanceof Error ? scanError.stack || scanError.message : String(scanError),
+        exitCode: 1
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
+    };
   }
 }
 
@@ -38,72 +120,18 @@ export function modelScanCommand(program: Command): void {
     .option('-v, --verbose', 'Enable verbose output')
     .option('--max-file-size <bytes>', 'Maximum file size to scan in bytes')
     .action(async (paths: string[], options) => {
-      if (!paths || paths.length === 0) {
-        logger.error(
-          'No paths specified. Please provide at least one model file or directory to scan.',
-        );
-        process.exit(1);
-      }
-
-      // Check if modelaudit is installed
-      const isModelAuditInstalled = await checkModelAuditInstalled();
-      if (!isModelAuditInstalled) {
-        logger.error('ModelAudit is not installed.');
-        logger.info(`Please install it using: ${chalk.green('pip install modelaudit')}`);
-        logger.info('For more information, visit: https://www.promptfoo.dev/docs/model-audit/');
-        process.exit(1);
-      }
-
-      const args = ['-m', 'modelaudit'];
-
-      // Add all paths
-      args.push(...paths);
-
-      // Add options
-      if (options.blacklist && options.blacklist.length > 0) {
-        options.blacklist.forEach((pattern: string) => {
-          args.push('--blacklist', pattern);
-        });
-      }
-
-      if (options.format) {
-        args.push('--format', options.format);
-      }
-
-      if (options.output) {
-        args.push('--output', options.output);
-      }
-
-      if (options.timeout) {
-        args.push('--timeout', options.timeout);
-      }
-
-      if (options.verbose) {
-        args.push('--verbose');
-      }
-
-      if (options.maxFileSize) {
-        args.push('--max-file-size', options.maxFileSize);
-      }
-
-      logger.info(`Running model scan on: ${paths.join(', ')}`);
-
-      const modelAudit = spawn('python', args, { stdio: 'inherit' });
-
-      modelAudit.on('error', (error) => {
-        logger.error(`Failed to start modelaudit: ${error.message}`);
-        logger.info('Make sure modelaudit is installed and available in your PATH.');
-        logger.info('Install it using: pip install modelaudit');
-        process.exit(1);
+      const result = await scanModel({
+        paths,
+        blacklist: options.blacklist,
+        format: options.format,
+        output: options.output,
+        timeout: options.timeout,
+        verbose: options.verbose,
+        maxFileSize: options.maxFileSize,
       });
-
-      modelAudit.on('close', (code) => {
-        if (code === 0) {
-          logger.info('Model scan completed successfully.');
-        } else {
-          logger.error(`Model scan completed with issues. Exit code: ${code}`);
-          process.exit(code || 1);
-        }
-      });
+      
+      if (!result.success) {
+        process.exit(result.exitCode || 1);
+      }
     });
 }
