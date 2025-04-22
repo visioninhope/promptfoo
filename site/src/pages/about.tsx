@@ -1,46 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Link from '@docusaurus/Link';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import { useColorMode } from '@docusaurus/theme-common';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid2';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { alpha, createTheme, ThemeProvider } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Layout from '@theme/Layout';
 
-// --- Enhanced Types ---
+// --- Types ---
 
-// 1. Specific Roles
-type Role = 
-  | 'CEO & Co-founder' 
-  | 'CTO & Co-founder' 
-  | 'Staff Engineer' 
-  | 'Enterprise GTM Lead' 
-  | 'Principal Solutions Architect' 
-  | 'Senior Engineer' 
-  | 'AI Red Team';
-
-// 2. Filter Categories Type
-type FilterCategory = 'all' | 'engineering' | 'business';
-
-// 3. Role-to-Category Mapping
-const roleCategoryMapping: { [key in Role]?: FilterCategory[] } = {
-  'CEO & Co-founder': ['business'],
-  'CTO & Co-founder': ['engineering'],
-  'Staff Engineer': ['engineering'],
-  'Enterprise GTM Lead': ['business'],
-  'Principal Solutions Architect': ['business'],
-  'Senior Engineer': ['engineering'],
-  'AI Red Team': ['engineering'],
-};
-
-// 4. TeamMember Interface (using Role)
+// TeamMember Interface with simplified title as string
 interface TeamMember {
   name: string;
-  title: Role;
+  title: string;
   image: string;
   bio: string;
   socials?: {
@@ -53,7 +30,7 @@ interface TeamMemberCardProps {
   member: TeamMember;
 }
 
-// 5. Investor Interface
+// Investor Interface
 interface Investor {
   name: string;
   image: string;
@@ -63,32 +40,21 @@ interface Investor {
 // --- Component Implementation ---
 
 const AboutPageContent = () => {
-  // Explicitly typed state using FilterCategory
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
-  
-  // Force dark mode for this page
-  const isDark = true;
+  // Get current color mode from Docusaurus
+  const { colorMode } = useColorMode();
+  const isDarkMode = colorMode === 'dark';
 
-  // Theme setup remains the same
+  // Theme setup with responsive colors - simplified
   const theme = React.useMemo(
     () =>
       createTheme({
         palette: {
-          mode: 'dark',
-          primary: {
-            main: '#3578e5',
-          },
-          background: {
-            default: '#0e1c2b',
-            paper: '#132339',
-          },
-          text: {
-            primary: '#e2e8f0',
-            secondary: '#94a3b8',
-          },
+          mode: isDarkMode ? 'dark' : 'light',
+          // Remove explicit primary/background/text color overrides to use Material UI defaults
         },
         typography: {
-          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
+          fontFamily:
+            '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
           h2: { fontSize: '2.25rem', fontWeight: 600, lineHeight: 1.3 },
           h3: { fontSize: '1.5rem', fontWeight: 600, lineHeight: 1.3 },
           h5: { fontSize: '1.125rem', fontWeight: 600 },
@@ -101,7 +67,7 @@ const AboutPageContent = () => {
         components: {
           MuiDivider: {
             styleOverrides: {
-              root: { borderColor: 'rgba(255, 255, 255, 0.1)' },
+              root: { borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
             },
           },
           MuiButton: {
@@ -111,7 +77,7 @@ const AboutPageContent = () => {
           },
         },
       }),
-    [],
+    [isDarkMode],
   );
 
   // --- Data Definitions ---
@@ -125,17 +91,17 @@ const AboutPageContent = () => {
       socials: {
         linkedin: 'https://www.linkedin.com/in/ianww/',
         github: 'https://github.com/typpo',
-      }
+      },
     },
     {
       name: "Michael D'Angelo",
       title: 'CTO & Co-founder',
       image: '/img/team/michael.jpeg',
-      bio: 'Michael brings extensive experience in AI and engineering leadership. As the former VP of Engineering and Head of AI at Smile Identity, he has a track record of scaling ML solutions to serve over 100 million people.',
+      bio: 'Michael is the former VP of Engineering and Head of AI at SmileID, where he scaled ML solutions to serve over 200M people across hundreds of enterprises.',
       socials: {
         linkedin: 'https://www.linkedin.com/in/michaelldangelo/',
         github: 'https://github.com/mldangelo',
-      }
+      },
     },
   ];
 
@@ -144,57 +110,75 @@ const AboutPageContent = () => {
       name: 'Steve Klein',
       title: 'Staff Engineer',
       image: '/img/team/steve.jpeg',
-      bio: 'Steve brings decades of expertise in engineering, product, and cybersecurity. He has led technical teams at Microsoft, Shopify, Intercom, and PwC.',
-      socials: { linkedin: 'https://www.linkedin.com/in/' }
+      bio: 'Steve brings decades of expertise in engineering, product, and cybersecurity. He has led technical and product teams, and conducted pentests at companies like Microsoft, Shopify, Intercom, and PwC. Most recently he was scaling AI products at Discord.',
+      socials: {
+        linkedin: 'https://www.linkedin.com/in/sklein12/',
+        github: 'https://github.com/sklein12',
+      },
     },
     {
       name: 'Matthew Bou',
       title: 'Enterprise GTM Lead',
       image: '/img/team/matt.jpeg',
-      bio: "Matt's a three-time founding sales team member with a track record of building GTM from scratch. He's helped startups land and grow Fortune 500 accounts.",
-      socials: { linkedin: 'https://www.linkedin.com/in/mattbou/' }
+      bio: "Matt's a three-time founding sales team member with a track record of building GTM from scratch. He's helped startups land and grow Fortune 500 accounts, leading to three exits. At Promptfoo, he leads enterprise sales, helping teams accelerate and secure LLMs.",
+      socials: { linkedin: 'https://www.linkedin.com/in/mattbou/' },
     },
     {
       name: 'Ben Shipley',
       title: 'Enterprise GTM Lead',
       image: '/img/team/ben.jpeg',
-      bio: 'Ben brings go-to-market expertise as an early GTM hire at multiple high-growth startups including Windsurf, Applied Intuition, and Amplitude.',
-      socials: { linkedin: 'https://www.linkedin.com/in/ben-shipley-069517101' }
+      bio: 'Ben brings go-to-market expertise as an early GTM hire at multiple high-growth startups including Windsurf, Applied Intuition, and Amplitude. He specializes in building strategic relationships and helping enterprises implement and secure their AI solutions.',
+      socials: { linkedin: 'https://www.linkedin.com/in/ben-shipley-069517101' },
     },
     {
       name: 'Vanessa Sauter',
       title: 'Principal Solutions Architect',
       image: '/img/team/vanessa.jpeg',
-      bio: 'Vanessa led hundreds of security and privacy reviews for customers at Gong. She has also pentested dozens of enterprises and launched hundreds of bug bounty programs.',
-      socials: { linkedin: 'https://www.linkedin.com/in/vsauter/' }
+      bio: 'Vanessa led hundreds of security and privacy reviews for customers at Gong. She has also pentested dozens of enterprises and launched hundreds of bug bounty programs for a leading crowdsourced security company and is published in Forbes, Lawfare, and Dark Reading.',
+      socials: {
+        linkedin: 'https://www.linkedin.com/in/vsauter/',
+        github: 'https://github.com/vsauter',
+      },
     },
     {
       name: 'Guangshuo Zang',
       title: 'Staff Engineer',
       image: '/img/team/shuo.jpeg',
-      bio: 'Guangshuo brings technical expertise from Meta, ChipperCash, and Smile Identity. Specializes in GenAI systems and product engineering.',
-      socials: { linkedin: 'https://www.linkedin.com/in/guangshuo-zang-23455361/', github: 'https://github.com/shuzang' }
+      bio: 'Guangshuo brings technical expertise from Meta, ChipperCash, and Smile Identity. Specializes in GenAI systems, product engineering, and building scalable client solutions.',
+      socials: {
+        linkedin: 'https://www.linkedin.com/in/guangshuo-zang-23455361/',
+        github: 'https://github.com/shuzang',
+      },
     },
     {
       name: 'Faizan Minhas',
       title: 'Senior Engineer',
       image: '/img/team/faizan.jpeg',
-      bio: 'Faizan brings a wealth of experience in building products across industries. He has led projects at Faire, Intercom, and various startups.',
-      socials: { linkedin: 'https://www.linkedin.com/in/faizan-m-54157b113/' }
+      bio: 'Faizan brings a wealth of experience in building products across a range of industries. He has led and contributed to projects at companies like Faire, Intercom, and a range of startups.',
+      socials: {
+        linkedin: 'https://www.linkedin.com/in/faizan-m-54157b113/',
+        github: 'https://github.com/faizanminhas',
+      },
     },
     {
       name: 'Will Holley',
       title: 'Senior Engineer',
       image: '/img/team/will.jpg',
       bio: 'Will has a passion for building secure and reliable systems. He brings experience leading teams that develop AI for the financial services industry.',
-      socials: { linkedin: 'https://www.linkedin.com/in/waholley/' }
+      socials: {
+        linkedin: 'https://www.linkedin.com/in/waholley/',
+        github: 'https://github.com/will-holley',
+      },
     },
     {
       name: 'Asmi Gulati',
       title: 'AI Red Team',
       image: '/img/team/asmi.jpeg',
-      bio: 'Asmi specializes in prompt hacking and develops educational content for Promptfoo. In her free time she maintains aisimplyexplained.com.',
-      socials: { linkedin: 'https://www.linkedin.com/in/asmi-gulati/', github: 'https://github.com/asmigulati' }
+      bio: 'Asmi specializes in prompt hacking and develops educational content for Promptfoo. In her free time she maintains https://aisimplyexplained.com/',
+      socials: {
+        linkedin: 'https://www.linkedin.com/in/asmi-gulati/',
+        github: 'https://github.com/AISimplyExplained',
+      },
     },
   ];
 
@@ -233,99 +217,95 @@ const AboutPageContent = () => {
 
   // --- Logic ---
 
-  // Simplified filter function using the mapping
-  const getFilteredTeam = () => {
-    const allTeam = [...founders, ...teamMembers];
-    if (activeFilter === 'all') {
-      return allTeam;
-    }
-    return allTeam.filter(member => {
-      const categories = roleCategoryMapping[member.title] || [];
-      // Ensure founders are correctly included based on their roles
-      // This logic handles cases where a role might belong to multiple categories if needed
-      return categories.includes(activeFilter);
-    });
-  };
-
   // --- Components ---
 
-  // TeamMemberCard component (structure unchanged)
+  // TeamMemberCard component
   const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member }) => (
-    <Box 
-      sx={{ 
-        height: '100%', 
-        bgcolor: 'background.paper',
-        borderRadius: '4px',
-        transition: 'background-color 0.2s ease-in-out, transform 0.2s ease-in-out',
+    <Box
+      sx={{
+        height: '100%',
+        borderRadius: '8px',
+        boxShadow: theme.shadows[1],
+        transition: 'all 0.2s ease-in-out',
+        padding: 3,
+        textAlign: 'center',
         '&:hover': {
-          bgcolor: alpha(theme.palette.background.paper, 0.8),
           transform: 'translateY(-2px)',
-        }
+          boxShadow: theme.shadows[3],
+        },
       }}
     >
-      <Box sx={{ position: 'relative', mb: 1.5 }}>
+      <Box sx={{ position: 'relative', mb: 2.5, display: 'flex', justifyContent: 'center' }}>
         <img
           src={member.image}
           alt={member.name}
-          style={{ 
-            width: '100%', 
-            aspectRatio: '1 / 1',
+          style={{
+            width: '130px',
+            height: '130px',
+            borderRadius: '50%',
             objectFit: 'cover',
-            borderRadius: '4px 4px 0 0',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.15)',
           }}
         />
-        <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
-          {member.socials?.github && (
-            <IconButton
-              aria-label={`GitHub profile of ${member.name}`}
-              href={member.socials.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                color: 'white',
-                padding: '4px',
-                width: '26px',
-                height: '26px',
-                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.7)' },
-              }}
-            >
-              <GitHubIcon sx={{ fontSize: '14px' }} />
-            </IconButton>
-          )}
-          {member.socials?.linkedin && (
-            <IconButton
-              aria-label={`LinkedIn profile of ${member.name}`}
-              href={member.socials.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                color: 'white',
-                padding: '4px',
-                width: '26px',
-                height: '26px',
-                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.7)' },
-              }}
-            >
-              <LinkedInIcon sx={{ fontSize: '14px' }} />
-            </IconButton>
-          )}
-        </Box>
       </Box>
-      <Box sx={{ p: 2 }}> 
-        <Typography variant="h6" component="h3" sx={{ mb: 0.25 }}>
-          {member.name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {member.title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', lineHeight: 1.45 }}>
-          {member.bio}
-        </Typography>
+      
+      <Typography variant="h6" component="h3" sx={{ mb: 0.5, fontWeight: 600 }}>
+        {member.name}
+      </Typography>
+      
+      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+        {member.title}
+      </Typography>
+      
+      {/* Social links */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, gap: 1 }}>
+        {member.socials?.github && (
+          <IconButton
+            aria-label={`GitHub profile of ${member.name}`}
+            href={member.socials.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+            sx={{
+              backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+              color: isDarkMode ? 'white' : 'rgba(0, 0, 0, 0.7)',
+              padding: '6px',
+              '&:hover': { 
+                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+              },
+            }}
+          >
+            <GitHubIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+        )}
+        {member.socials?.linkedin && (
+          <IconButton
+            aria-label={`LinkedIn profile of ${member.name}`}
+            href={member.socials.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+            sx={{
+              backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+              color: isDarkMode ? 'white' : 'rgba(0, 0, 0, 0.7)',
+              padding: '6px',
+              '&:hover': { 
+                backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+              },
+            }}
+          >
+            <LinkedInIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+        )}
       </Box>
+      
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ fontSize: '0.85rem', lineHeight: 1.5 }}
+      >
+        {member.bio}
+      </Typography>
     </Box>
   );
 
@@ -333,19 +313,23 @@ const AboutPageContent = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', color: 'text.primary' }}>
+      <Box sx={{ minHeight: '100vh', color: 'text.primary' }}>
         <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
           {/* Hero Section */}
-          <Box 
-            sx={{ 
-              textAlign: 'center', 
+          <Box
+            sx={{
+              textAlign: 'center',
               mb: { xs: 8, md: 10 },
             }}
           >
-            <Typography variant="h2" component="h1" gutterBottom>
+            <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
               Securing the Future of AI
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '650px', mx: 'auto' }}>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ maxWidth: '650px', mx: 'auto', fontSize: '1.1rem' }}
+            >
               Promptfoo helps developers and enterprises build secure, reliable AI applications.
             </Typography>
           </Box>
@@ -358,13 +342,13 @@ const AboutPageContent = () => {
             <Grid container spacing={5} alignItems="center">
               <Grid size={{ xs: 12, md: 8 }}>
                 <Typography variant="body1" paragraph>
-                  We are security and engineering practitioners who have scaled generative AI products
-                  to hundreds of millions of users. We're building the tools that we wished we had
-                  when we were on the front lines.
+                  We are security and engineering practitioners who have scaled generative AI
+                  products to hundreds of millions of users. We're building the tools that we wished
+                  we had when we were on the front lines.
                 </Typography>
                 <Typography variant="body1">
-                  Based in San Mateo, California, we're backed by Andreessen Horowitz and top leaders
-                  in the technology and security industries.
+                  Based in San Mateo, California, we're backed by Andreessen Horowitz and top
+                  leaders in the technology and security industries.
                 </Typography>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -373,7 +357,13 @@ const AboutPageContent = () => {
                     <img
                       src="/img/logo-panda.svg"
                       alt="Promptfoo Logo"
-                      style={{ maxWidth: '120px', height: 'auto' }}
+                      style={{
+                        width: '180px',
+                        height: 'auto',
+                        filter: isDarkMode
+                          ? 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.2))'
+                          : 'drop-shadow(0 0 10px rgba(0, 0, 0, 0.1))',
+                      }}
                     />
                   </Box>
                 </Box>
@@ -385,16 +375,24 @@ const AboutPageContent = () => {
 
           {/* Founders Section */}
           <Box mb={{ xs: 8, md: 10 }}>
-            <Typography variant="h3" component="h2" align="center" mb={1}>
-              Our Founders
-            </Typography>
-            <Typography variant="body1" align="center" mb={5} color="text.secondary" sx={{ maxWidth: '600px', mx: 'auto' }}>
-              Meet the leadership building the future of AI security
-            </Typography>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
+                Our Founders
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ maxWidth: '600px', mx: 'auto' }}
+              >
+                Meet the leadership building the future of AI security
+              </Typography>
+            </Box>
             <Grid container spacing={4} justifyContent="center">
               {founders.map((founder) => (
-                <Grid size={{ xs: 12, sm: 6 }} key={founder.name}>
-                  <TeamMemberCard member={founder} />
+                <Grid size={{ xs: 12, sm: 5, md: 4 }} key={founder.name}>
+                  <Box sx={{ maxWidth: '360px', mx: 'auto' }}>
+                    <TeamMemberCard member={founder} />
+                  </Box>
                 </Grid>
               ))}
             </Grid>
@@ -402,64 +400,23 @@ const AboutPageContent = () => {
 
           <Divider sx={{ my: { xs: 6, md: 8 } }} />
 
-          {/* Team Members Section with Filters */}
+          {/* Team Members Section */}
           <Box mb={{ xs: 8, md: 10 }}>
-            <Typography variant="h3" component="h2" align="center" mb={1}>
-              Our Team
-            </Typography>
-            <Typography variant="body1" align="center" mb={5} color="text.secondary" sx={{ maxWidth: '600px', mx: 'auto' }}>
-              Experts in AI, security, and enterprise software
-            </Typography>
-            
-            {/* Filter tabs using FilterCategory type */}
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                mb: 5, 
-                gap: 1.5, 
-              }}
-            >
-              {[
-                { id: 'all' as FilterCategory, label: 'All' },
-                { id: 'engineering' as FilterCategory, label: 'Engineering' },
-                { id: 'business' as FilterCategory, label: 'Business' },
-              ].map((filter) => (
-                <Box
-                  key={filter.id}
-                  onClick={() => setActiveFilter(filter.id)}
-                  tabIndex={0}
-                  onKeyPress={(e) => e.key === 'Enter' && setActiveFilter(filter.id)}
-                  sx={{
-                    px: 3,
-                    py: 1,
-                    borderRadius: '20px',
-                    bgcolor: activeFilter === filter.id ? theme.palette.primary.main : 'transparent',
-                    border: '1px solid',
-                    borderColor: activeFilter === filter.id ? theme.palette.primary.main : 'rgba(255, 255, 255, 0.2)',
-                    color: activeFilter === filter.id ? '#fff' : theme.palette.text.secondary,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      borderColor: activeFilter === filter.id ? theme.palette.primary.main : alpha(theme.palette.text.secondary, 0.7),
-                      color: '#fff', 
-                    },
-                    '&:focus-visible': {
-                      outline: `2px solid ${theme.palette.primary.main}`,
-                      outlineOffset: '2px',
-                    },
-                    textAlign: 'center',
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {filter.label}
-                  </Typography>
-                </Box>
-              ))}
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
+                Our Team
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ maxWidth: '600px', mx: 'auto' }}
+              >
+                Experts in AI, security, and enterprise software
+              </Typography>
             </Box>
-            
-            <Grid container spacing={4}>
-              {getFilteredTeam().map((member) => (
+
+            <Grid container spacing={4} justifyContent="center">
+              {teamMembers.map((member) => (
                 <Grid size={{ xs: 12, sm: 6, md: 3 }} key={member.name}>
                   <TeamMemberCard member={member} />
                 </Grid>
@@ -471,108 +428,173 @@ const AboutPageContent = () => {
 
           {/* Backed by Industry Leaders */}
           <Box mb={{ xs: 8, md: 10 }}>
-            <Typography variant="h3" component="h2" align="center" mb={1}>
-              Backed by Industry Leaders
-            </Typography>
-            <Typography variant="body1" align="center" mb={6} color="text.secondary" sx={{ maxWidth: '600px', mx: 'auto' }}>
-              We're honored to have the support of top investors and industry experts
-            </Typography>
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-                gap: { xs: 4, sm: 6 }, 
-              }}
-            >
-              {investors.map((investor) => (
-                <Box 
-                  key={investor.name} 
-                  sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center',
-                    width: { xs: '100px', sm: '110px' },
-                    textAlign: 'center'
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={investor.image}
-                    alt={investor.name}
-                    sx={{ width: 64, height: 64, borderRadius: '50%', mb: 1.5 }}
-                  />
-                  <Typography variant="subtitle2" component="h4" sx={{ fontWeight: 500, mb: 0.25 }}>
-                    {investor.name}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ whiteSpace: 'pre-line', lineHeight: 1.3 }}
-                  >
-                    {investor.description}
-                  </Typography>
-                </Box>
-              ))}
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
+                Backed by Industry Leaders
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ maxWidth: '600px', mx: 'auto' }}
+              >
+                We're honored to have the support of top investors and industry experts
+              </Typography>
             </Box>
+            <Grid container spacing={4} justifyContent="center">
+              {investors.map((investor) => (
+                <Grid size={{ xs: 6, sm: 4, md: 2 }} key={investor.name}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      height: '100%',
+                      px: 1,
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={investor.image}
+                      alt={investor.name}
+                      sx={{
+                        width: 70,
+                        height: 70,
+                        borderRadius: '50%',
+                        mb: 2,
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                      }}
+                    />
+                    <Typography
+                      variant="subtitle1"
+                      component="h4"
+                      sx={{ fontWeight: 600, mb: 0.5 }}
+                    >
+                      {investor.name}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        whiteSpace: 'pre-line',
+                        lineHeight: 1.4,
+                        minHeight: 42, // Provide consistent height for the description
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {investor.description}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
           </Box>
 
           <Divider sx={{ my: { xs: 6, md: 8 } }} />
 
           {/* Open Source Community */}
           <Box mb={{ xs: 8, md: 10 }}>
-            <Typography variant="h3" component="h2" align="center" mb={1}>
-              An Incredible Open Source Community
-            </Typography>
-            <Typography variant="body1" align="center" mb={5} sx={{ maxWidth: '600px', mx: 'auto' }}>
-              Promptfoo is proud to be supported by a vibrant community of over 150 open source
-              contributors.
-            </Typography>
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
+                An Incredible Open Source Community
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ maxWidth: '600px', mx: 'auto' }}
+              >
+                Promptfoo is proud to be supported by a vibrant community of over 150 open source
+                contributors.
+              </Typography>
+            </Box>
             <Box display="flex" justifyContent="center">
               <a href="https://github.com/promptfoo/promptfoo/graphs/contributors">
                 <img
                   src="https://contrib.rocks/image?repo=promptfoo/promptfoo"
                   alt="Promptfoo Contributors"
-                  style={{ borderRadius: '4px', maxWidth: '100%' }}
+                  style={{ borderRadius: '8px', maxWidth: '100%', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)' }}
                 />
               </a>
             </Box>
           </Box>
 
           {/* Call to Action */}
-          <Box 
+          <Box
             sx={{
-              textAlign: 'center', 
-              mb: 4,
-              py: 6, 
-              px: 4,
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              maxWidth: '700px',
+              textAlign: 'center',
+              mb: 6,
+              py: 8,
+              px: { xs: 4, md: 6 },
+              borderRadius: 3,
+              maxWidth: '800px',
               mx: 'auto',
+              boxShadow: theme.shadows[2],
+              border: '1px solid',
+              borderColor: 'divider',
+              position: 'relative',
+              background: isDarkMode 
+                ? 'linear-gradient(145deg, rgba(19, 35, 57, 0.6) 0%, transparent 100%)'
+                : 'linear-gradient(145deg, rgba(247, 249, 252, 0.7) 0%, transparent 100%)',
+              overflow: 'hidden',
             }}
           >
-            <Typography variant="h3" component="h2" mb={2}>
-              Ready to Secure Your AI Applications?
-            </Typography>
-            <Typography variant="body1" mb={4} color="text.secondary">
-              Join leading enterprises who trust Promptfoo to fortify their AI applications.
-            </Typography>
-            <Link 
-              className="button button--primary button--lg" 
-              to="/contact/"
-              style={{
-                background: theme.palette.primary.main,
-                color: '#fff',
-                padding: '10px 28px',
-                fontWeight: 500,
-                borderRadius: '20px',
-                display: 'inline-block',
-                textDecoration: 'none',
+            {/* Subtle decorative element */}
+            <Box 
+              sx={{ 
+                position: 'absolute', 
+                width: '300px',
+                height: '300px',
+                background: 'radial-gradient(circle, rgba(53, 120, 229, 0.05) 0%, transparent 70%)',
+                top: '-150px',
+                right: '-150px',
+                zIndex: 0,
               }}
-            >
-              Get in Touch
-            </Link>
+            />
+            
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
+              <Typography variant="h2" component="h2" mb={3} sx={{ fontWeight: 700 }}>
+                Ready to Secure Your AI Applications?
+              </Typography>
+
+              <Typography
+                variant="body1"
+                mb={5}
+                color="text.secondary"
+                sx={{
+                  maxWidth: '600px',
+                  mx: 'auto',
+                  fontSize: '1.05rem',
+                }}
+              >
+                Join leading enterprises who trust Promptfoo to fortify their AI applications.
+              </Typography>
+
+              <Link
+                className="button button--primary button--lg"
+                to="/contact/"
+                style={{
+                  padding: '10px 32px',
+                  fontWeight: 600,
+                }}
+              >
+                Get in Touch
+              </Link>
+            </Box>
+            
+            {/* Subtle bottom decorative element */}
+            <Box 
+              sx={{ 
+                position: 'absolute', 
+                width: '250px',
+                height: '250px',
+                background: 'radial-gradient(circle, rgba(53, 120, 229, 0.03) 0%, transparent 70%)',
+                bottom: '-100px',
+                left: '-100px',
+                zIndex: 0,
+              }}
+            />
           </Box>
         </Container>
       </Box>
