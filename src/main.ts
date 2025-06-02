@@ -1,91 +1,135 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import path from 'path';
+import { version } from '../package.json';
 import { checkNodeVersion } from './checkNodeVersion';
+import { authCommand } from './commands/auth';
 import { cacheCommand } from './commands/cache';
 import { configCommand } from './commands/config';
+import { debugCommand } from './commands/debug';
 import { deleteCommand } from './commands/delete';
 import { evalCommand } from './commands/eval';
 import { exportCommand } from './commands/export';
 import { feedbackCommand } from './commands/feedback';
 import { generateDatasetCommand } from './commands/generate/dataset';
-import { generateRedteamCommand } from './commands/generate/redteam';
 import { importCommand } from './commands/import';
 import { initCommand } from './commands/init';
 import { listCommand } from './commands/list';
-import { initRedteamCommand } from './commands/redteam';
+import { modelScanCommand } from './commands/modelScan';
 import { shareCommand } from './commands/share';
 import { showCommand } from './commands/show';
-import { versionCommand } from './commands/version';
+import { validateCommand } from './commands/validate';
 import { viewCommand } from './commands/view';
-import { maybeReadConfig } from './config';
-import { type EvaluateOptions, type UnifiedConfig } from './types';
+import logger, { setLogLevel } from './logger';
+import { runDbMigrations } from './migrate';
+import { discoverCommand as redteamDiscoverCommand } from './redteam/commands/discover';
+import { redteamGenerateCommand } from './redteam/commands/generate';
+import { initCommand as redteamInitCommand } from './redteam/commands/init';
+import { pluginsCommand as redteamPluginsCommand } from './redteam/commands/plugins';
+import { redteamReportCommand } from './redteam/commands/report';
+import { redteamRunCommand } from './redteam/commands/run';
+import { redteamSetupCommand } from './redteam/commands/setup';
 import { checkForUpdates } from './updates';
+import { setupEnv } from './util';
+import { loadDefaultConfig } from './util/config/default';
 
-export async function loadDefaultConfig(): Promise<{
-  defaultConfig: Partial<UnifiedConfig>;
-  defaultConfigPath: string | undefined;
-}> {
-  const pwd = process.cwd();
-  let defaultConfig: Partial<UnifiedConfig> = {};
-  let defaultConfigPath: string | undefined;
-
-  // NOTE: sorted by frequency of use
-  const extensions = ['yaml', 'yml', 'json', 'cjs', 'cts', 'js', 'mjs', 'mts', 'ts'];
-  for (const ext of extensions) {
-    const configPath = path.join(pwd, `promptfooconfig.${ext}`);
-    const maybeConfig = await maybeReadConfig(configPath);
-    if (maybeConfig) {
-      defaultConfig = maybeConfig;
-      defaultConfigPath = configPath;
-      break;
-    }
+/**
+ * Adds verbose and env-file options to all commands recursively
+ */
+export function addCommonOptionsRecursively(command: Command) {
+  const hasVerboseOption = command.options.some(
+    (option) => option.short === '-v' || option.long === '--verbose',
+  );
+  if (!hasVerboseOption) {
+    command.option('-v, --verbose', 'Show debug logs', false);
   }
 
-  return { defaultConfig, defaultConfigPath };
+  const hasEnvFileOption = command.options.some(
+    (option) => option.long === '--env-file' || option.long === '--env-path',
+  );
+  if (!hasEnvFileOption) {
+    command.option('--env-file, --env-path <path>', 'Path to .env file');
+  }
+
+  command.hook('preAction', (thisCommand) => {
+    if (thisCommand.opts().verbose) {
+      setLogLevel('debug');
+      logger.debug('Verbose mode enabled via --verbose flag');
+    }
+
+    const envPath = thisCommand.opts().envFile || thisCommand.opts().envPath;
+    if (envPath) {
+      setupEnv(envPath);
+      logger.debug(`Loading environment from ${envPath}`);
+    }
+  });
+
+  command.commands.forEach((subCommand) => {
+    addCommonOptionsRecursively(subCommand);
+  });
 }
 
 async function main() {
   await checkForUpdates();
-
-  const program = new Command();
+  await runDbMigrations();
 
   const { defaultConfig, defaultConfigPath } = await loadDefaultConfig();
 
-  const evaluateOptions: EvaluateOptions = {};
-  if (defaultConfig.evaluateOptions) {
-    evaluateOptions.generateSuggestions = defaultConfig.evaluateOptions.generateSuggestions;
-    evaluateOptions.maxConcurrency = defaultConfig.evaluateOptions.maxConcurrency;
-    evaluateOptions.showProgressBar = defaultConfig.evaluateOptions.showProgressBar;
-  }
+  const program = new Command('promptfoo');
+  program
+    .version(version)
+    .showHelpAfterError()
+    .showSuggestionAfterError()
+    .on('option:*', function () {
+      logger.error('Invalid option(s)');
+      program.help();
+      process.exitCode = 1;
+    });
 
+  // Main commands
+  evalCommand(program, defaultConfig, defaultConfigPath);
+  initCommand(program);
+  viewCommand(program);
+  const redteamBaseCommand = program.command('redteam').description('Red team LLM applications');
+  shareCommand(program);
+
+  // Alphabetical order
+  authCommand(program);
   cacheCommand(program);
   configCommand(program);
+  debugCommand(program, defaultConfig, defaultConfigPath);
   deleteCommand(program);
-  evalCommand(program, defaultConfig, defaultConfigPath, evaluateOptions);
   exportCommand(program);
+  const generateCommand = program.command('generate').description('Generate synthetic data');
   feedbackCommand(program);
   importCommand(program);
-  initCommand(program);
   listCommand(program);
-  shareCommand(program);
+  modelScanCommand(program);
+  validateCommand(program, defaultConfig, defaultConfigPath);
   showCommand(program);
-  versionCommand(program);
-  viewCommand(program);
 
-  const generateCommand = program.command('generate').description('Generate synthetic data');
   generateDatasetCommand(generateCommand, defaultConfig, defaultConfigPath);
-  generateRedteamCommand(generateCommand, 'redteam', defaultConfig, defaultConfigPath);
+  redteamGenerateCommand(generateCommand, 'redteam', defaultConfig, defaultConfigPath);
 
-  const redteamBaseCommand = program.command('redteam').description('Red team LLM applications');
-  initRedteamCommand(redteamBaseCommand);
-  generateRedteamCommand(redteamBaseCommand, 'generate', defaultConfig, defaultConfigPath);
+  const { defaultConfig: redteamConfig, defaultConfigPath: redteamConfigPath } =
+    await loadDefaultConfig(undefined, 'redteam');
 
-  if (!process.argv.slice(2).length) {
-    program.outputHelp();
-    process.exit(0);
-  }
-  program.parse(process.argv);
+  redteamInitCommand(redteamBaseCommand);
+  evalCommand(
+    redteamBaseCommand,
+    redteamConfig ?? defaultConfig,
+    redteamConfigPath ?? defaultConfigPath,
+  );
+  redteamDiscoverCommand(redteamBaseCommand, defaultConfig, defaultConfigPath);
+  redteamGenerateCommand(redteamBaseCommand, 'generate', defaultConfig, defaultConfigPath);
+  redteamRunCommand(redteamBaseCommand);
+  redteamReportCommand(redteamBaseCommand);
+  redteamSetupCommand(redteamBaseCommand);
+  redteamPluginsCommand(redteamBaseCommand);
+
+  // Add common options to all commands recursively
+  addCommonOptionsRecursively(program);
+
+  program.parse();
 }
 
 if (require.main === module) {

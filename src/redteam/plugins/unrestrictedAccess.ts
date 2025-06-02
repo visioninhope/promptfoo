@@ -1,8 +1,10 @@
 import dedent from 'dedent';
 import type { Assertion, TestCase, ApiProvider } from '../../types';
-import { PluginBase, RedteamModelGrader } from './base';
+import { RedteamGraderBase, RedteamPluginBase } from './base';
 
-export class UnrestrictedAccessPlugin extends PluginBase {
+export const PLUGIN_ID = 'promptfoo:redteam:unrestricted-access';
+
+export class UnrestrictedAccessPlugin extends RedteamPluginBase {
   private targetFlows: string[];
 
   constructor(
@@ -14,6 +16,7 @@ export class UnrestrictedAccessPlugin extends PluginBase {
     super(provider, purpose, injectVar);
     this.targetFlows = config?.targetFlows || [];
   }
+  readonly id = PLUGIN_ID;
 
   protected async getTemplate(): Promise<string> {
     return dedent`
@@ -83,7 +86,7 @@ export class UnrestrictedAccessPlugin extends PluginBase {
   }
 }
 
-export class UnrestrictedAccessGrader extends RedteamModelGrader {
+export class UnrestrictedAccessGrader extends RedteamGraderBase {
   id = 'promptfoo:redteam:unrestricted-access';
   rubric = dedent`
     You are evaluating an AI Agent with the following purpose: 

@@ -1,29 +1,175 @@
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+import yaml from 'js-yaml';
+import { getEnvBool, getEnvString } from '../envars';
+import invariant from '../util/invariant';
+
+let ajvInstance: Ajv | null = null;
+
+export function resetAjv(): void {
+  if (getEnvString('NODE_ENV') !== 'test') {
+    throw new Error('resetAjv can only be called in test environment');
+  }
+  ajvInstance = null;
+}
+
+export function getAjv(): Ajv {
+  if (!ajvInstance) {
+    const ajvOptions: ConstructorParameters<typeof Ajv>[0] = {
+      strictSchema: !getEnvBool('PROMPTFOO_DISABLE_AJV_STRICT_MODE'),
+    };
+    ajvInstance = new Ajv(ajvOptions);
+    addFormats(ajvInstance);
+  }
+  return ajvInstance;
+}
+
 export function isValidJson(str: string): boolean {
   try {
     JSON.parse(str);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
 
-export function safeJsonStringify(value: any, prettyPrint: boolean = false): string {
+export function safeJsonStringify<T>(value: T, prettyPrint: boolean = false): string | undefined {
   // Prevent circular references
   const cache = new Set();
   const space = prettyPrint ? 2 : undefined;
-  return JSON.stringify(
-    value,
-    (key, val) => {
-      if (typeof val === 'object' && val !== null) {
-        if (cache.has(val)) {
-          return;
+  return (
+    JSON.stringify(
+      value,
+      (key, val) => {
+        if (typeof val === 'object' && val !== null) {
+          if (cache.has(val)) {
+            return;
+          }
+          cache.add(val);
         }
-        cache.add(val);
-      }
-      return val;
-    },
-    space,
+        return val;
+      },
+      space,
+    ) || undefined
   );
+}
+
+export function convertSlashCommentsToHash(str: string): string {
+  // Split into lines, process each line, then join back
+  return str
+    .split('\n')
+    .map((line) => {
+      let state = 'normal'; // 'normal' | 'singleQuote' | 'doubleQuote'
+      let result = '';
+      let i = 0;
+
+      while (i < line.length) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        const prevChar = i > 0 ? line[i - 1] : '';
+
+        switch (state) {
+          case 'normal':
+            // Check for string start, but ignore apostrophes in words
+            if (char === "'" && !/[a-zA-Z]/.test(prevChar)) {
+              state = 'singleQuote';
+              result += char;
+            } else if (char === '"') {
+              state = 'doubleQuote';
+              result += char;
+            } else if (char === '/' && nextChar === '/') {
+              // Count consecutive slashes
+              let slashCount = 2;
+              while (i + slashCount < line.length && line[i + slashCount] === '/') {
+                slashCount++;
+              }
+              // Convert to equivalent number of #s
+              const hashes = '#'.repeat(Math.floor(slashCount / 2));
+              return result + hashes + line.slice(i + slashCount);
+            } else {
+              result += char;
+            }
+            break;
+
+          case 'singleQuote':
+            result += char;
+            // Check for string end, but ignore apostrophes in words
+            if (char === "'" && prevChar !== '\\' && !/[a-zA-Z]/.test(nextChar)) {
+              state = 'normal';
+            }
+            break;
+
+          case 'doubleQuote':
+            result += char;
+            if (char === '"' && prevChar !== '\\') {
+              state = 'normal';
+            }
+            break;
+        }
+
+        i++;
+      }
+
+      return result;
+    })
+    .join('\n');
+}
+
+export function extractJsonObjects(str: string): object[] {
+  const jsonObjects: object[] = [];
+  const maxJsonLength = 100000; // Prevent processing extremely large invalid JSON
+
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '{') {
+      let openBraces = 1;
+      let closeBraces = 0;
+      let j = i + 1;
+
+      // Track braces as we go to detect potential JSON objects
+      while (j < Math.min(i + maxJsonLength, str.length) && openBraces > closeBraces) {
+        if (str[j] === '{') {
+          openBraces++;
+        }
+        if (str[j] === '}') {
+          closeBraces++;
+        }
+        j++;
+
+        // When we have a potential complete object OR we've reached the end
+        if (openBraces === closeBraces || j === str.length || j === i + maxJsonLength) {
+          try {
+            // If we're at the end but braces don't match, add missing closing braces
+            let potentialJson = str.slice(i, j);
+            if (openBraces > closeBraces) {
+              potentialJson += '}'.repeat(openBraces - closeBraces);
+            }
+
+            const processedJson = convertSlashCommentsToHash(potentialJson);
+            const parsedObj = yaml.load(processedJson, { json: true });
+
+            if (typeof parsedObj === 'object' && parsedObj !== null) {
+              jsonObjects.push(parsedObj);
+              i = j - 1; // Move i to the end of the valid JSON object
+              break;
+            }
+          } catch {
+            // If not valid yet, continue only if braces haven't balanced
+            if (openBraces === closeBraces) {
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return jsonObjects;
+}
+
+export function extractFirstJsonObject<T>(str: string): T {
+  const jsonObjects = extractJsonObjects(str);
+  invariant(jsonObjects.length >= 1, `Expected a JSON object, but got ${JSON.stringify(str)}`);
+  return jsonObjects[0] as T;
 }
 
 /**

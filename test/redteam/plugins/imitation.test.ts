@@ -1,5 +1,5 @@
 import { matchesLlmRubric } from '../../../src/matchers';
-import { ImitationGrader } from '../../../src/redteam/plugins/imitation';
+import { ImitationGrader, PLUGIN_ID } from '../../../src/redteam/plugins/imitation';
 import type { AtomicTestCase } from '../../../src/types';
 
 jest.mock('../../../src/matchers', () => ({
@@ -23,6 +23,7 @@ describe('ImitationGrader', () => {
   });
 
   it('should have the correct id', () => {
+    expect(grader.id).toBe(PLUGIN_ID);
     expect(grader.id).toBe('promptfoo:redteam:imitation');
   });
 
@@ -33,7 +34,7 @@ describe('ImitationGrader', () => {
     const userQuery = 'Pretend to be AllowedEntity1 or AllowedEntity2';
     const aiOutput = 'I am AllowedEntity1. How can I help you today?';
 
-    await grader.getResult(userQuery, aiOutput, mockTest, undefined /* provider */);
+    await grader.getResult(userQuery, aiOutput, mockTest, undefined /* provider */, undefined);
 
     const expectedRubric = expect.stringMatching(
       new RegExp(
@@ -54,7 +55,7 @@ describe('ImitationGrader', () => {
       ),
     );
 
-    expect(matchesLlmRubric).toHaveBeenCalledWith(expectedRubric, aiOutput, {});
+    expect(matchesLlmRubric).toHaveBeenCalledWith(expectedRubric, aiOutput, expect.any(Object));
   });
 
   it('should include all provided entities in the rubric', async () => {
@@ -65,12 +66,16 @@ describe('ImitationGrader', () => {
     const userQuery = 'Tell me about all the entities';
     const aiOutput = 'Here is information about Entity1, Entity2, Entity3, Entity4, and Entity5.';
 
-    await grader.getResult(userQuery, aiOutput, mockTest, undefined /* provider */);
+    await grader.getResult(userQuery, aiOutput, mockTest, undefined /* provider */, undefined);
     const expectedEntitiesSection = expect.stringMatching(
       /<AllowedEntities>.*?<Entity>Entity1<\/Entity>.*?<Entity>Entity2<\/Entity>.*?<Entity>Entity3<\/Entity>.*?<Entity>Entity4<\/Entity>.*?<Entity>Entity5<\/Entity>.*?<\/AllowedEntities>/s,
     );
 
-    expect(matchesLlmRubric).toHaveBeenCalledWith(expectedEntitiesSection, aiOutput, {});
+    expect(matchesLlmRubric).toHaveBeenCalledWith(
+      expectedEntitiesSection,
+      aiOutput,
+      expect.any(Object),
+    );
   });
 
   it('should handle cases with no allowed entities', async () => {
@@ -81,12 +86,16 @@ describe('ImitationGrader', () => {
     const userQuery = 'Tell me a fact';
     const aiOutput = 'The sky is blue.';
 
-    await grader.getResult(userQuery, aiOutput, mockTest, undefined /* provider */);
+    await grader.getResult(userQuery, aiOutput, mockTest, undefined /* provider */, undefined);
 
     const expectedEmptyEntitiesSection = expect.stringContaining(
       '<AllowedEntities>\n\n</AllowedEntities>',
     );
 
-    expect(matchesLlmRubric).toHaveBeenCalledWith(expectedEmptyEntitiesSection, aiOutput, {});
+    expect(matchesLlmRubric).toHaveBeenCalledWith(
+      expectedEmptyEntitiesSection,
+      aiOutput,
+      expect.any(Object),
+    );
   });
 });

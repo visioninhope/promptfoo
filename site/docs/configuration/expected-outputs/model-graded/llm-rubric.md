@@ -1,10 +1,14 @@
+---
+sidebar_label: LLM Rubric
+---
+
 # LLM Rubric
 
 `llm-rubric` is promptfoo's general-purpose grader for "LLM as a judge" evaluation.
 
 It is similar to OpenAI's [model-graded-closedqa](/docs/configuration/expected-outputs) prompt, but can be more effective and robust in certain cases.
 
-### How to use it
+## How to use it
 
 To use the `llm-rubric` assertion type, add it to your test configuration like this:
 
@@ -17,7 +21,7 @@ assert:
 
 This assertion will use a language model to grade the output based on the specified rubric.
 
-### How it works
+## How it works
 
 Under the hood, `llm-rubric` uses a model to evaluate the output based on the criteria you provide. By default, it uses GPT-4o, but you can override this by setting the `provider` option (see below).
 
@@ -45,13 +49,16 @@ assert:
       Anything funny enough to be on SNL should pass, otherwise fail.
 ```
 
-### Using variables in the rubric
+## Using variables in the rubric
 
 You can incorporate test variables into your LLM rubric. This is particularly useful for detecting hallucinations or ensuring the output addresses specific aspects of the input. Here's an example:
 
 ```yaml
-providers: [openai:gpt-4o]
-prompts: [prompt1.txt, prompt2.txt]
+providers:
+  - openai:gpt-4.1
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
 defaultTest:
   assert:
     - type: llm-rubric
@@ -63,22 +70,24 @@ tests:
       question: How many planets are in our solar system?
 ```
 
-### Overriding the LLM grader
+## Overriding the LLM grader
 
-By default, `llm-rubric` uses GPT-4 for grading. You can override this in several ways:
+By default, `llm-rubric` uses `gpt-4.1-2025-04-14` for grading. You can override this in several ways:
 
 1. Using the `--grader` CLI option:
 
    ```sh
-   promptfoo eval --grader openai:gpt-3.5-turbo
+   promptfoo eval --grader openai:gpt-4.1-mini
    ```
 
 2. Using `test.options` or `defaultTest.options`:
 
    ```yaml
    defaultTest:
+     // highlight-start
      options:
-       provider: openai:gpt-3.5-turbo
+       provider: openai:gpt-4.1-mini
+     // highlight-end
      assert:
        - description: Evaluate output using LLM
          assert:
@@ -93,11 +102,13 @@ By default, `llm-rubric` uses GPT-4 for grading. You can override this in severa
      - description: Evaluate output using LLM
        assert:
          - type: llm-rubric
-            value: Is written in a professional tone
-            provider: openai:gpt-3.5-turbo
+           value: Is written in a professional tone
+           // highlight-start
+           provider: openai:gpt-4.1-mini
+           // highlight-end
    ```
 
-### Customizing the rubric prompt
+## Customizing the rubric prompt
 
 For more control over the `llm-rubric` evaluation, you can set a custom prompt using the `rubricPrompt` property:
 
@@ -117,6 +128,19 @@ defaultTest:
     ]
 ```
 
-# Further reading
+## Threshold Support
+
+The `llm-rubric` assertion type supports an optional `threshold` property that sets a minimum score requirement. When specified, the output must achieve a score greater than or equal to the threshold to pass. For example:
+
+```yaml
+assert:
+  - type: llm-rubric
+    value: Is not apologetic and provides a clear, concise answer
+    threshold: 0.8 # Requires a score of 0.8 or higher to pass
+```
+
+The threshold is applied to the score returned by the LLM (which ranges from 0.0 to 1.0). If the LLM returns an explicit pass/fail status, the threshold will still be enforced - both conditions must be met for the assertion to pass.
+
+## Further reading
 
 See [model-graded metrics](/docs/configuration/expected-outputs/model-graded) for more options.

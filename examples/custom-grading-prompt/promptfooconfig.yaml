@@ -1,5 +1,8 @@
-prompts: [prompts.txt]
-providers: [openai:gpt-4o-mini]
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+prompts:
+  - file://prompts.txt
+providers:
+  - openai:gpt-4o-mini
 defaultTest:
   options:
     # ---

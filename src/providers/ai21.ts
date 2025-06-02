@@ -1,8 +1,10 @@
 import { fetchWithCache } from '../cache';
+import type { EnvVarKey } from '../envars';
 import { getEnvString } from '../envars';
 import logger from '../logger';
-import type { ApiProvider, EnvOverrides, ProviderResponse, TokenUsage } from '../types';
-import { REQUEST_TIMEOUT_MS, parseChatPrompt } from './shared';
+import type { ApiProvider, ProviderResponse, TokenUsage } from '../types';
+import type { EnvOverrides } from '../types/env';
+import { calculateCost, REQUEST_TIMEOUT_MS, parseChatPrompt } from './shared';
 
 const AI21_CHAT_MODELS = [
   {
@@ -23,7 +25,7 @@ const AI21_CHAT_MODELS = [
 
 interface AI21ChatCompletionOptions {
   apiKey?: string;
-  apiKeyEnvar?: string;
+  apiKeyEnvar?: EnvVarKey;
   apiBaseUrl?: string;
   temperature?: number;
   top_p?: number;
@@ -47,24 +49,13 @@ function getTokenUsage(data: any, cached: boolean): Partial<TokenUsage> {
   return {};
 }
 
-function calculateCost(
+function calculateAI21Cost(
   modelName: string,
   config: AI21ChatCompletionOptions,
   promptTokens?: number,
   completionTokens?: number,
 ): number | undefined {
-  if (!promptTokens || !completionTokens) {
-    return undefined;
-  }
-
-  const model = AI21_CHAT_MODELS.find((m) => m.id === modelName);
-  if (!model || !model.cost) {
-    return undefined;
-  }
-
-  const inputCost = config.cost ?? model.cost.input;
-  const outputCost = config.cost ?? model.cost.output;
-  return inputCost * promptTokens + outputCost * completionTokens || undefined;
+  return calculateCost(modelName, config, promptTokens, completionTokens, AI21_CHAT_MODELS);
 }
 
 export class AI21ChatCompletionProvider implements ApiProvider {
@@ -115,7 +106,7 @@ export class AI21ChatCompletionProvider implements ApiProvider {
     return (
       this.config.apiKey ||
       (this.config?.apiKeyEnvar
-        ? process.env[this.config.apiKeyEnvar] ||
+        ? getEnvString(this.config.apiKeyEnvar) ||
           this.env?.[this.config.apiKeyEnvar as keyof EnvOverrides]
         : undefined) ||
       this.env?.AI21_API_KEY ||
@@ -134,7 +125,7 @@ export class AI21ChatCompletionProvider implements ApiProvider {
 
     const body = {
       model: this.modelName,
-      messages: messages,
+      messages,
       temperature: this.config?.temperature ?? 0.1,
       top_p: this.config?.top_p || 1,
       max_tokens: this.config?.max_tokens || 1024,
@@ -175,7 +166,9 @@ export class AI21ChatCompletionProvider implements ApiProvider {
         error: `API call error: ${data.error}`,
       };
     }
-    if (!data.choices[0] && !data.choices[0].message.content) {
+    // Ensure the expected shape of the API response to avoid accessing
+    // properties of undefined
+    if (!data.choices?.[0] || !data.choices[0].message?.content) {
       return {
         error: `Malformed response data: ${JSON.stringify(data)}`,
       };
@@ -185,7 +178,7 @@ export class AI21ChatCompletionProvider implements ApiProvider {
       output: data.choices[0].message.content,
       tokenUsage: getTokenUsage(data, cached),
       cached,
-      cost: calculateCost(
+      cost: calculateAI21Cost(
         this.modelName,
         this.config,
         data.usage?.prompt_tokens,

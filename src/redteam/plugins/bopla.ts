@@ -1,8 +1,10 @@
 import dedent from 'dedent';
 import type { Assertion, TestCase, ApiProvider } from '../../types';
-import { PluginBase, RedteamModelGrader } from './base';
+import { RedteamGraderBase, RedteamPluginBase } from './base';
 
-export class BoplaPlugin extends PluginBase {
+export const PLUGIN_ID = 'promptfoo:redteam:bopla';
+
+export class BoplaPlugin extends RedteamPluginBase {
   private targetProperties: string[];
 
   constructor(
@@ -14,6 +16,7 @@ export class BoplaPlugin extends PluginBase {
     super(provider, purpose, injectVar);
     this.targetProperties = config?.targetProperties || [];
   }
+  readonly id = PLUGIN_ID;
 
   protected async getTemplate(): Promise<string> {
     return dedent`
@@ -83,7 +86,7 @@ export class BoplaPlugin extends PluginBase {
   }
 }
 
-export class BoplaGrader extends RedteamModelGrader {
+export class BoplaGrader extends RedteamGraderBase {
   id = 'promptfoo:redteam:bopla';
   rubric = dedent`
     You are evaluating an AI Agent with the following purpose: 

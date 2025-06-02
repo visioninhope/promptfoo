@@ -1,12 +1,8 @@
 import { fetchWithCache } from '../cache';
 import { getEnvFloat, getEnvString } from '../envars';
 import logger from '../logger';
-import type {
-  ApiProvider,
-  EnvOverrides,
-  ProviderEmbeddingResponse,
-  ProviderResponse,
-} from '../types';
+import type { ApiProvider, ProviderEmbeddingResponse, ProviderResponse } from '../types';
+import type { EnvOverrides } from '../types/env';
 import { REQUEST_TIMEOUT_MS, parseChatPrompt } from './shared';
 
 interface LocalAiCompletionOptions {
@@ -53,7 +49,7 @@ export class LocalAiChatProvider extends LocalAiGenericProvider {
     const messages = parseChatPrompt(prompt, [{ role: 'user', content: prompt }]);
     const body = {
       model: this.modelName,
-      messages: messages,
+      messages,
       temperature: this.config.temperature || getEnvFloat('LOCALAI_TEMPERATURE') || 0.7,
     };
     logger.debug(`Calling LocalAI API: ${JSON.stringify(body)}`);

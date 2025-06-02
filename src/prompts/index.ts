@@ -1,17 +1,24 @@
 import { globSync } from 'glob';
-import invariant from 'tiny-invariant';
 import logger from '../logger';
 import type {
   UnifiedConfig,
   Prompt,
+  PromptFunction,
   ProviderOptionsMap,
   TestSuite,
   ProviderOptions,
+  EvaluateTestSuite,
 } from '../types';
-import { isJavascriptFile, parsePathOrGlob } from '../util';
+import { parsePathOrGlob } from '../util';
+import { isJavascriptFile } from '../util/fileExtensions';
+import invariant from '../util/invariant';
+import { PromptSchema } from '../validators/prompts';
+import { processCsvPrompts } from './processors/csv';
 import { processJsFile } from './processors/javascript';
+import { processJinjaFile } from './processors/jinja';
 import { processJsonFile } from './processors/json';
 import { processJsonlFile } from './processors/jsonl';
+import { processMarkdownFile } from './processors/markdown';
 import { processPythonFile } from './processors/python';
 import { processString } from './processors/string';
 import { processTxtFile } from './processors/text';
@@ -27,7 +34,7 @@ export * from './grading';
  * @returns A map of provider IDs to their respective prompts.
  */
 export function readProviderPromptMap(
-  config: Partial<UnifiedConfig>,
+  config: Pick<Partial<UnifiedConfig>, 'providers'>,
   parsedPrompts: Prompt[],
 ): TestSuite['providerPromptMap'] {
   const ret: Record<string, string[]> = {};
@@ -92,6 +99,11 @@ export async function processPrompt(
     `prompt.raw must be a string, but got ${JSON.stringify(prompt.raw)}`,
   );
 
+  // Handling when the prompt is a raw function (e.g. javascript function)
+  if (prompt.function) {
+    return [prompt as Prompt];
+  }
+
   if (!maybeFilePath(prompt.raw)) {
     return processString(prompt);
   }
@@ -134,6 +146,12 @@ export async function processPrompt(
     return prompts;
   }
 
+  if (extension === '.csv') {
+    return processCsvPrompts(filePath, prompt);
+  }
+  if (extension === '.j2') {
+    return processJinjaFile(filePath, prompt);
+  }
   if (extension === '.json') {
     return processJsonFile(filePath, prompt);
   }
@@ -142,6 +160,9 @@ export async function processPrompt(
   }
   if (extension && isJavascriptFile(extension)) {
     return processJsFile(filePath, prompt, functionName);
+  }
+  if (extension === '.md') {
+    return processMarkdownFile(filePath, prompt);
   }
   if (extension === '.py') {
     return processPythonFile(filePath, prompt, functionName);
@@ -177,3 +198,76 @@ export async function readPrompts(
   }
   return prompts;
 }
+
+export async function processPrompts(
+  prompts: EvaluateTestSuite['prompts'],
+): Promise<TestSuite['prompts']> {
+  return (
+    await Promise.all(
+      prompts.map(async (promptInput: EvaluateTestSuite['prompts'][number]) => {
+        if (typeof promptInput === 'function') {
+          return {
+            raw: promptInput.toString(),
+            label: promptInput?.name ?? promptInput.toString(),
+            function: promptInput as PromptFunction,
+          };
+        } else if (typeof promptInput === 'string') {
+          return readPrompts(promptInput);
+        }
+        try {
+          return PromptSchema.parse(promptInput);
+        } catch (error) {
+          logger.warn(
+            `Prompt input is not a valid prompt schema: ${error}\nFalling back to serialized JSON as raw prompt.`,
+          );
+          return {
+            raw: JSON.stringify(promptInput),
+            label: JSON.stringify(promptInput),
+          };
+        }
+      }),
+    )
+  ).flat();
+}
+
+export const GEVAL_PROMPT_STEPS = `
+Given an evaluation criteria which outlines how you should judge some text, generate 3-4 concise evaluation steps for any text based on the criteria below.
+
+Evaluation Criteria:
+{{criteria}}
+
+**
+IMPORTANT: Please make sure to only return in minified JSON format, with the "steps" key as a list of strings. No additional words, explanation or formatting is needed.
+Example JSON:
+{"steps": <list_of_strings>}
+**
+
+JSON:
+`;
+
+export const GEVAL_PROMPT_EVALUATE = `
+You will be given one Reply for a Source Text below. Your task is to rate the Reply on one metric.
+Please make sure you read and understand these instructions carefully. Please keep this document open while reviewing, and refer to it as needed.
+
+Evaluation Criteria:
+{{criteria}}
+
+Evaluation Steps:
+- {{steps}}
+- Given the evaluation steps, return a JSON with two keys: 1) a "score" key ranging from 0 - {{maxScore}}, with {{maxScore}} being that it follows the Evaluation Criteria outlined in the Evaluation Steps and 0 being that it does not; 2) a "reason" key, a reason for the given score, but DO NOT QUOTE THE SCORE in your reason. Please mention specific information from Source Text and Reply in your reason, but be very concise with it!
+
+Source Text:
+{{input}}
+
+Reply:
+{{output}}
+
+**
+IMPORTANT: Please make sure to only return in minified JSON format, with the "score" and "reason" key. No additional words, explanation or formatting is needed.
+
+Example JSON:
+{"score":0,"reason":"The text does not follow the evaluation steps provided."}
+**
+
+JSON:
+`;

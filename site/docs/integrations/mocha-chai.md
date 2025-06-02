@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 
 This guide includes examples that show how to create Mocha test cases for desired prompt quality using semantic similarity and LLM grading.
 
-For more information on supported checks, see [Expected Outputs documentation](/docs/configuration/expected-outputs/).
+For more information on supported checks, see [Assertions & Metrics documentation](/docs/configuration/expected-outputs/).
 
 ## Prerequisites
 
@@ -147,7 +147,7 @@ import { expect } from 'chai';
 import './assertions';
 
 const gradingConfig = {
-  provider: 'openai:chat:gpt-4o-mini',
+  provider: 'openai:chat:gpt-4.1-mini',
 };
 
 describe('semantic similarity tests', () => {

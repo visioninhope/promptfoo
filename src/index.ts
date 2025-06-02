@@ -1,74 +1,69 @@
-import invariant from 'tiny-invariant';
 import assertions from './assertions';
 import * as cache from './cache';
 import { evaluate as doEvaluate } from './evaluator';
-import { readPrompts } from './prompts';
-import providers, { loadApiProvider } from './providers';
-import { loadApiProviders } from './providers';
+import guardrails from './guardrails';
+import { runDbMigrations } from './migrate';
+import Eval from './models/eval';
+import { readProviderPromptMap, processPrompts } from './prompts';
+import { loadApiProvider, loadApiProviders, resolveProvider } from './providers';
+import { extractEntities } from './redteam/extraction/entities';
+import { extractSystemPurpose } from './redteam/extraction/purpose';
+import { GRADERS } from './redteam/graders';
+import { Plugins } from './redteam/plugins';
+import { RedteamPluginBase, RedteamGraderBase } from './redteam/plugins/base';
+import { Strategies } from './redteam/strategies';
 import telemetry from './telemetry';
-import { readTests } from './testCases';
-import type {
-  EvaluateOptions,
-  TestSuite,
-  EvaluateTestSuite,
-  ProviderOptions,
-  PromptFunction,
-  Scenario,
-} from './types';
-import {
-  readFilters,
-  writeResultsToDatabase,
-  writeMultipleOutputs,
-  writeOutput,
-  migrateResultsFromFileSystemToDatabase,
-} from './util';
+import type { EvaluateOptions, TestSuite, EvaluateTestSuite, Scenario } from './types';
+import type { ApiProvider } from './types/providers';
+import { readFilters, writeMultipleOutputs, writeOutput } from './util';
+import { readTests } from './util/testCaseReader';
 
 export * from './types';
 
 export { generateTable } from './table';
 
 async function evaluate(testSuite: EvaluateTestSuite, options: EvaluateOptions = {}) {
+  if (testSuite.writeLatestResults) {
+    await runDbMigrations();
+  }
+
+  const loadedProviders = await loadApiProviders(testSuite.providers, {
+    env: testSuite.env,
+  });
+  const providerMap: Record<string, ApiProvider> = {};
+  for (const p of loadedProviders) {
+    providerMap[p.id()] = p;
+    if (p.label) {
+      providerMap[p.label] = p;
+    }
+  }
+
   const constructedTestSuite: TestSuite = {
     ...testSuite,
     scenarios: testSuite.scenarios as Scenario[],
-    providers: await loadApiProviders(testSuite.providers, {
-      env: testSuite.env,
-    }),
+    providers: loadedProviders,
     tests: await readTests(testSuite.tests),
 
     nunjucksFilters: await readFilters(testSuite.nunjucksFilters || {}),
 
     // Full prompts expected (not filepaths)
-    prompts: (
-      await Promise.all(
-        testSuite.prompts.map(async (promptInput) => {
-          if (typeof promptInput === 'function') {
-            return {
-              raw: promptInput.toString(),
-              label: promptInput.toString(),
-              function: promptInput as PromptFunction,
-            };
-          } else if (typeof promptInput === 'string') {
-            const prompts = await readPrompts(promptInput);
-            return prompts.map((p) => ({
-              raw: p.raw,
-              label: p.label,
-            }));
-          } else {
-            return {
-              raw: JSON.stringify(promptInput),
-              label: JSON.stringify(promptInput),
-            };
-          }
-        }),
-      )
-    ).flat(),
+    prompts: await processPrompts(testSuite.prompts),
   };
 
   // Resolve nested providers
+  if (constructedTestSuite.defaultTest?.options?.provider) {
+    constructedTestSuite.defaultTest.options.provider = await resolveProvider(
+      constructedTestSuite.defaultTest.options.provider,
+      providerMap,
+      { env: testSuite.env },
+    );
+  }
+
   for (const test of constructedTestSuite.tests || []) {
-    if (test.options?.provider && typeof test.options.provider === 'function') {
-      test.options.provider = await loadApiProvider(test.options.provider);
+    if (test.options?.provider) {
+      test.options.provider = await resolveProvider(test.options.provider, providerMap, {
+        env: testSuite.env,
+      });
     }
     if (test.assert) {
       for (const assertion of test.assert) {
@@ -77,15 +72,9 @@ async function evaluate(testSuite: EvaluateTestSuite, options: EvaluateOptions =
         }
 
         if (assertion.provider) {
-          if (typeof assertion.provider === 'object') {
-            const casted = assertion.provider as ProviderOptions;
-            invariant(casted.id, 'Provider object must have an id');
-            assertion.provider = await loadApiProvider(casted.id, { options: casted });
-          } else if (typeof assertion.provider === 'string') {
-            assertion.provider = await loadApiProvider(assertion.provider);
-          } else {
-            throw new Error('Invalid provider type');
-          }
+          assertion.provider = await resolveProvider(assertion.provider, providerMap, {
+            env: testSuite.env,
+          });
         }
       }
     }
@@ -95,26 +84,31 @@ async function evaluate(testSuite: EvaluateTestSuite, options: EvaluateOptions =
   if (options.cache === false || (options.repeat && options.repeat > 1)) {
     cache.disableCache();
   }
-  telemetry.maybeShowNotice();
+
+  const parsedProviderPromptMap = readProviderPromptMap(testSuite, constructedTestSuite.prompts);
+  const unifiedConfig = { ...testSuite, prompts: constructedTestSuite.prompts };
+  const evalRecord = testSuite.writeLatestResults
+    ? await Eval.create(unifiedConfig, constructedTestSuite.prompts)
+    : new Eval(unifiedConfig);
 
   // Run the eval!
-  const ret = await doEvaluate(constructedTestSuite, {
-    eventSource: 'library',
-    ...options,
-  });
-
-  const unifiedConfig = { ...testSuite, prompts: constructedTestSuite.prompts };
-  let evalId: string | null = null;
-  if (testSuite.writeLatestResults) {
-    await migrateResultsFromFileSystemToDatabase();
-    evalId = await writeResultsToDatabase(ret, unifiedConfig);
-  }
+  const ret = await doEvaluate(
+    {
+      ...constructedTestSuite,
+      providerPromptMap: parsedProviderPromptMap,
+    },
+    evalRecord,
+    {
+      eventSource: 'library',
+      ...options,
+    },
+  );
 
   if (testSuite.outputPath) {
     if (typeof testSuite.outputPath === 'string') {
-      await writeOutput(testSuite.outputPath, evalId, ret, unifiedConfig, null);
+      await writeOutput(testSuite.outputPath, evalRecord, null);
     } else if (Array.isArray(testSuite.outputPath)) {
-      await writeMultipleOutputs(testSuite.outputPath, evalId, ret, unifiedConfig, null);
+      await writeMultipleOutputs(testSuite.outputPath, evalRecord, null);
     }
   }
 
@@ -122,11 +116,27 @@ async function evaluate(testSuite: EvaluateTestSuite, options: EvaluateOptions =
   return ret;
 }
 
-export { evaluate, assertions, providers };
+const redteam = {
+  Extractors: {
+    extractEntities,
+    extractSystemPurpose,
+  },
+  Graders: GRADERS,
+  Plugins,
+  Strategies,
+  Base: {
+    Plugin: RedteamPluginBase,
+    Grader: RedteamGraderBase,
+  },
+};
+
+export { assertions, cache, evaluate, loadApiProvider, redteam, guardrails };
 
 export default {
-  evaluate,
   assertions,
-  providers,
   cache,
+  evaluate,
+  loadApiProvider,
+  redteam,
+  guardrails,
 };

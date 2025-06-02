@@ -1,127 +1,177 @@
-import { retryWithDeduplication, sampleArray } from '../../src/redteam/util';
+import { fetchWithCache } from '../../src/cache';
+import {
+  removePrefix,
+  normalizeApostrophes,
+  isEmptyResponse,
+  isBasicRefusal,
+  extractGoalFromPrompt,
+  getShortPluginId,
+} from '../../src/redteam/util';
 
-jest.mock('../../src/logger');
+jest.mock('../../src/cache');
 
-describe('retryWithDeduplication', () => {
-  it('should collect unique items until target count is reached', async () => {
-    const operation = jest
-      .fn()
-      .mockResolvedValueOnce([1, 2, 3])
-      .mockResolvedValueOnce([3, 4, 5])
-      .mockResolvedValueOnce([5, 6, 7]);
-
-    const result = await retryWithDeduplication(operation, 5);
-
-    expect(result).toEqual([1, 2, 3, 4, 5]);
-    expect(operation).toHaveBeenCalledTimes(2);
+describe('removePrefix', () => {
+  it('should remove a simple prefix', () => {
+    expect(removePrefix('Prompt: Hello world', 'Prompt')).toBe('Hello world');
   });
 
-  it('should stop after max consecutive retries', async () => {
-    const operation = jest
-      .fn()
-      .mockResolvedValueOnce([1, 2])
-      .mockResolvedValueOnce([1, 2])
-      .mockResolvedValueOnce([1, 2]);
-
-    const result = await retryWithDeduplication(operation, 5, 2);
-
-    expect(result).toEqual([1, 2]);
-    expect(operation).toHaveBeenCalledTimes(4);
+  it('should be case insensitive', () => {
+    expect(removePrefix('PROMPT: Hello world', 'prompt')).toBe('Hello world');
   });
 
-  it('should use custom deduplication function', async () => {
-    const operation = jest
-      .fn()
-      .mockResolvedValueOnce([{ id: 1 }, { id: 2 }])
-      .mockResolvedValueOnce([{ id: 2 }, { id: 3 }]);
-
-    const customDedupFn = (items: { id: number }[]) =>
-      Array.from(new Set(items.map((item) => item.id))).map((id) => ({ id }));
-
-    const result = await retryWithDeduplication(operation, 3, 2, customDedupFn);
-
-    expect(result).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }]);
-    expect(operation).toHaveBeenCalledTimes(2);
+  it('should remove asterisks from the prefix', () => {
+    expect(removePrefix('**Prompt:** Hello world', 'Prompt')).toBe('Hello world');
   });
 
-  it('should handle empty results from operation', async () => {
-    const operation = jest
-      .fn()
-      .mockResolvedValueOnce([1, 2])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([3]);
-
-    const result = await retryWithDeduplication(operation, 3);
-
-    expect(result).toEqual([1, 2, 3]);
-    expect(operation).toHaveBeenCalledTimes(3);
+  it('should handle multiple asterisks', () => {
+    expect(removePrefix('***Prompt:*** Hello world', 'Prompt')).toBe('Hello world');
   });
 
-  it('should return all unique items even if target count is not reached', async () => {
-    const operation = jest
-      .fn()
-      .mockResolvedValueOnce([1, 2])
-      .mockResolvedValueOnce([2, 3])
-      .mockResolvedValueOnce([3, 4]);
+  it('should return the same string if prefix is not found', () => {
+    expect(removePrefix('Hello world', 'Prefix')).toBe('Hello world');
+  });
 
-    const result = await retryWithDeduplication(operation, 10, 2);
+  it('should handle empty strings', () => {
+    expect(removePrefix('', 'Prefix')).toBe('');
+  });
 
-    expect(result).toEqual([1, 2, 3, 4]);
-    expect(operation).toHaveBeenCalledTimes(6);
+  it('should handle prefix that is the entire string', () => {
+    expect(removePrefix('Prompt:', 'Prompt')).toBe('');
   });
 });
 
-describe('sampleArray', () => {
-  it('should return n random items when n is less than array length', () => {
-    const array = [1, 2, 3, 4, 5];
-    const result = sampleArray(array, 3);
-
-    expect(result).toHaveLength(3);
-    expect(new Set(result).size).toBe(3); // All items are unique
-    result.forEach((item) => expect(array).toContain(item));
+describe('normalizeApostrophes', () => {
+  it('should normalize different types of apostrophes', () => {
+    expect(normalizeApostrophes("I'm")).toBe("I'm");
+    expect(normalizeApostrophes('I′m')).toBe("I'm");
+    expect(normalizeApostrophes("I'm")).toBe("I'm");
+    expect(normalizeApostrophes("I'm")).toBe("I'm");
   });
 
-  it('should return all items when n is equal to array length', () => {
-    const array = [1, 2, 3, 4, 5];
-    const result = sampleArray(array, 5);
+  it('should handle strings without apostrophes', () => {
+    expect(normalizeApostrophes('Hello world')).toBe('Hello world');
+  });
+});
 
-    expect(result).toHaveLength(5);
-    expect(new Set(result).size).toBe(5);
-    expect(result).toEqual(expect.arrayContaining(array));
+describe('isEmptyResponse', () => {
+  it('should return true for empty responses', () => {
+    expect(isEmptyResponse('')).toBe(true);
+    expect(isEmptyResponse('   ')).toBe(true);
+    expect(isEmptyResponse('{}')).toBe(true);
+    expect(isEmptyResponse('  {}  ')).toBe(true);
   });
 
-  it('should return all items when n is greater than array length', () => {
-    const array = [1, 2, 3];
-    const result = sampleArray(array, 5);
+  it('should return false for non-empty responses', () => {
+    expect(isEmptyResponse('Hello')).toBe(false);
+    expect(isEmptyResponse('{"key": "value"}')).toBe(false);
+  });
+});
 
-    expect(result).toHaveLength(3);
-    expect(result).toEqual(expect.arrayContaining(array));
+describe('isBasicRefusal', () => {
+  it('should detect refusal prefixes', () => {
+    expect(isBasicRefusal('I am sorry, I cannot help with that')).toBe(true);
+    expect(isBasicRefusal("I'm not able to assist with this request")).toBe(true);
+    expect(isBasicRefusal('I apologize, but I cannot do that')).toBe(true);
   });
 
-  it('should return an empty array when input array is empty', () => {
-    const result = sampleArray([], 3);
-    expect(result).toEqual([]);
+  it('should detect refusal substrings', () => {
+    expect(isBasicRefusal('As an AI language model, I cannot help with that')).toBe(true);
+    expect(isBasicRefusal('I cannot assist with that request')).toBe(true);
+    expect(isBasicRefusal('That would not be appropriate')).toBe(true);
   });
 
-  it('should return a new array, not modifying the original', () => {
-    const array = [1, 2, 3, 4, 5];
-    const originalArray = [...array];
-    sampleArray(array, 3);
-
-    expect(array).toEqual(originalArray);
+  it('should normalize apostrophes in responses', () => {
+    expect(isBasicRefusal("I′m sorry, I can't help")).toBe(true);
+    expect(isBasicRefusal("I'm unable to assist")).toBe(true);
   });
 
-  it('should return random samples across multiple calls', () => {
-    const array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    const samples = new Set();
+  it('should handle case insensitivity', () => {
+    expect(isBasicRefusal('I AM SORRY, I CANNOT HELP')).toBe(true);
+    expect(isBasicRefusal('as an ai language model')).toBe(true);
+  });
 
-    for (let i = 0; i < 100; i++) {
-      const result = sampleArray(array, 5);
-      samples.add(result.join(','));
-    }
+  it('should return false for non-refusal responses', () => {
+    expect(isBasicRefusal('I will help you with that')).toBe(false);
+    expect(isBasicRefusal('Here is the information you requested')).toBe(false);
+    expect(isBasicRefusal('The answer is 42')).toBe(false);
+  });
+});
 
-    // With 100 samples, it's extremely unlikely to get the same sample every time
-    // unless the randomization is not working
-    expect(samples.size).toBeGreaterThan(1);
+describe('getShortPluginId', () => {
+  it('should remove promptfoo:redteam: prefix', () => {
+    expect(getShortPluginId('promptfoo:redteam:test')).toBe('test');
+  });
+
+  it('should return original if no prefix', () => {
+    expect(getShortPluginId('test')).toBe('test');
+  });
+});
+
+describe('extractGoalFromPrompt', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('should successfully extract goal', async () => {
+    jest.mocked(fetchWithCache).mockResolvedValue({
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      data: { intent: 'test goal' },
+      deleteFromCache: async () => {},
+    });
+
+    const result = await extractGoalFromPrompt('test prompt', 'test purpose');
+    expect(result).toBe('test goal');
+  });
+
+  it('should return null on HTTP error', async () => {
+    jest.mocked(fetchWithCache).mockResolvedValue({
+      cached: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      headers: {},
+      data: {},
+      deleteFromCache: async () => {},
+    });
+
+    const result = await extractGoalFromPrompt('test prompt', 'test purpose');
+    expect(result).toBeNull();
+  });
+
+  it('should return null when no intent returned', async () => {
+    jest.mocked(fetchWithCache).mockResolvedValue({
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      data: {},
+      deleteFromCache: async () => {},
+    });
+
+    const result = await extractGoalFromPrompt('test prompt', 'test purpose');
+    expect(result).toBeNull();
+  });
+
+  it('should return null when API throws error', async () => {
+    jest.mocked(fetchWithCache).mockRejectedValue(new Error('API error'));
+
+    const result = await extractGoalFromPrompt('test prompt', 'test purpose');
+    expect(result).toBeNull();
+  });
+
+  it('should handle empty prompt and purpose', async () => {
+    jest.mocked(fetchWithCache).mockResolvedValue({
+      cached: false,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      data: { intent: 'empty goal' },
+      deleteFromCache: async () => {},
+    });
+
+    const result = await extractGoalFromPrompt('', '');
+    expect(result).toBe('empty goal');
   });
 });

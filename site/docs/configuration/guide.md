@@ -14,8 +14,12 @@ Assertions are _optional_. Many people get value out of reviewing outputs manual
 Let's imagine we're building an app that does language translation. This config runs each prompt through GPT-3.5 and Gemini, substituting `language` and `input` variables:
 
 ```yaml
-prompts: [prompt1.txt, prompt2.txt]
-providers: [openai:gpt-4o-mini, vertex:gemini-pro]
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
+providers:
+  - openai:gpt-4.1-mini
+  - vertex:gemini-2.0-flash-exp
 tests:
   - vars:
       language: French
@@ -38,8 +42,12 @@ Running `promptfoo eval` over this config will result in a _matrix view_ that yo
 Next, let's add an assertion. This automatically rejects any outputs that don't contain JSON:
 
 ```yaml
-prompts: [prompt1.txt, prompt2.txt]
-providers: [openai:gpt-4o-mini, vertex:gemini-pro]
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
+providers:
+  - openai:gpt-4.1-mini
+  - vertex:gemini-2.0-flash-exp
 tests:
   - vars:
       language: French
@@ -58,8 +66,12 @@ We can create additional tests. Let's add a couple other [types of assertions](/
 In this example, the `javascript` assertion runs Javascript against the LLM output. The `similar` assertion checks for semantic similarity using embeddings:
 
 ```yaml
-prompts: [prompt1.txt, prompt2.txt]
-providers: [openai:gpt-4o-mini, vertex:gemini-pro]
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
+providers:
+  - openai:gpt-4.1-mini
+  - vertex:gemini-2.0-flash-exp
 tests:
   - vars:
       language: French
@@ -82,7 +94,7 @@ tests:
 ```
 
 :::tip
-To learn more about assertions, see docs on configuring [expected outputs](/docs/configuration/expected-outputs).
+To learn more about assertions, see docs on configuring [assertions and metrics](/docs/configuration/expected-outputs).
 :::
 
 ## Import providers from separate files
@@ -98,7 +110,7 @@ providers:
 Where the provider file looks like this:
 
 ```yaml
-id: openai:gpt-4o-mini
+id: openai:gpt-4.1-mini
 label: Foo bar
 config:
   temperature: 0.9
@@ -109,16 +121,16 @@ config:
 The `tests` config property takes a list of paths to files or directories. For example:
 
 ```yaml
-prompts: prompts.txt
-providers: openai:gpt-4o-mini
+prompts: file://prompts.txt
+providers: openai:gpt-4.1-mini
 
 # Load & runs all test cases matching these filepaths
 tests:
   # You can supply an exact filepath
-  - tests/tests2.yaml
+  - file://tests/tests2.yaml
 
   # Or a glob (wildcard)
-  - tests/*
+  - file://tests/*
 
   # Mix and match with actual test cases
   - vars:
@@ -129,17 +141,20 @@ tests:
 A single string is also valid:
 
 ```yaml
-tests: tests/*
+tests: file://tests/*
 ```
 
 Or a list of paths:
 
 ```yaml
-tests: ['tests/accuracy', 'tests/creativity', 'tests/hallucination']
+tests:
+  - file://tests/accuracy
+  - file://tests/creativity
+  - file://tests/hallucination
 ```
 
 :::tip
-We also support CSV datasets from [local file](/docs/configuration/parameters/#import-from-csv) and [Google Sheets](/docs/integrations/google-sheets).
+Test files can be defined in YAML/JSON, JSONL, [CSV](/docs/configuration/parameters/#import-from-csv), and TypeScript/JavaScript. We also support [Google Sheets](/docs/integrations/google-sheets) CSV datasets.
 :::
 
 ## Import vars from separate files
@@ -148,7 +163,7 @@ The `vars` property can point to a file or directory. For example:
 
 ```yaml
 tests:
-  - vars: path/to/vars*.yaml
+  - vars: file://path/to/vars*.yaml
 ```
 
 You can also load individual variables from file by using the `file://` prefix. For example:
@@ -169,7 +184,21 @@ tests:
       context: file://fetch_from_vector_database.py
 ```
 
-This is useful when testing vector databases like Pinecone, Chroma, Milvus, etc.
+Scripted vars are useful when testing vector databases like Pinecone, Chroma, Milvus, etc. You can communicate directly with the database to fetch the context you need.
+
+PDFs are also supported and can be used to extract text from a document:
+
+```yaml
+tests:
+  - vars:
+      paper: file://pdfs/arxiv_1.pdf
+```
+
+Note that you must install the `pdf-parse` package to use PDFs as variables:
+
+```
+npm install pdf-parse
+```
 
 ### Javascript variables
 
@@ -215,7 +244,8 @@ tests:
 fetch_dynamic_context.py:
 
 ```python
-def get_var(var_name, prompt, other_vars):
+def get_var(var_name: str, prompt: str, other_vars: Dict[str, str]) -> Dict[str, str]:
+    # NOTE: Must return a dictionary with an 'output' key or an 'error' key.
     # Example logic to dynamically generate variable content
     if var_name == 'context':
         return {
@@ -236,8 +266,12 @@ Use `defaultTest` to set properties for all tests.
 In this example, we use a `llm-rubric` assertion to ensure that the LLM does not refer to itself as an AI. This check applies to all test cases:
 
 ```yaml
-prompts: [prompt1.txt, prompt2.txt]
-providers: [openai:gpt-4o-mini, vertex:gemini-pro]
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
+providers:
+  - openai:gpt-4.1-mini
+  - vertex:gemini-2.0-flash-exp
 // highlight-start
 defaultTest:
   assert:
@@ -266,7 +300,25 @@ You can also use `defaultTest` to override the model used for each test. This ca
 ```yaml
 defaultTest:
   options:
-    provider: openai:gpt-4o-mini-0613
+    provider: openai:gpt-4.1-mini-0613
+```
+
+### Default variables
+
+Use `defaultTest` to define variables that are shared across all tests:
+
+```yaml
+defaultTest:
+  vars:
+    template: 'A reusable prompt template with {{shared_var}}'
+    shared_var: 'some shared content'
+
+tests:
+  - vars:
+      unique_var: value1
+  - vars:
+      unique_var: value2
+      shared_var: 'override shared content' # Optionally override defaults
 ```
 
 ### YAML references
@@ -276,8 +328,12 @@ promptfoo configurations support JSON schema [references](https://opis.io/json-s
 Use the `$ref` key to re-use assertions without having to fully define them more than once. Here's an example:
 
 ```yaml
-prompts: [prompt1.txt, prompt2.txt]
-providers: [openai:gpt-4o-mini, vertex:gemini-pro]
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
+providers:
+  - openai:gpt-4.1-mini
+  - vertex:gemini-2.0-flash-exp
 tests:
   - vars:
       language: French
@@ -313,13 +369,21 @@ The `vars` map in the test also supports array values. If values are an array, t
 For example:
 
 ```yaml
-prompts: prompts.txt
-providers: [openai:gpt-4o-mini, openai:gpt-4]
+prompts: file://prompts.txt
+providers:
+  - openai:gpt-4.1-mini
+  - openai:gpt-4
 tests:
   - vars:
       // highlight-start
-      language: [French, German, Spanish]
-      input: ['Hello world', 'Good morning', 'How are you?']
+      language:
+        - French
+        - German
+        - Spanish
+      input:
+        - 'Hello world'
+        - 'Good morning'
+        - 'How are you?'
       // highlight-end
     assert:
       - type: similar
@@ -335,7 +399,10 @@ Vars can also be imported from globbed filepaths. They are automatically expande
 
 ```yaml
   - vars:
-      language: [French, German, Spanish]
+      language:
+        - French
+        - German
+        - Spanish
       // highlight-start
       input: file://path/to/inputs/*.txt
       // highlight-end
@@ -463,9 +530,45 @@ tests:
       topic: 'theoretical quantum physics in alternate dimensions'
 ```
 
+### Accessing environment variables
+
+You can access environment variables in your templates using the `env` global:
+
+```yaml
+tests:
+  - vars:
+      headline: 'Articles about {{ env.TOPIC }}'
+```
+
 ## Tools and Functions
 
-promptfoo supports tool use and function calling with OpenAI and Anthropic models, as well as other provider-specific configurations like temperature and number of tokens. For more information on defining functions and tools, see the [OpenAI provider docs](/docs/providers/openai#using-tools) and the [Anthropic provider docs](/docs/providers/anthropic#tool-use).
+promptfoo supports tool use and function calling with Google, OpenAI and Anthropic models, as well as other provider-specific configurations like temperature and number of tokens. For more information on defining functions and tools, see the [Google Vertex provider docs](/docs/providers/vertex/#function-calling-and-tools), [Google AIStudio provider docs](/docs/providers/google/#function-calling), [Google Live provider docs](/docs/providers/google#function-calling-example), [OpenAI provider docs](/docs/providers/openai#using-tools) and the [Anthropic provider docs](/docs/providers/anthropic#tool-use).
+
+## Thinking Output
+
+Some models, like Anthropic's Claude and DeepSeek, support thinking/reasoning capabilities that allow the model to show its reasoning process before providing a final answer.
+
+This is useful for reasoning tasks or understanding how the model arrived at its conclusion.
+
+### Controlling Thinking Output
+
+By default, thinking content is included in the response. You can hide it by setting `showThinking` to `false`.
+
+For example, for Claude:
+
+```yaml
+providers:
+  - id: anthropic:messages:claude-3-7-sonnet-20250219
+    config:
+      thinking:
+        type: 'enabled'
+        budget_tokens: 16000
+      showThinking: false # Exclude thinking content from output
+```
+
+This is useful when you want better reasoning but don't want to expose the thinking process to your assertions.
+
+For more details on extended thinking capabilities, see the [Anthropic provider docs](/docs/providers/anthropic#extended-thinking) and [AWS Bedrock provider docs](/docs/providers/aws-bedrock#claude-models).
 
 ## Transforming outputs
 
@@ -587,6 +690,99 @@ If no function name is specified for Python files, it defaults to `get_transform
 transform: file://transform.py:custom_python_transform
 ```
 
+## Transforming input variables
+
+You can also transform input variables before they are used in prompts using the `transformVars` option. This feature is useful when you need to pre-process data or load content from external sources.
+
+The `transformVars` function should return an object with the transformed variable names and values. These transformed variables are added to the `vars` object and can override existing keys. For example:
+
+```yaml
+prompts:
+  - 'Summarize the following text in {{topic_length}} words: {{processed_content}}'
+
+defaultTest:
+  options:
+    transformVars: |
+      return {
+        uppercase_topic: vars.topic.toUpperCase(),
+        topic_length: vars.topic.length,
+        processed_content: vars.content.trim()
+      };
+
+tests:
+  - vars:
+      topic: 'climate change'
+      content: '  This is some text about climate change that needs processing.  '
+    assert:
+      - type: contains
+        value: '{{uppercase_topic}}'
+```
+
+Transform functions can also be specified within individual test cases.
+
+```yaml
+tests:
+  - vars:
+      url: 'https://example.com/image.png'
+    options:
+      transformVars: |
+        return { ...vars, image_markdown: `![image](${vars.url})` }
+```
+
+### Input transforms from separate files
+
+For more complex transformations, you can use external files for `transformVars`:
+
+```yaml
+defaultTest:
+  options:
+    transformVars: file://transformVars.js:customTransformVars
+```
+
+```js
+const fs = require('fs');
+
+module.exports = {
+  customTransformVars: (vars, context) => {
+    try {
+      return {
+        uppercase_topic: vars.topic.toUpperCase(),
+        topic_length: vars.topic.length,
+        file_content: fs.readFileSync(vars.file_path, 'utf-8'),
+      };
+    } catch (error) {
+      console.error('Error in transformVars:', error);
+      return {
+        error: 'Failed to transform variables',
+      };
+    }
+  },
+};
+```
+
+You can also define transforms in python.
+
+```yaml
+defaultTest:
+  options:
+    transformVars: file://transform_vars.py
+```
+
+```python
+import os
+
+def get_transform(vars, context):
+    with open(vars['file_path'], 'r') as file:
+        file_content = file.read()
+
+    return {
+        'uppercase_topic': vars['topic'].upper(),
+        'topic_length': len(vars['topic']),
+        'file_content': file_content,
+        'word_count': len(file_content.split())
+    }
+```
+
 ## Config structure and organization
 
 For detailed information on the config structure, see [Configuration Reference](/docs/configuration/reference).
@@ -617,20 +813,28 @@ promptfoo eval -c config1.yaml -c config2.yaml -c config3.yaml
 
 ## Loading tests from CSV
 
-YAML is nice, but some organizations maintain their LLM tests in spreadsheets for ease of collaboration. promptfoo supports a special [CSV file format](/docs/configuration/parameters#tests-file).
+YAML is nice, but some organizations maintain their LLM tests in spreadsheets for ease of collaboration. promptfoo supports a special [CSV file format](/docs/configuration/parameters#tests-and-vars).
 
 ```yaml
-prompts: [prompt1.txt, prompt2.txt]
-providers: [openai:gpt-4o-mini, vertex:gemini-pro]
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
+providers:
+  - openai:gpt-4.1-mini
+  - vertex:gemini-2.0-flash-exp
 // highlight-next-line
-tests: tests.csv
+tests: file://tests.csv
 ```
 
 promptfoo also has built-in ability to pull test cases from a Google Sheet. The easiest way to get started is to set the sheet visible to "anyone with the link". For example:
 
 ```yaml
-prompts: [prompt1.txt, prompt2.txt]
-providers: [openai:gpt-4o-mini, vertex:gemini-pro]
+prompts:
+  - file://prompt1.txt
+  - file://prompt2.txt
+providers:
+  - openai:gpt-4.1-mini
+  - vertex:gemini-2.0-flash-exp
 // highlight-next-line
 tests: https://docs.google.com/spreadsheets/d/1eqFnv1vzkPvS7zG-mYsqNDwOzvSaiIAsKB3zKg9H18c/edit?usp=sharing
 ```

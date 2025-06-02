@@ -1,4 +1,12 @@
-Getting Started with claude3 via Anthropic and/or AWS Bedrock
+# claude-vision (Claude Vision)
+
+You can run this example with:
+
+```bash
+npx promptfoo@latest init --example claude-vision
+```
+
+Getting Started with claude 3.5 sonnet via Anthropic and/or AWS Bedrock
 
 To get started, set your environment variables:
 

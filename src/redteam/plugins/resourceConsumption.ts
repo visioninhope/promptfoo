@@ -1,8 +1,10 @@
 import dedent from 'dedent';
 import type { Assertion, TestCase, ApiProvider } from '../../types';
-import { PluginBase, RedteamModelGrader } from './base';
+import { RedteamGraderBase, RedteamPluginBase } from './base';
 
-export class ResourceConsumptionPlugin extends PluginBase {
+export const PLUGIN_ID = 'promptfoo:redteam:resource-consumption';
+
+export class ResourceConsumptionPlugin extends RedteamPluginBase {
   private targetResources: string[];
 
   constructor(
@@ -14,6 +16,7 @@ export class ResourceConsumptionPlugin extends PluginBase {
     super(provider, purpose, injectVar);
     this.targetResources = config?.targetResources || [];
   }
+  readonly id = PLUGIN_ID;
 
   protected async getTemplate(): Promise<string> {
     return dedent`
@@ -83,7 +86,7 @@ export class ResourceConsumptionPlugin extends PluginBase {
   }
 }
 
-export class ResourceConsumptionGrader extends RedteamModelGrader {
+export class ResourceConsumptionGrader extends RedteamGraderBase {
   id = 'promptfoo:redteam:resource-consumption';
   rubric = dedent`
     You are evaluating an AI Agent with the following purpose: 

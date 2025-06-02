@@ -1,3 +1,7 @@
+---
+sidebar_label: Sandboxed Evaluations of LLM-Generated Code
+---
+
 # Sandboxed Evaluations of LLM-Generated Code
 
 You're using LLMs to generate code snippets, functions, or even entire programs. Blindly trusting and executing this generated code in our production environments - or even in development environments - can be a severe security risk.
@@ -38,7 +42,7 @@ prompts: code_generation_prompt.txt
 
 providers:
   - ollama:chat:llama3:70b
-  - openai:gpt-4o
+  - openai:gpt-4.1
 
 tests:
   - vars:
