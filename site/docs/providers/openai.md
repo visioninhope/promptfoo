@@ -1051,3 +1051,5 @@ providers:
 By default, OpenAI requires approval before sharing data with MCP servers. You can configure approval settings:
 
 ```
+
+```
