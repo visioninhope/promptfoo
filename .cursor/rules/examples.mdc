@@ -31,6 +31,13 @@ alwaysApply: false
 - Structure examples consistently with common patterns across the project
 - Include a working `promptfooconfig.yaml` (or equivalent) file
 
+## Local Development and Testing
+
+- **Important**: When testing examples locally during development, use `npm run local -- eval -c ...` instead of `npx promptfoo@latest eval -c ...`
+- This ensures you're testing against the local development version rather than the published package
+- Example: `npm run local -- eval -c examples/openai-responses/promptfooconfig.codex.yaml --no-cache`
+- Use `--no-cache` flag when testing to ensure fresh results during development
+
 ## Configuration File Structure
 
 - Always include the YAML schema reference at the top of configuration files:

@@ -819,6 +819,7 @@ Therefore, there are 2 occurrences of the letter "r" in "strawberry".\n\nThere a
       const o1PreviewProvider = new OpenAiChatCompletionProvider('o1-preview');
       const o3StandardProvider = new OpenAiChatCompletionProvider('o3');
       const o4MiniProvider = new OpenAiChatCompletionProvider('o4-mini');
+      const codexMiniProvider = new OpenAiChatCompletionProvider('codex-mini-latest');
 
       expect(regularProvider['isReasoningModel']()).toBe(false);
       expect(o1Provider['isReasoningModel']()).toBe(true);
@@ -826,6 +827,7 @@ Therefore, there are 2 occurrences of the letter "r" in "strawberry".\n\nThere a
       expect(o1PreviewProvider['isReasoningModel']()).toBe(true);
       expect(o3StandardProvider['isReasoningModel']()).toBe(true);
       expect(o4MiniProvider['isReasoningModel']()).toBe(true);
+      expect(codexMiniProvider['isReasoningModel']()).toBe(true);
     });
 
     it('should handle temperature support correctly', () => {
@@ -835,6 +837,7 @@ Therefore, there are 2 occurrences of the letter "r" in "strawberry".\n\nThere a
       const o1PreviewProvider = new OpenAiChatCompletionProvider('o1-preview');
       const o4MiniProvider = new OpenAiChatCompletionProvider('o4-mini');
       const gpt41Provider = new OpenAiChatCompletionProvider('gpt-4.1');
+      const codexMiniProvider = new OpenAiChatCompletionProvider('codex-mini-latest');
 
       expect(regularProvider['supportsTemperature']()).toBe(true);
       expect(o1Provider['supportsTemperature']()).toBe(false);
@@ -842,6 +845,7 @@ Therefore, there are 2 occurrences of the letter "r" in "strawberry".\n\nThere a
       expect(o1PreviewProvider['supportsTemperature']()).toBe(false);
       expect(o4MiniProvider['supportsTemperature']()).toBe(false);
       expect(gpt41Provider['supportsTemperature']()).toBe(true);
+      expect(codexMiniProvider['supportsTemperature']()).toBe(false);
     });
 
     it('should respect temperature settings based on model type', async () => {

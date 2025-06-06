@@ -930,6 +930,31 @@ The Responses API supports a wide range of models, including:
 - `o4-mini` - Latest fast, cost-effective reasoning model
 - `codex-mini-latest` - Fast reasoning model optimized for the Codex CLI
 
+#### codex-mini-latest
+
+`codex-mini-latest` is a specialized reasoning model fine-tuned from o4-mini, specifically optimized for the Codex CLI. It offers:
+
+- **Fast reasoning performance** with medium speed
+- **200,000 token context window** with 100,000 max output tokens
+- **Reasoning token support** for complex problem-solving
+- **Competitive pricing**: $1.50 per 1M input tokens, $6.00 per 1M output tokens
+- **Text and image input** support with text output
+- **May 31, 2024 knowledge cutoff**
+
+The model supports all standard OpenAI features including streaming, function calling, and structured outputs. It's available on multiple endpoints including Chat Completions and Responses APIs.
+
+Example configuration:
+
+```yaml title="promptfooconfig.yaml"
+providers:
+  - id: openai:responses:codex-mini-latest
+    config:
+      reasoning_effort: 'medium'
+      max_output_tokens: 1000
+```
+
+> **Note**: While `codex-mini-latest` is optimized for the Codex CLI, for direct API use, OpenAI recommends starting with `gpt-4.1`.
+
 ### Using the Responses API
 
 To use the OpenAI Responses API, use the provider format `openai:responses:<model name>`:
@@ -1025,191 +1050,4 @@ providers:
 
 By default, OpenAI requires approval before sharing data with MCP servers. You can configure approval settings:
 
-```yaml title="promptfooconfig.yaml"
-# Never require approval for all tools
-providers:
-  - id: openai:responses:gpt-4.1-2025-04-14
-    config:
-      tools:
-        - type: mcp
-          server_label: deepwiki
-          server_url: https://mcp.deepwiki.com/mcp
-          require_approval: never
-
-# Never require approval for specific tools only
-providers:
-  - id: openai:responses:gpt-4.1-2025-04-14
-    config:
-      tools:
-        - type: mcp
-          server_label: deepwiki
-          server_url: https://mcp.deepwiki.com/mcp
-          require_approval:
-            never:
-              tool_names: ["ask_question", "read_wiki_structure"]
-```
-
-#### Complete MCP Example
-
-```yaml title="promptfooconfig.yaml"
-# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
-prompts:
-  - 'What are the transport protocols supported in the MCP specification for {{repo}}?'
-
-providers:
-  - id: openai:responses:gpt-4.1-2025-04-14
-    config:
-      tools:
-        - type: mcp
-          server_label: deepwiki
-          server_url: https://mcp.deepwiki.com/mcp
-          require_approval: never
-          allowed_tools: ['ask_question']
-
-tests:
-  - vars:
-      repo: modelcontextprotocol/modelcontextprotocol
-    assert:
-      - type: contains
-        value: 'transport protocols'
-```
-
-For a complete working example, see the [OpenAI MCP example](https://github.com/promptfoo/promptfoo/tree/main/examples/openai-mcp) or initialize it with:
-
-```bash
-npx promptfoo@latest init --example openai-mcp
-```
-
-### Reasoning Models
-
-When using reasoning models like `o1`, `o1-pro`, `o3`, `o3-mini`, or `o4-mini`, you can control the reasoning effort:
-
-```yaml title="promptfooconfig.yaml"
-providers:
-  - id: openai:responses:o3
-    config:
-      reasoning_effort: 'medium' # Can be "low", "medium", or "high"
-      max_output_tokens: 1000
-```
-
-Reasoning models "think before they answer," generating internal reasoning that isn't visible in the output but counts toward token usage and billing.
-
-### o3 and o4-mini Models
-
-OpenAI offers advanced reasoning models in the o-series:
-
-#### o3 and o4-mini
-
-These reasoning models provide different performance and efficiency profiles:
-
-- **o3**: Powerful reasoning model, optimized for complex mathematical, scientific, and coding tasks
-- **o4-mini**: Efficient reasoning model with strong performance in coding and visual tasks at lower cost
-
-Both models feature:
-
-- Large context window (200,000 tokens)
-- High maximum output tokens (100,000 tokens)
-
-For current specifications and pricing information, refer to [OpenAI's pricing page](https://openai.com/pricing).
-
-Example configuration:
-
-```yaml title="promptfooconfig.yaml"
-providers:
-  - id: openai:responses:o3
-    config:
-      reasoning_effort: 'high'
-      max_output_tokens: 2000
-
-  - id: openai:responses:o4-mini
-    config:
-      reasoning_effort: 'medium'
-      max_output_tokens: 1000
-```
-
-### Sending Images in Prompts
-
-The Responses API supports structured prompts with text and image inputs. Example:
-
-```json title="prompt.json"
-[
-  {
-    "type": "message",
-    "role": "user",
-    "content": [
-      {
-        "type": "input_text",
-        "text": "Describe what you see in this image about {{topic}}."
-      },
-      {
-        "type": "image_url",
-        "image_url": {
-          "url": "{{image_url}}"
-        }
-      }
-    ]
-  }
-]
-```
-
-### Function Calling
-
-The Responses API supports tool and function calling, similar to the Chat API:
-
-```yaml title="promptfooconfig.yaml"
-providers:
-  - id: openai:responses:gpt-4.1
-    config:
-      tools:
-        - type: function
-          function:
-            name: get_weather
-            description: Get the current weather for a location
-            parameters:
-              type: object
-              properties:
-                location:
-                  type: string
-                  description: The city and state, e.g. San Francisco, CA
-              required: ['location']
-      tool_choice: 'auto'
-```
-
-### Complete Example
-
-For a complete working example, see the [OpenAI Responses API example](https://github.com/promptfoo/promptfoo/tree/main/examples/openai-responses) or initialize it with:
-
-```bash
-npx promptfoo@latest init --example openai-responses
-```
-
-## Troubleshooting
-
-### OpenAI rate limits
-
-There are a few things you can do if you encounter OpenAI rate limits (most commonly with GPT-4):
-
-1. **Reduce concurrency to 1** by setting `--max-concurrency 1` in the CLI, or by setting `evaluateOptions.maxConcurrency` in the config.
-2. **Set a delay between requests** by setting `--delay 3000` (3000 ms) in the CLI,
-   or by setting `evaluateOptions.delay` in the config,
-   or with the environment variable `PROMPTFOO_DELAY_MS` (all values are in milliseconds).
-3. **Adjust the exponential backoff for failed requests** by setting the environment variable `PROMPTFOO_REQUEST_BACKOFF_MS`. This defaults to 5000 milliseconds and retries exponential up to 4 times. You can increase this value if requests are still failing, but note that this can significantly increase end-to-end test time.
-
-### OpenAI flakiness
-
-To retry HTTP requests that are Internal Server errors, set the `PROMPTFOO_RETRY_5XX` environment variable to `1`.
-
-## Agents SDK Integration
-
-Promptfoo supports evaluation of OpenAI's Agents SDK, which enables building multi-agent systems with specialized agents, handoffs, and persistent context. You can integrate the Agents SDK as a [Python provider](./python.md).
-
-```yaml title="promptfooconfig.yaml"
-providers:
-  - file://agent_provider.py:call_api
-```
-
-For a complete working example of an airline customer service system with multiple agents, see the [OpenAI Agents SDK example](https://github.com/promptfoo/promptfoo/tree/main/examples/openai-agents) or initialize it with:
-
-```bash
-npx promptfoo@latest init --example openai-agents
 ```
