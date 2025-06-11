@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import * as path from 'path';
 import { runAssertion } from '../../src/assertions';
 import { OpenAiChatCompletionProvider } from '../../src/providers/openai/chat';
@@ -32,7 +23,7 @@ jest.mock('../../src/python/pythonUtils', () => {
 });
 
 jest.mock('path', () => ({
-  ...jest.requireActual('path'),
+  ...(jest.requireActual('path') as any),
   resolve: jest.fn(jest.requireActual('path').resolve),
   extname: jest.fn(jest.requireActual('path').extname),
 }));

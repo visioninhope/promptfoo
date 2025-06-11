@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { getUserEmail } from '../../../src/globalConfig/accounts';
@@ -70,7 +61,10 @@ describe('poison command', () => {
         url: 'test-url',
       } as Response;
 
-      jest.spyOn(global, 'fetch').mockImplementation().mockResolvedValue(mockResponse);
+      jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockResponse);
 
       const result = await generatePoisonedDocument('test doc', 'test goal');
 
@@ -106,7 +100,10 @@ describe('poison command', () => {
         url: 'test-url',
       } as Response;
 
-      jest.spyOn(global, 'fetch').mockImplementation().mockResolvedValue(mockResponse);
+      jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockResponse);
 
       await expect(generatePoisonedDocument('test doc')).rejects.toThrow(
         'Failed to generate poisoned document',
@@ -142,7 +139,10 @@ describe('poison command', () => {
         url: 'test-url',
       } as Response;
 
-      jest.spyOn(global, 'fetch').mockImplementation().mockResolvedValue(mockResponse);
+      jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockResponse);
 
       const result = await poisonDocument(mockDoc, 'output-dir');
 
@@ -177,7 +177,10 @@ describe('poison command', () => {
         url: 'test-url',
       } as Response;
 
-      jest.spyOn(global, 'fetch').mockImplementation().mockResolvedValue(mockResponse);
+      jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockResponse);
 
       const result = await poisonDocument(mockDoc, 'output-dir');
 
@@ -235,7 +238,10 @@ describe('poison command', () => {
         url: 'test-url',
       } as Response;
 
-      jest.spyOn(global, 'fetch').mockImplementation().mockResolvedValue(mockResponse);
+      jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockResponse);
 
       await doPoisonDocuments(options);
 
@@ -281,7 +287,10 @@ describe('poison command', () => {
         url: 'test-url',
       } as Response;
 
-      jest.spyOn(global, 'fetch').mockImplementation().mockResolvedValue(mockResponse);
+      jest
+        .spyOn(global, 'fetch')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockResponse);
 
       await doPoisonDocuments(options);
 

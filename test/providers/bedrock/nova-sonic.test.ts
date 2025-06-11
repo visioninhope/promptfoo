@@ -1,14 +1,5 @@
 import { BedrockRuntimeClient } from '@aws-sdk/client-bedrock-runtime';
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import { NodeHttp2Handler } from '@smithy/node-http-handler';
 import { TextEncoder } from 'util';
 import { disableCache, enableCache } from '../../../src/cache';

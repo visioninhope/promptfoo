@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { ContractPlugin, ContractsGrader, PLUGIN_ID } from '../../../src/redteam/plugins/contracts';
 import type { ApiProvider } from '../../../src/types';
 
@@ -59,7 +50,10 @@ describe('ContractPlugin', () => {
   });
 
   it('should handle empty response from provider', async () => {
-    jest.spyOn(mockProvider, 'callApi').mockImplementation().mockResolvedValue({ output: '' });
+    jest
+      .spyOn(mockProvider, 'callApi')
+      .mockImplementation(() => {})
+      .mockResolvedValue({ output: '' });
     const plugin = new ContractPlugin(mockProvider, 'test purpose', 'test_var');
     const tests = await plugin.generateTests(1);
     expect(tests).toHaveLength(0);
@@ -68,7 +62,7 @@ describe('ContractPlugin', () => {
   it('should handle error response from provider', async () => {
     jest
       .spyOn(mockProvider, 'callApi')
-      .mockImplementation()
+      .mockImplementation(() => {})
       .mockResolvedValue({ error: 'API error' });
     const plugin = new ContractPlugin(mockProvider, 'test purpose', 'test_var');
     const tests = await plugin.generateTests(1);

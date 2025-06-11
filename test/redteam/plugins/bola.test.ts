@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach } from '@jest/globals';
 import { BolaGrader } from '../../../src/redteam/plugins/bola';
 
 describe('BolaGrader', () => {

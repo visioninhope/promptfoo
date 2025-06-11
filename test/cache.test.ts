@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, afterAll, jest } from '@jest/globals';
 import fs from 'fs';
 import {
   fetchWithCache,
@@ -91,13 +82,13 @@ const mockedFetchResponse = (
 
 describe('cache configuration', () => {
   const originalEnv = process.env;
-  let mkdirSyncMock: jest.SpyInstance;
-  let existsSyncMock: jest.SpyInstance;
+  let mkdirSyncMock: jest.SpiedFunction;
+  let existsSyncMock: jest.SpiedFunction;
 
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...originalEnv };
-    mkdirSyncMock = jest.spyOn(fs, 'mkdirSync').mockImplementation();
+    mkdirSyncMock = jest.spyOn(fs, 'mkdirSync').mockImplementation(() => {});
     existsSyncMock = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
   });
 

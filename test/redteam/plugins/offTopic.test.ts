@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach } from '@jest/globals';
 import { OffTopicPluginGrader } from '../../../src/redteam/plugins/offTopic';
 
 describe('OffTopicPluginGrader', () => {

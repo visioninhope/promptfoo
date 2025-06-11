@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { AssertionsResult } from '../../src/assertions/assertionsResult';
 import type { AssertionSet, GradingResult } from '../../src/types';
 
@@ -274,30 +265,30 @@ describe('AssertionsResult', () => {
   });
 
   it('handles scoring function errors', async () => {
-    const mockScoringFunction = jest.fn().mockImplementation(() => {
+    const mockScoringFunction = jest.mocked(jest.fn().mockImplementation(() => {
       throw new Error('Scoring function failed');
-    });
+    }));
 
     assertionsResult.addResult({
       index: 0,
       result: succeedingResult,
     });
 
-    const result = await assertionsResult.testResult(mockScoringFunction);
+    const result = await assertionsResult.testResult(mockScoringFunction as any);
     expect(result.pass).toBe(false);
     expect(result.score).toBe(0);
     expect(result.reason).toBe('Scoring function error: Scoring function failed');
   });
 
   it('handles invalid scoring function return value', async () => {
-    const mockScoringFunction = jest.fn().mockReturnValue('invalid');
+    const mockScoringFunction = jest.mocked(jest.fn().mockReturnValue('invalid'));
 
     assertionsResult.addResult({
       index: 0,
       result: succeedingResult,
     });
 
-    const result = await assertionsResult.testResult(mockScoringFunction);
+    const result = await assertionsResult.testResult(mockScoringFunction as any);
     expect(result.pass).toBe(false);
     expect(result.score).toBe(0);
     expect(result.reason).toBe(
@@ -328,18 +319,18 @@ describe('AssertionsResult', () => {
   });
 
   it('handles scoring function with async GradingResult', async () => {
-    const mockScoringFunction = jest.fn().mockResolvedValue({
+    const mockScoringFunction = jest.mocked(jest.fn().mockResolvedValue({
       pass: true,
       score: 0.9,
       reason: 'Async scoring result',
-    });
+    } as any));
 
     assertionsResult.addResult({
       index: 0,
       result: succeedingResult,
     });
 
-    const result = await assertionsResult.testResult(mockScoringFunction);
+    const result = await assertionsResult.testResult(mockScoringFunction as any);
     expect(result.pass).toBe(true);
     expect(result.score).toBe(0.9);
     expect(result.reason).toBe('Async scoring result');

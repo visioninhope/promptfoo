@@ -1,21 +1,12 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import { cloudConfig } from '../../src/globalConfig/cloud';
 import logger from '../../src/logger';
 import { PromptfooModelProvider } from '../../src/providers/promptfooModel';
 
 describe('PromptfooModelProvider', () => {
   let mockFetch: jest.Mock;
-  let mockCloudConfig: jest.SpyInstance;
-  const mockLogger = jest.spyOn(logger, 'debug').mockImplementation();
+  let mockCloudConfig: jest.SpiedFunction;
+  const mockLogger = jest.spyOn(logger, 'debug').mockImplementation(() => {});
 
   beforeEach(() => {
     mockFetch = jest.fn();

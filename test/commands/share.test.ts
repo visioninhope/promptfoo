@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { Command } from 'commander';
 import {
   createAndDisplayShareableUrl,
@@ -113,7 +104,10 @@ describe('Share Command', () => {
     });
 
     it('should handle specific evalId not found', async () => {
-      jest.spyOn(Eval, 'findById').mockImplementation().mockResolvedValue(undefined);
+      jest
+        .spyOn(Eval, 'findById')
+        .mockImplementation(() => {})
+        .mockResolvedValue(undefined);
 
       const shareCmd = program.commands.find((c) => c.name() === 'share');
       await shareCmd?.parseAsync(['node', 'test', 'non-existent-id']);
@@ -126,7 +120,10 @@ describe('Share Command', () => {
     });
 
     it('should handle no evals available', async () => {
-      jest.spyOn(Eval, 'latest').mockImplementation().mockResolvedValue(undefined);
+      jest
+        .spyOn(Eval, 'latest')
+        .mockImplementation(() => {})
+        .mockResolvedValue(undefined);
 
       const shareCmd = program.commands.find((c) => c.name() === 'share');
       await shareCmd?.parseAsync(['node', 'test']);
@@ -138,7 +135,10 @@ describe('Share Command', () => {
 
     it('should handle eval with empty prompts', async () => {
       const mockEval = { prompts: [] } as unknown as Eval;
-      jest.spyOn(Eval, 'latest').mockImplementation().mockResolvedValue(mockEval);
+      jest
+        .spyOn(Eval, 'latest')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockEval);
 
       const shareCmd = program.commands.find((c) => c.name() === 'share');
       await shareCmd?.parseAsync(['node', 'test']);
@@ -151,7 +151,10 @@ describe('Share Command', () => {
     it('should accept -y flag for backwards compatibility', async () => {
       const mockEval = { prompts: ['test'] } as unknown as Eval;
 
-      jest.spyOn(Eval, 'latest').mockImplementation().mockResolvedValue(mockEval);
+      jest
+        .spyOn(Eval, 'latest')
+        .mockImplementation(() => {})
+        .mockResolvedValue(mockEval);
       jest.mocked(isSharingEnabled).mockReturnValue(true);
       jest.mocked(createShareableUrl).mockResolvedValue('https://example.com/share');
 

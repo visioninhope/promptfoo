@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { fetchWithProxy } from '../../src/fetch';
 import { cloudConfig } from '../../src/globalConfig/cloud';
 import { makeRequest, getProviderFromCloud, getConfigFromCloud } from '../../src/util/cloud';
@@ -15,7 +6,7 @@ import { makeRequest, getProviderFromCloud, getConfigFromCloud } from '../../src
 jest.mock('../../src/fetch');
 jest.mock('../../src/globalConfig/cloud');
 jest.mock('../../src/util/cloud', () => ({
-  ...jest.requireActual('../../src/util/cloud'),
+  ...(jest.requireActual('../../src/util/cloud') as any),
   cloudCanBuildFormattedConfig: jest.fn().mockResolvedValue(true),
 }));
 

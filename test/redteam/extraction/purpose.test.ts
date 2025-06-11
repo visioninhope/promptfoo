@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, beforeAll, jest } from '@jest/globals';
 import { fetchWithCache } from '../../../src/cache';
 import { VERSION } from '../../../src/constants';
 import { extractSystemPurpose } from '../../../src/redteam/extraction/purpose';
@@ -18,7 +9,7 @@ jest.mock('../../../src/cache', () => ({
   fetchWithCache: jest.fn(),
 }));
 jest.mock('../../../src/redteam/remoteGeneration', () => ({
-  ...jest.requireActual('../../../src/redteam/remoteGeneration'),
+  ...(jest.requireActual('../../../src/redteam/remoteGeneration') as any),
   getRemoteGenerationUrl: jest.fn().mockReturnValue('https://api.promptfoo.app/api/v1/task'),
 }));
 

@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import dotenv from 'dotenv';
 import * as fs from 'fs';
 import { globSync } from 'glob';
@@ -49,7 +40,7 @@ jest.mock('glob', () => ({
 }));
 
 jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
+  ...(jest.requireActual('fs') as any),
   readFileSync: jest.fn(),
   writeFileSync: jest.fn(),
   statSync: jest.fn(),
@@ -141,7 +132,7 @@ describe('util', () => {
   });
 
   describe('writeOutput', () => {
-    let consoleLogSpy: jest.SpyInstance;
+    let consoleLogSpy: jest.SpiedFunction;
 
     beforeEach(() => {
       consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -620,7 +611,7 @@ describe('util', () => {
 
 describe('setupEnv', () => {
   let originalEnv: typeof process.env;
-  let dotenvConfigSpy: jest.SpyInstance<
+  let dotenvConfigSpy: jest.SpiedFunction<
     dotenv.DotenvConfigOutput,
     [options?: dotenv.DotenvConfigOptions]
   >;

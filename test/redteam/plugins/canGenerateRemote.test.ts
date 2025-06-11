@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { fetchWithCache } from '../../../src/cache';
 import { Plugins } from '../../../src/redteam/plugins';
 import { BeavertailsPlugin } from '../../../src/redteam/plugins/beavertails';
@@ -32,7 +23,7 @@ jest.mock('../../../src/redteam/remoteGeneration', () => ({
   shouldGenerateRemote: jest.fn().mockReturnValue(false),
 }));
 jest.mock('../../../src/util', () => ({
-  ...jest.requireActual('../../../src/util'),
+  ...(jest.requireActual('../../../src/util') as any),
   maybeLoadFromExternalFile: jest.fn().mockReturnValue({
     generator: 'Generate test prompts',
     grader: 'Grade the response',

@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import { sendFeedback, gatherFeedback } from '../src/feedback';
 import { fetchWithProxy } from '../src/fetch';
 import logger from '../src/logger';
@@ -67,7 +58,7 @@ describe('Feedback Module', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {

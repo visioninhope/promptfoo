@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, beforeAll, jest } from '@jest/globals';
 import { getDb } from '../../src/database';
 import { getUserEmail } from '../../src/globalConfig/accounts';
 import { runDbMigrations } from '../../src/migrate';
@@ -16,7 +7,7 @@ import type { Prompt } from '../../src/types';
 import EvalFactory from '../factories/evalFactory';
 
 jest.mock('../../src/globalConfig/accounts', () => ({
-  ...jest.requireActual('../../src/globalConfig/accounts'),
+  ...(jest.requireActual('../../src/globalConfig/accounts') as any),
   getUserEmail: jest.fn(),
 }));
 

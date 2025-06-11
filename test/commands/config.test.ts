@@ -1,14 +1,5 @@
 import confirm from '@inquirer/confirm';
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { Command } from 'commander';
 import { configCommand } from '../../src/commands/config';
 import { getUserEmail, setUserEmail } from '../../src/globalConfig/accounts';

@@ -1,14 +1,5 @@
 import type { TextGenerationCreateOutput } from '@ibm-generative-ai/node-sdk';
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { convertResponse } from '../../src/providers/bam';
 
 describe('BAM Provider', () => {

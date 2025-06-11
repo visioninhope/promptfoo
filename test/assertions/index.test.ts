@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import dedent from 'dedent';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -47,7 +38,7 @@ jest.mock('node:module', () => {
 });
 
 jest.mock('../../src/fetch', () => {
-  const actual = jest.requireActual('../../src/fetch');
+  const actual = jest.requireActual('../../src/fetch') as any;
   return {
     ...actual,
     fetchWithRetries: jest.fn(actual.fetchWithRetries),
@@ -70,24 +61,24 @@ jest.mock('../../src/database', () => ({
   getDb: jest.fn(),
 }));
 jest.mock('path', () => ({
-  ...jest.requireActual('path'),
-  resolve: jest.fn(jest.requireActual('path').resolve),
-  extname: jest.fn(jest.requireActual('path').extname),
+  ...(jest.requireActual('path') as any),
+  resolve: jest.fn((jest.requireActual('path') as any).resolve),
+  extname: jest.fn((jest.requireActual('path') as any).extname),
 }));
 
 jest.mock('../../src/cliState', () => ({
   basePath: '/base/path',
 }));
 jest.mock('../../src/matchers', () => {
-  const actual = jest.requireActual('../../src/matchers');
+  const actual = jest.requireActual('../../src/matchers') as any;
   return {
     ...actual,
     matchesContextRelevance: jest
       .fn()
-      .mockResolvedValue({ pass: true, score: 1, reason: 'Mocked reason' }),
+      .mockResolvedValue({ pass: true, score: 1, reason: 'Mocked reason' } as any),
     matchesContextFaithfulness: jest
       .fn()
-      .mockResolvedValue({ pass: true, score: 1, reason: 'Mocked reason' }),
+      .mockResolvedValue({ pass: true, score: 1, reason: 'Mocked reason' } as any),
   };
 });
 

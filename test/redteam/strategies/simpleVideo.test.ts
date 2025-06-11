@@ -3,16 +3,7 @@
  *
  * Tests core functionality with proper mocks to avoid depending on fs, ffmpeg, etc.
  */
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import fs from 'fs';
 import logger from '../../../src/logger';
 import {

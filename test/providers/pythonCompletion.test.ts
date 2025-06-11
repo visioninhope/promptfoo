@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { getCache, isCacheEnabled } from '../../src/cache';
@@ -19,7 +10,7 @@ jest.mock('../../src/cache');
 jest.mock('fs');
 jest.mock('path');
 jest.mock('../../src/util', () => ({
-  ...jest.requireActual('../../src/util'),
+  ...(jest.requireActual('../../src/util') as any),
   parsePathOrGlob: jest.fn((basePath, runPath) => {
     // Handle the special case for testing function names
     if (runPath === 'script.py:custom_function') {

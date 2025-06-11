@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { fetchWithCache } from '../../src/cache';
 import logger from '../../src/logger';
 import { AI21ChatCompletionProvider } from '../../src/providers/ai21';
@@ -26,7 +17,7 @@ describe('AI21ChatCompletionProvider', () => {
   });
 
   it('should warn when constructing with unknown model', () => {
-    const mockWarn = jest.spyOn(logger, 'warn').mockImplementation();
+    const mockWarn = jest.spyOn(logger, 'warn').mockImplementation(() => {});
     new AI21ChatCompletionProvider('unknown-model');
     expect(mockWarn).toHaveBeenCalledWith(expect.stringContaining('unknown-model'));
     mockWarn.mockRestore();

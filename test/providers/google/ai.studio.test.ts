@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import * as fs from 'fs';
 import * as cache from '../../../src/cache';
 import { AIStudioChatProvider } from '../../../src/providers/google/ai.studio';
@@ -20,7 +11,7 @@ jest.mock('../../../src/cache', () => ({
 }));
 
 jest.mock('../../../src/providers/google/util', () => ({
-  ...jest.requireActual('../../../src/providers/google/util'),
+  ...(jest.requireActual('../../../src/providers/google/util') as any),
   maybeCoerceToGeminiFormat: jest.fn(),
 }));
 

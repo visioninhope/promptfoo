@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import packageJson from '../package.json';
 import cliState from '../src/cliState';
 import { fetchWithTimeout } from '../src/fetch';
@@ -29,7 +20,7 @@ jest.mock('../src/cliState', () => ({
 }));
 
 jest.mock('../src/envars', () => ({
-  ...jest.requireActual('../src/envars'),
+  ...(jest.requireActual('../src/envars') as any),
   getEnvBool: jest.fn().mockImplementation((key) => {
     if (key === 'PROMPTFOO_DISABLE_TELEMETRY') {
       return process.env.PROMPTFOO_DISABLE_TELEMETRY === '1';

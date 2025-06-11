@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import type { ChildProcess } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -214,9 +205,9 @@ describe('pythonUtils', () => {
     it('should correctly run a Python script with provided arguments and read the output file', async () => {
       const mockOutput = JSON.stringify({ type: 'final_result', data: 'test result' });
 
-      jest.mocked(fs.writeFileSync).mockImplementation();
+      jest.mocked(fs.writeFileSync).mockImplementation(() => {});
       jest.mocked(fs.readFileSync).mockReturnValue(mockOutput);
-      jest.mocked(fs.unlinkSync).mockImplementation();
+      jest.mocked(fs.unlinkSync).mockImplementation(() => {});
 
       mockPythonShellInstance.end.mockImplementation((callback: any) => callback());
 

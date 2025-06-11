@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { loadApiProvider } from '../src/providers';
 import {
   SageMakerCompletionProvider,
@@ -177,7 +168,7 @@ jest.mock('@aws-sdk/client-sagemaker-runtime', () => {
 
 // Mock the sleep function
 jest.mock('../src/util/time', () => ({
-  ...jest.requireActual('../src/util/time'),
+  ...(jest.requireActual('../src/util/time') as any),
   sleep: jest.fn().mockResolvedValue(undefined),
 }));
 

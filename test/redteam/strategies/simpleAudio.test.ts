@@ -35,7 +35,7 @@ const mockNeverGenerateRemote = jest.mocked(neverGenerateRemote);
 
 describe('audio strategy', () => {
   beforeAll(() => {
-    jest.spyOn(console, 'log').mockImplementation();
+    jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   beforeEach(() => {

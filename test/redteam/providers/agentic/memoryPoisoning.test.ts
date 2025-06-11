@@ -1,20 +1,11 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import { MemoryPoisoningProvider } from '../../../../src/redteam/providers/agentic/memoryPoisoning';
 import type { ApiProvider, CallApiContextParams } from '../../../../src/types/providers';
 
 describe('MemoryPoisoningProvider', () => {
   let provider: MemoryPoisoningProvider;
   let mockTargetProvider: jest.Mocked<ApiProvider>;
-  let mockFetch: jest.SpyInstance;
+  let mockFetch: jest.SpiedFunction;
 
   beforeEach(() => {
     provider = new MemoryPoisoningProvider({});
@@ -24,7 +15,7 @@ describe('MemoryPoisoningProvider', () => {
       callApi: jest.fn(),
     };
 
-    mockFetch = jest.spyOn(global, 'fetch').mockImplementation();
+    mockFetch = jest.spyOn(global, 'fetch').mockImplementation(() => {});
   });
 
   afterEach(() => {

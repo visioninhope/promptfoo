@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, beforeAll, jest } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { loadFromJavaScriptFile } from '../src/assertions/utils';
@@ -69,7 +60,7 @@ jest.mock('glob', () => ({
 }));
 jest.mock('better-sqlite3');
 jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
+  ...(jest.requireActual('fs') as any),
   readFileSync: jest.fn(),
   existsSync: jest.fn(),
 }));

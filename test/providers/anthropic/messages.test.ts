@@ -1,15 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { APIError } from '@anthropic-ai/sdk';
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import dedent from 'dedent';
 import { clearCache, disableCache, enableCache, getCache } from '../../../src/cache';
 import { AnthropicMessagesProvider } from '../../../src/providers/anthropic/messages';
@@ -69,7 +60,7 @@ describe('AnthropicMessagesProvider', () => {
     it('should use cache by default for ToolUse requests', async () => {
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [
             {
@@ -131,7 +122,7 @@ describe('AnthropicMessagesProvider', () => {
       provider.config.tool_choice = toolChoice;
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [
             {
@@ -188,7 +179,7 @@ describe('AnthropicMessagesProvider', () => {
 
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [{ type: 'text', text: 'Test response' }],
         } as Anthropic.Messages.Message);
@@ -224,7 +215,7 @@ describe('AnthropicMessagesProvider', () => {
 
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [{ type: 'text', text: 'Test response' }],
         } as Anthropic.Messages.Message);
@@ -252,7 +243,7 @@ describe('AnthropicMessagesProvider', () => {
     it('should not use cache if caching is disabled for ToolUse requests', async () => {
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [
             {
@@ -288,7 +279,7 @@ describe('AnthropicMessagesProvider', () => {
     it('should return cached response for legacy caching behavior', async () => {
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [],
         } as unknown as Anthropic.Messages.Message);
@@ -310,7 +301,7 @@ describe('AnthropicMessagesProvider', () => {
       const provider = new AnthropicMessagesProvider('claude-3-5-sonnet-20241022');
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockRejectedValue(new Error('API call failed'));
 
       const result = await provider.callApi('What is the forecast in San Francisco?');
@@ -323,7 +314,7 @@ describe('AnthropicMessagesProvider', () => {
       const provider = new AnthropicMessagesProvider('claude-3-5-sonnet-20241022');
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockRejectedValue('Non-error object');
 
       const result = await provider.callApi('What is the forecast in San Francisco?');
@@ -350,7 +341,7 @@ describe('AnthropicMessagesProvider', () => {
 
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockRejectedValue(mockApiError);
 
       const result = await provider.callApi('What is the forecast in San Francisco?');
@@ -365,7 +356,7 @@ describe('AnthropicMessagesProvider', () => {
       });
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [{ type: 'text', text: 'Test output' }],
           usage: { input_tokens: 50, output_tokens: 50, server_tool_use: null },
@@ -391,7 +382,7 @@ describe('AnthropicMessagesProvider', () => {
 
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [
             {
@@ -435,7 +426,7 @@ describe('AnthropicMessagesProvider', () => {
       const provider = new AnthropicMessagesProvider('claude-3-7-sonnet-20250219');
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [
             {
@@ -544,7 +535,7 @@ describe('AnthropicMessagesProvider', () => {
 
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [{ type: 'text', text: 'Test response' }],
         } as Anthropic.Messages.Message);
@@ -580,7 +571,7 @@ describe('AnthropicMessagesProvider', () => {
 
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [{ type: 'text', text: 'Test response' }],
         } as Anthropic.Messages.Message);
@@ -602,7 +593,7 @@ describe('AnthropicMessagesProvider', () => {
 
       jest
         .spyOn(provider.anthropic.messages, 'create')
-        .mockImplementation()
+        .mockImplementation(() => {})
         .mockResolvedValue({
           content: [{ type: 'text', text: 'Test response' }],
         } as Anthropic.Messages.Message);

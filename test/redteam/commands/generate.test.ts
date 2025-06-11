@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import fs from 'fs';
 import { getAuthor, getUserEmail } from '../../../src/globalConfig/accounts';
 import { cloudConfig } from '../../../src/globalConfig/cloud';
@@ -33,7 +24,7 @@ jest.mock('../../../src/util/config/load', () => ({
 }));
 
 jest.mock('../../../src/envars', () => ({
-  ...jest.requireActual('../../../src/envars'),
+  ...(jest.requireActual('../../../src/envars') as any),
   getEnvBool: jest.fn().mockImplementation((key) => {
     if (key === 'PROMPTFOO_REDTEAM_ENABLE_PURPOSE_DISCOVERY_AGENT') {
       return true;

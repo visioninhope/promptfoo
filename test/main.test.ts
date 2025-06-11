@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, beforeAll, afterAll, jest } from '@jest/globals';
 import { Command } from 'commander';
 import { setLogLevel } from '../src/logger';
 import { addCommonOptionsRecursively } from '../src/main';

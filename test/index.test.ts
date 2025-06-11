@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import * as cache from '../src/cache';
 import { evaluate as doEvaluate } from '../src/evaluator';
 import * as index from '../src/index';
@@ -147,8 +138,8 @@ describe('index.ts exports', () => {
 });
 
 describe('evaluate function', () => {
-  let loadApiProvidersSpy: jest.SpyInstance;
-  let loadApiProviderSpy: jest.SpyInstance;
+  let loadApiProvidersSpy: jest.SpiedFunction;
+  let loadApiProviderSpy: jest.SpiedFunction;
 
   beforeEach(() => {
     jest.clearAllMocks();

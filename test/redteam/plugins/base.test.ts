@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import dedent from 'dedent';
 import { matchesLlmRubric } from '../../../src/matchers';
 import {
@@ -131,7 +122,7 @@ describe('RedteamPluginBase', () => {
 
     jest
       .spyOn(provider, 'callApi')
-      .mockImplementation()
+      .mockImplementation(() => {})
       .mockResolvedValueOnce(mockResponses[0])
       .mockResolvedValueOnce(mockResponses[1]);
 
@@ -146,7 +137,7 @@ describe('RedteamPluginBase', () => {
   it('should deduplicate prompts', async () => {
     jest
       .spyOn(provider, 'callApi')
-      .mockImplementation()
+      .mockImplementation(() => {})
       .mockResolvedValueOnce({
         output: 'Prompt: duplicate\nPrompt: duplicate',
       })
@@ -183,7 +174,7 @@ describe('RedteamPluginBase', () => {
 
     jest
       .spyOn(provider, 'callApi')
-      .mockImplementation()
+      .mockImplementation(() => {})
       .mockResolvedValueOnce(mockResponses[0])
       .mockResolvedValueOnce(mockResponses[1])
       .mockResolvedValueOnce(mockResponses[2]);
@@ -197,7 +188,10 @@ describe('RedteamPluginBase', () => {
   it('should bail after 2 retries if no new prompts are generated', async () => {
     const mockResponse = { output: 'Prompt: test1\nPrompt: test2' };
 
-    jest.spyOn(provider, 'callApi').mockImplementation().mockResolvedValue(mockResponse);
+    jest
+      .spyOn(provider, 'callApi')
+      .mockImplementation(() => {})
+      .mockResolvedValue(mockResponse);
 
     const result = await plugin.generateTests(5);
 
@@ -208,7 +202,7 @@ describe('RedteamPluginBase', () => {
   it('should sample prompts when more are generated than requested', async () => {
     jest
       .spyOn(provider, 'callApi')
-      .mockImplementation()
+      .mockImplementation(() => {})
       .mockResolvedValue({
         output: Array(10)
           .fill(0)
@@ -659,7 +653,7 @@ describe('RedteamGraderBase', () => {
 
   describe('RedteamGraderBase with tools', () => {
     let toolProvider: any;
-    let maybeLoadFromExternalFileSpy: jest.SpyInstance;
+    let maybeLoadFromExternalFileSpy: jest.SpiedFunction;
     let ToolGrader: any;
 
     beforeEach(() => {

@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import { getEnvBool, getEnvString } from '../../../../src/envars';
 import { PromptfooHarmfulCompletionProvider } from '../../../../src/providers/promptfoo';
 import { UNALIGNED_PROVIDER_HARM_PLUGINS } from '../../../../src/redteam/constants';
@@ -21,7 +12,7 @@ jest.mock('../../../../src/envars');
 
 describe('harmful plugin', () => {
   let mockProvider: ApiProvider;
-  let mockCallApi: jest.SpyInstance;
+  let mockCallApi: jest.SpiedFunction;
 
   beforeEach(() => {
     jest.clearAllMocks();

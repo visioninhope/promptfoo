@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
@@ -19,7 +10,7 @@ import { isJavascriptFile } from '../../src/util/fileExtensions';
 import { loadFileReference, processConfigFileReferences } from '../../src/util/fileReference';
 
 jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
+  ...(jest.requireActual('fs') as any),
   promises: {
     readFile: jest.fn(),
   },

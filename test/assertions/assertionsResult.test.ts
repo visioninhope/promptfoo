@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { AssertionsResult, DEFAULT_TOKENS_USED } from '../../src/assertions/assertionsResult';
 import { getEnvBool } from '../../src/envars';
 import type { GradingResult, AssertionSet } from '../../src/types';
@@ -144,13 +135,13 @@ describe('AssertionsResult', () => {
 
     it('should handle scoring function', async () => {
       const assertionsResult = new AssertionsResult({});
-      const scoringFunction = jest.fn().mockResolvedValue({
+      const scoringFunction = jest.mocked(jest.fn().mockResolvedValue({
         pass: true,
         score: 0.9,
         reason: 'Custom scoring',
-      });
+      } as any));
 
-      const result = await assertionsResult.testResult(scoringFunction);
+      const result = await assertionsResult.testResult(scoringFunction as any);
 
       expect(result.pass).toBe(true);
       expect(result.score).toBe(0.9);
@@ -168,9 +159,11 @@ describe('AssertionsResult', () => {
 
     it('should handle scoring function errors', async () => {
       const assertionsResult = new AssertionsResult({});
-      const scoringFunction = jest.fn().mockRejectedValue(new Error('Scoring failed'));
+      const scoringFunction = jest.mocked(jest
+        .fn()
+        .mockRejectedValue(new Error('Scoring failed') as any));
 
-      const result = await assertionsResult.testResult(scoringFunction);
+      const result = await assertionsResult.testResult(scoringFunction as any);
 
       expect(result.pass).toBe(false);
       expect(result.score).toBe(0);

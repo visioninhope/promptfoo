@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import { getCache, isCacheEnabled } from '../../src/cache';
 import { getEnvString } from '../../src/envars';
 import { FalImageGenerationProvider } from '../../src/providers/fal';
@@ -24,7 +15,7 @@ jest.mock('@fal-ai/client', () => ({
 }));
 
 jest.mock('../../src/cache', () => ({
-  ...jest.requireActual('../../src/cache'),
+  ...(jest.requireActual('../../src/cache') as any),
   getCache: jest.fn(),
   isCacheEnabled: jest.fn(),
 }));

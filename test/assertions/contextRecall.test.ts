@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { handleContextRecall } from '../../src/assertions/contextRecall';
 import * as matchers from '../../src/matchers';
 import type { AssertionParams, ApiProvider, ProviderResponse } from '../../src/types';
@@ -31,7 +22,7 @@ describe('handleContextRecall', () => {
 
     const mockProvider: ApiProvider = {
       id: () => 'test-provider',
-      callApi: jest.fn(),
+      callApi: jest.fn() as any,
     };
 
     const params: AssertionParams = {
@@ -86,7 +77,7 @@ describe('handleContextRecall', () => {
 
     const mockProvider: ApiProvider = {
       id: () => 'test-provider',
-      callApi: jest.fn(),
+      callApi: jest.fn() as any,
     };
 
     const params: AssertionParams = {
@@ -141,7 +132,7 @@ describe('handleContextRecall', () => {
 
     const mockProvider: ApiProvider = {
       id: () => 'test-provider',
-      callApi: jest.fn(),
+      callApi: jest.fn() as any,
     };
 
     const params: AssertionParams = {
@@ -183,7 +174,7 @@ describe('handleContextRecall', () => {
   it('should throw error when renderedValue is not a string', async () => {
     const mockProvider: ApiProvider = {
       id: () => 'test-provider',
-      callApi: jest.fn(),
+      callApi: jest.fn() as any,
     };
 
     const params: AssertionParams = {
@@ -221,7 +212,7 @@ describe('handleContextRecall', () => {
   it('should throw error when prompt is missing', async () => {
     const mockProvider: ApiProvider = {
       id: () => 'test-provider',
-      callApi: jest.fn(),
+      callApi: jest.fn() as any,
     };
 
     const params: AssertionParams = {

@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 import * as os from 'os';
@@ -75,7 +66,7 @@ jest.mock('os');
 
 describe('doRedteamRun', () => {
   const mockDate = new Date('2023-01-01T00:00:00.000Z');
-  let dateNowSpy: jest.SpyInstance;
+  let dateNowSpy: jest.SpiedFunction;
 
   beforeEach(() => {
     jest.resetAllMocks();

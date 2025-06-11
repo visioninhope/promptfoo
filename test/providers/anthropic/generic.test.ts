@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import { AnthropicGenericProvider } from '../../../src/providers/anthropic/generic';
 
 jest.mock('proxy-agent', () => ({

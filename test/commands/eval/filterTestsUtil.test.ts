@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { filterTestsByResults } from '../../../src/commands/eval/filterTestsUtil';
 import Eval from '../../../src/models/eval';
 import type { TestSuite, EvaluateResult, Prompt, ProviderResponse } from '../../../src/types';
@@ -19,7 +10,7 @@ jest.mock('../../../src/models/eval', () => ({
 }));
 
 jest.mock('../../../src/util', () => ({
-  ...jest.requireActual('../../../src/util'),
+  ...(jest.requireActual('../../../src/util') as any),
   readOutput: jest.fn(),
   resultIsForTestCase: jest.fn().mockImplementation((result, test) => {
     return result.testCase === test;

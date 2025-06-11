@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import * as fs from 'fs';
 import path from 'path';
 import cliState from '../../src/cliState';
@@ -21,7 +12,7 @@ import {
 } from '../../src/util/fileExtensions';
 
 jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
+  ...(jest.requireActual('fs') as any),
   readFileSync: jest.fn(),
   existsSync: jest.fn(),
 }));

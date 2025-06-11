@@ -29,26 +29,29 @@ import { processConfigFileReferences } from '../src/util/fileReference';
 import { sleep } from '../src/util/time';
 
 jest.mock('../src/util/fileReference', () => ({
-  ...jest.requireActual('../src/util/fileReference'),
+  ...(jest.requireActual('../src/util/fileReference') as any),
   processConfigFileReferences: jest.fn().mockImplementation(async (config) => {
-    if (typeof config === 'object' && config !== null) {
-      if (config.tests && Array.isArray(config.tests)) {
-        const result = {
-          ...config,
-          tests: config.tests.map((test: any) => {
-            return {
-              ...test,
-              vars:
-                test.vars.var1 === 'file://test/fixtures/test_file.txt'
-                  ? {
-                      var1: '<h1>Sample Report</h1><p>This is a test report with some data for the year 2023.</p>',
-                    }
-                  : test.vars,
-            };
-          }),
-        };
-        return result;
-      }
+    if (
+      typeof config === 'object' &&
+      config !== null &&
+      config.tests &&
+      Array.isArray(config.tests)
+    ) {
+      const result = {
+        ...config,
+        tests: config.tests.map((test: any) => {
+          return {
+            ...test,
+            vars:
+              test.vars.var1 === 'file://test/fixtures/test_file.txt'
+                ? {
+                    var1: '<h1>Sample Report</h1><p>This is a test report with some data for the year 2023.</p>',
+                  }
+                : test.vars,
+          };
+        }),
+      };
+      return result;
     }
     return config;
   }),
@@ -69,12 +72,12 @@ jest.mock('glob', () => ({
 jest.mock('../src/esm');
 
 jest.mock('../src/evaluatorHelpers', () => ({
-  ...jest.requireActual('../src/evaluatorHelpers'),
+  ...(jest.requireActual('../src/evaluatorHelpers') as any),
   runExtensionHook: jest.fn(),
 }));
 
 jest.mock('../src/util/time', () => ({
-  ...jest.requireActual('../src/util/time'),
+  ...(jest.requireActual('../src/util/time') as any),
   sleep: jest.fn(),
 }));
 
@@ -88,7 +91,7 @@ jest.mock('../src/util/fileExtensions', () => ({
 }));
 
 jest.mock('../src/util/functions/loadFunction', () => ({
-  ...jest.requireActual('../src/util/functions/loadFunction'),
+  ...(jest.requireActual('../src/util/functions/loadFunction') as any),
   loadFunction: jest.fn().mockImplementation((options) => {
     if (options.filePath.includes('scoring')) {
       return Promise.resolve((metrics: Record<string, number>) => ({
@@ -306,7 +309,7 @@ describe('evaluator', () => {
 
   it('evaluate with vars from file', async () => {
     const originalReadFileSync = fs.readFileSync;
-    fs.readFileSync = jest.fn().mockImplementation((path) => {
+    jest.spyOn(fs, 'readFileSync').mockImplementation((path) => {
       if (path.includes('test_file.txt')) {
         return '<h1>Sample Report</h1><p>This is a test report with some data for the year 2023.</p>';
       }

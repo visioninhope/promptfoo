@@ -1,14 +1,5 @@
 import $RefParser from '@apidevtools/json-schema-ref-parser';
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import * as fs from 'fs';
 import { globSync } from 'glob';
 import yaml from 'js-yaml';
@@ -63,7 +54,7 @@ jest.mock('../../../src/logger', () => ({
 }));
 
 jest.mock('../../../src/util', () => ({
-  ...jest.requireActual('../../../src/util'),
+  ...(jest.requireActual('../../../src/util') as any),
   isRunningUnderNpx: jest.fn(),
 }));
 
@@ -521,7 +512,7 @@ describe('combineConfigs', () => {
       .mocked(fs.readFileSync)
       .mockReturnValueOnce(JSON.stringify(config1))
       .mockReturnValueOnce(JSON.stringify(config2));
-    jest.spyOn(console, 'warn').mockImplementation();
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = await combineConfigs(['config1.json', 'config2.json']);
     expect(globSync).toHaveBeenCalledWith(
@@ -576,7 +567,7 @@ describe('combineConfigs', () => {
         }),
       );
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     await combineConfigs(['config1.json', 'config2.json']);
     expect(globSync).toHaveBeenCalledWith(
@@ -609,7 +600,7 @@ describe('combineConfigs', () => {
         }),
       );
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     await combineConfigs(['config1.json', 'config2.json']);
     expect(globSync).toHaveBeenCalledWith(

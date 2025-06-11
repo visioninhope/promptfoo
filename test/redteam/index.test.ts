@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import cliProgress from 'cli-progress';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
@@ -43,12 +34,12 @@ jest.mock('../../src/util/templates', () => {
 });
 
 jest.mock('process', () => ({
-  ...jest.requireActual('process'),
+  ...(jest.requireActual('process') as any),
   exit: jest.fn(),
 }));
 
 jest.mock('../../src/redteam/strategies', () => ({
-  ...jest.requireActual('../../src/redteam/strategies'),
+  ...(jest.requireActual('../../src/redteam/strategies') as any),
   validateStrategies: jest.fn().mockImplementation((strategies) => {
     if (strategies.some((s: { id: string }) => s.id === 'invalid-strategy')) {
       throw new Error('Invalid strategies');
@@ -59,7 +50,7 @@ jest.mock('../../src/redteam/strategies', () => ({
 jest.mock('../../src/util/apiHealth');
 jest.mock('../../src/redteam/remoteGeneration');
 jest.mock('../../src/redteam/util', () => ({
-  ...jest.requireActual('../../src/redteam/util'),
+  ...(jest.requireActual('../../src/redteam/util') as any),
   extractGoalFromPrompt: jest.fn().mockResolvedValue('mocked goal'),
 }));
 

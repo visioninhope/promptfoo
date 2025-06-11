@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import * as path from 'path';
 import { importModule } from '../../../src/esm';
 import { runPython } from '../../../src/python/pythonUtils';
@@ -27,7 +18,7 @@ jest.mock('../../../src/python/pythonUtils', () => ({
 }));
 
 jest.mock('path', () => ({
-  ...jest.requireActual('path'),
+  ...(jest.requireActual('path') as any),
   resolve: jest.fn(),
 }));
 

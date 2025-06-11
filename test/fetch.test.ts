@@ -1,19 +1,10 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import cliState from '../src/cliState';
 import { VERSION } from '../src/constants';
-import { getEnvBool, getEnvInt, getEnvString } from '../src/envars';
+import { getEnvBool, getEnvString } from '../src/envars';
 import {
   fetchWithProxy,
   fetchWithRetries,
@@ -118,7 +109,7 @@ jest.mock('../src/cliState', () => ({
 describe('fetchWithProxy', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(global, 'fetch').mockImplementation();
+    jest.spyOn(global, 'fetch').mockImplementation(() => {});
     jest.mocked(ProxyAgent).mockClear();
     jest.mocked(setGlobalDispatcher).mockClear();
     delete process.env.HTTPS_PROXY;
@@ -621,7 +612,7 @@ describe('fetchWithProxy', () => {
 describe('fetchWithTimeout', () => {
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.spyOn(global, 'fetch').mockImplementation();
+    jest.spyOn(global, 'fetch').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -761,7 +752,7 @@ describe('handleRateLimit', () => {
 describe('fetchWithRetries', () => {
   beforeEach(() => {
     jest.mocked(sleep).mockClear();
-    jest.spyOn(global, 'fetch').mockImplementation();
+    jest.spyOn(global, 'fetch').mockImplementation(() => {});
     jest.clearAllMocks();
   });
 
@@ -935,7 +926,7 @@ describe('sanitizeUrl', () => {
 describe('fetchWithProxy with NO_PROXY', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(global, 'fetch').mockImplementation();
+    jest.spyOn(global, 'fetch').mockImplementation(() => {});
     jest.mocked(ProxyAgent).mockClear();
     jest.mocked(setGlobalDispatcher).mockClear();
     delete process.env.HTTPS_PROXY;

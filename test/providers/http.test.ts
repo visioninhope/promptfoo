@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
 import crypto from 'crypto';
 import dedent from 'dedent';
 import fs from 'fs';
@@ -30,18 +21,18 @@ import { REQUEST_TIMEOUT_MS } from '../../src/providers/shared';
 import { maybeLoadFromExternalFile } from '../../src/util/file';
 
 jest.mock('../../src/cache', () => ({
-  ...jest.requireActual('../../src/cache'),
+  ...(jest.requireActual('../../src/cache') as any),
   fetchWithCache: jest.fn(),
 }));
 
 jest.mock('../../src/fetch', () => ({
-  ...jest.requireActual('../../src/fetch'),
+  ...(jest.requireActual('../../src/fetch') as any),
   fetchWithRetries: jest.fn(),
   fetchWithTimeout: jest.fn(),
 }));
 
 jest.mock('../../src/util/file', () => ({
-  ...jest.requireActual('../../src/util/file'),
+  ...(jest.requireActual('../../src/util/file') as any),
   maybeLoadFromExternalFile: jest.fn((input) => input),
 }));
 
@@ -2903,9 +2894,9 @@ describe('string-based validators', () => {
 
 describe('RSA signature authentication', () => {
   let mockPrivateKey: string;
-  let mockSign: jest.SpyInstance;
-  let mockUpdate: jest.SpyInstance;
-  let mockEnd: jest.SpyInstance;
+  let mockSign: jest.SpiedFunction;
+  let mockUpdate: jest.SpiedFunction;
+  let mockEnd: jest.SpiedFunction;
 
   beforeEach(() => {
     mockPrivateKey = '-----BEGIN PRIVATE KEY-----\nMOCK_KEY\n-----END PRIVATE KEY-----';

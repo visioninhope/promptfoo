@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import type { AssertionParams, GradingResult } from 'src/types';
 import type { handleMeteorAssertion as originalHandleMeteorAssertion } from '../../src/assertions/meteor';
 

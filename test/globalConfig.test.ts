@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import type {
@@ -87,8 +78,8 @@ describe('Global Config', () => {
     describe('when config file does not exist', () => {
       beforeEach(() => {
         jest.mocked(fs.existsSync).mockReturnValue(false);
-        jest.mocked(fs.writeFileSync).mockImplementation();
-        jest.mocked(fs.mkdirSync).mockImplementation();
+        jest.mocked(fs.writeFileSync).mockImplementation(() => {});
+        jest.mocked(fs.mkdirSync).mockImplementation(() => {});
       });
 
       it('should create new config directory and file with empty config', () => {

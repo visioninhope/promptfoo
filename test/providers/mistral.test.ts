@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { getCache, isCacheEnabled } from '../../src/cache';
 import { fetchWithCache } from '../../src/cache';
 import {
@@ -16,7 +7,7 @@ import {
 } from '../../src/providers/mistral';
 
 jest.mock('../../src/cache', () => ({
-  ...jest.requireActual('../../src/cache'),
+  ...(jest.requireActual('../../src/cache') as any),
   fetchWithCache: jest.fn(),
   getCache: jest.fn(),
   isCacheEnabled: jest.fn(),

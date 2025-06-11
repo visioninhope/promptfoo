@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { addCrescendo } from '../../../src/redteam/strategies/crescendo';
 import type { TestCase } from '../../../src/types';
 

@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, afterEach, beforeAll, jest } from '@jest/globals';
 import chalk from 'chalk';
 import child_process from 'child_process';
 import dedent from 'dedent';
@@ -73,7 +64,7 @@ jest.mock('proxy-agent', () => ({
 }));
 
 jest.mock('../../src/esm', () => ({
-  ...jest.requireActual('../../src/esm'),
+  ...(jest.requireActual('../../src/esm') as any),
   importModule: jest.fn(),
 }));
 

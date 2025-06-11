@@ -1,13 +1,4 @@
-import {
-  describe,
-  expect,
-  it,
-  beforeEach,
-  afterEach,
-  beforeAll,
-  afterAll,
-  jest,
-} from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { runAssertion } from '../../src/assertions';
@@ -28,7 +19,7 @@ import { maybeLoadToolsFromExternalFile } from '../../src/util';
 jest.mock('fs');
 jest.mock('path');
 jest.mock('../../src/util', () => ({
-  ...jest.requireActual('../../src/util'),
+  ...(jest.requireActual('../../src/util') as any),
   maybeLoadToolsFromExternalFile: jest.fn(),
 }));
 
