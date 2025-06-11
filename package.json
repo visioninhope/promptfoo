@@ -67,7 +67,9 @@
     "test:watch": "jest --watch",
     "test:redteam:integration": "npm run build && ./test/redteam/integration/test.sh",
     "test": "jest",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "type-check-tests": "tsc --project tsconfig.test.json --noEmit",
+    "type-check-src": "tsc --project tsconfig.src.json --noEmit"
   },
   "overrides": {
     "uri-js": "npm:uri-js-replace",
