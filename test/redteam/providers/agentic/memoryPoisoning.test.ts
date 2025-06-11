@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { MemoryPoisoningProvider } from '../../../../src/redteam/providers/agentic/memoryPoisoning';
 import type { ApiProvider, CallApiContextParams } from '../../../../src/types/providers';
 

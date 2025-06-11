@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import dedent from 'dedent';
 import { matchesLlmRubric } from '../../../src/matchers';
 import {
@@ -208,12 +218,8 @@ describe('RedteamPluginBase', () => {
 
     const result = await plugin.generateTests(5);
 
-    expect(result).toEqual(
-      expect.objectContaining({
-        length: 5,
-        [Symbol.iterator]: expect.any(Function),
-      }),
-    );
+    expect(result).toHaveLength(5);
+    expect(result[Symbol.iterator]).toEqual(expect.any(Function));
     expect(new Set(result.map((r) => r.vars?.testVar)).size).toBe(5);
   });
 

@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { AsciiSmugglingGrader, PLUGIN_ID } from '../../../src/redteam/plugins/asciiSmuggling';
 import type { AtomicTestCase } from '../../../src/types';
 

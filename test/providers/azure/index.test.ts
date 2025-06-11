@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { AzureCompletionProvider } from '../../../src/providers/azure/completion';
 import { maybeEmitAzureOpenAiWarning } from '../../../src/providers/azure/warnings';
 import { HuggingfaceTextGenerationProvider } from '../../../src/providers/huggingface';

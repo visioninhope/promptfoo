@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { handleModeration } from '../../src/assertions/moderation';
 import { matchesModeration } from '../../src/matchers';
 import type {

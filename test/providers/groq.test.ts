@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { clearCache } from '../../src/cache';
 import * as fetchModule from '../../src/fetch';
 import { GroqProvider } from '../../src/providers/groq';

@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import * as path from 'path';
 import { runAssertion } from '../../src/assertions';
 import { importModule } from '../../src/esm';

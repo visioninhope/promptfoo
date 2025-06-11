@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { addInjections } from '../../../src/redteam/strategies/promptInjections';
 import type { TestCase } from '../../../src/types';
 

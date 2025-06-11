@@ -1,4 +1,14 @@
 import { WatsonXAI } from '@ibm-cloud/watsonx-ai';
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { IamAuthenticator, BearerTokenAuthenticator } from 'ibm-cloud-sdk-core';
 import { getCache, isCacheEnabled, fetchWithCache } from '../../src/cache';
 import * as envarsModule from '../../src/envars';

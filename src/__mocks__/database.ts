@@ -1,3 +1,5 @@
+import { jest } from '@jest/globals';
+
 const mockDbInstance = {
   // Mock any method you use from the dbInstance
   // For example:

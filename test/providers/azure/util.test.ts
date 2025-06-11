@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { throwConfigurationError, calculateAzureCost } from '../../../src/providers/azure/util';
 
 describe('throwConfigurationError', () => {

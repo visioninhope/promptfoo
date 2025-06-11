@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { CompetitorsGrader, PLUGIN_ID } from '../../../src/redteam/plugins/competitors';
 import type { AssertionValue } from '../../../src/types';
 

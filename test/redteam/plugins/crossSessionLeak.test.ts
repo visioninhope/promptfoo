@@ -1,4 +1,14 @@
 import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
+import {
   CrossSessionLeakGrader,
   CrossSessionLeakPlugin,
 } from '../../../src/redteam/plugins/crossSessionLeak';

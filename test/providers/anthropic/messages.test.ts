@@ -1,5 +1,15 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { APIError } from '@anthropic-ai/sdk';
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import dedent from 'dedent';
 import { clearCache, disableCache, enableCache, getCache } from '../../../src/cache';
 import { AnthropicMessagesProvider } from '../../../src/providers/anthropic/messages';

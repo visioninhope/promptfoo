@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { addHexEncoding } from '../../../src/redteam/strategies/hex';
 import type { TestCase } from '../../../src/types';
 

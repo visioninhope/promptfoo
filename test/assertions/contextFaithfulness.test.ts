@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { handleContextFaithfulness } from '../../src/assertions/contextFaithfulness';
 import * as matchers from '../../src/matchers';
 

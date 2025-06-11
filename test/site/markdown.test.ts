@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { sanitizeMarkdown } from '../../site/src/utils/markdown';
 
 describe('sanitizeMarkdown', () => {

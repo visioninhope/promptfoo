@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { createScriptBasedProviderFactory } from '../../src/providers/scriptBasedProvider';
 import type { LoadApiProviderContext } from '../../src/types';
 import type { ProviderOptions } from '../../src/types/providers';

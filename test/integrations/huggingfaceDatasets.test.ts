@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { getEnvString } from '../../src/envars';
 import { fetchWithProxy } from '../../src/fetch';
 import {

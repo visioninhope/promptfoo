@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import packageJson from '../package.json';
 import cliState from '../src/cliState';
 import { fetchWithTimeout } from '../src/fetch';

@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import { disableCache } from '../../../src/cache';

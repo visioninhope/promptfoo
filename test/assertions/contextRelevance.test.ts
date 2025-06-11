@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { handleContextRelevance } from '../../src/assertions/contextRelevance';
 import { matchesContextRelevance } from '../../src/matchers';
 

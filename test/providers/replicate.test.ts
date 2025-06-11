@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import Replicate from 'replicate';
 import { disableCache, enableCache, isCacheEnabled } from '../../src/cache';
 import {

@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { fetchWithTimeout } from '../../../src/fetch';
 import logger from '../../../src/logger';
 import {

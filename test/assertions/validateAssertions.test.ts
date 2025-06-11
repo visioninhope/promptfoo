@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { validateAssertions, AssertValidationError } from '../../src/assertions/validateAssertions';
 import type { TestCase } from '../../src/types';
 

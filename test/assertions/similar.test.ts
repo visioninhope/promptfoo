@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { handleSimilar } from '../../src/assertions/similar';
 
 jest.mock('../../src/matchers', () => ({

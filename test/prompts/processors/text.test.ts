@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import * as fs from 'fs';
 import { PROMPT_DELIMITER } from '../../../src/prompts/constants';
 import { processTxtFile } from '../../../src/prompts/processors/text';

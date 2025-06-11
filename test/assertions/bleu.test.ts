@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { calculateBleuScore, handleBleuScore } from '../../src/assertions/bleu';
 import type { AssertionParams } from '../../src/types';
 

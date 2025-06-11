@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { VALID_FILE_EXTENSIONS } from '../../src/prompts/constants';
 
 describe('VALID_FILE_EXTENSIONS', () => {

@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { ContractPlugin, ContractsGrader, PLUGIN_ID } from '../../../src/redteam/plugins/contracts';
 import type { ApiProvider } from '../../../src/types';
 

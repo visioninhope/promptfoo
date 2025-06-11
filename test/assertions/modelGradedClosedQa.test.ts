@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import type nunjucks from 'nunjucks';
 import { handleModelGradedClosedQa } from '../../src/assertions/modelGradedClosedQa';
 import { matchesClosedQa } from '../../src/matchers';

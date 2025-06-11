@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { getEnvBool, getEnvString } from '../../../../src/envars';
 import {
   HARM_PLUGINS,

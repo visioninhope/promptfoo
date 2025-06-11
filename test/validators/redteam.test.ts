@@ -1,4 +1,14 @@
 import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
+import {
   ALIASED_PLUGIN_MAPPINGS,
   COLLECTIONS,
   DEFAULT_NUM_TESTS_PER_PLUGIN,

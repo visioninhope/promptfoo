@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import { RbacPlugin, RbacGrader, PLUGIN_ID } from '../../../src/redteam/plugins/rbac';
 import type { ApiProvider, AtomicTestCase } from '../../../src/types';
 

@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import WebSocket from 'ws';
 import { WebSocketProvider, createTransformResponse } from '../../src/providers/websocket';
 

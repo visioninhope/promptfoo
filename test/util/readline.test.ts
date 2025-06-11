@@ -1,3 +1,13 @@
+import {
+  describe,
+  expect,
+  it,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+  jest,
+} from '@jest/globals';
 import readline from 'readline';
 import { createReadlineInterface, promptUser, promptYesNo } from '../../src/util/readline';
 
