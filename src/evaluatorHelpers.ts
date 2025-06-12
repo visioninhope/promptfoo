@@ -18,6 +18,8 @@ import invariant from './util/invariant';
 import { getNunjucksEngine } from './util/templates';
 import { transform } from './util/transform';
 
+export type FileMetadata = Record<string, { path: string; type: string; format?: string }>;
+
 export async function extractTextFromPDF(pdfPath: string): Promise<string> {
   logger.debug(`Extracting text from PDF: ${pdfPath}`);
   try {
@@ -65,6 +67,56 @@ export function resolveVariables(
   } while (!resolved && iterations < 5);
 
   return variables;
+}
+
+// Utility: Detect partial/unclosed Nunjucks tags and wrap in {% raw %} if needed
+function autoWrapRawIfPartialNunjucks(prompt: string): string {
+  // Detects any occurrence of an opening Nunjucks tag without a matching close
+  // e.g. "{%" or "{{" not followed by a closing "%}" or "}}"
+  const hasPartialTag = /({%[^%]*$|{{[^}]*$|{#[^#]*$)/m.test(prompt);
+  const alreadyWrapped = /{\%\s*raw\s*\%}/.test(prompt) && /{\%\s*endraw\s*\%}/.test(prompt);
+  if (hasPartialTag && !alreadyWrapped) {
+    return `{% raw %}${prompt}{% endraw %}`;
+  }
+  return prompt;
+}
+
+/**
+ * Collects metadata about file variables in the vars object.
+ * @param vars The variables object containing potential file references
+ * @returns An object mapping variable names to their file metadata
+ */
+export function collectFileMetadata(vars: Record<string, string | object>): FileMetadata {
+  const fileMetadata: FileMetadata = {};
+
+  for (const [varName, value] of Object.entries(vars)) {
+    if (typeof value === 'string' && value.startsWith('file://')) {
+      const filePath = path.resolve(cliState.basePath || '', value.slice('file://'.length));
+      const fileExtension = filePath.split('.').pop() || '';
+
+      if (isImageFile(filePath)) {
+        fileMetadata[varName] = {
+          path: value, // Keep the original file:// notation
+          type: 'image',
+          format: fileExtension,
+        };
+      } else if (isVideoFile(filePath)) {
+        fileMetadata[varName] = {
+          path: value,
+          type: 'video',
+          format: fileExtension,
+        };
+      } else if (isAudioFile(filePath)) {
+        fileMetadata[varName] = {
+          path: value,
+          type: 'audio',
+          format: fileExtension,
+        };
+      }
+    }
+  }
+
+  return fileMetadata;
 }
 
 export async function renderPrompt(
@@ -123,7 +175,7 @@ export async function renderPrompt(
           yaml.load(fs.readFileSync(filePath, 'utf8')) as string | object,
         );
       } else if (fileExtension === 'pdf' && !getEnvBool('PROMPTFOO_DISABLE_PDF_AS_TEXT')) {
-        telemetry.record('feature_used', {
+        telemetry.recordOnce('feature_used', {
           feature: 'extract_text_from_pdf',
         });
         vars[varName] = await extractTextFromPDF(filePath);
@@ -137,7 +189,7 @@ export async function renderPrompt(
             ? 'video'
             : 'audio';
 
-        telemetry.record('feature_used', {
+        telemetry.recordOnce('feature_used', {
           feature: `load_${fileType}_as_base64`,
         });
 
@@ -243,6 +295,8 @@ export async function renderPrompt(
   // Render prompt
   try {
     if (getEnvBool('PROMPTFOO_DISABLE_JSON_AUTOESCAPE')) {
+      // Pre-process: auto-wrap in {% raw %} if partial Nunjucks tags detected
+      basePrompt = autoWrapRawIfPartialNunjucks(basePrompt);
       return nunjucks.renderString(basePrompt, vars);
     }
 
@@ -255,10 +309,14 @@ export async function renderPrompt(
     const renderedVars = Object.fromEntries(
       Object.entries(vars).map(([key, value]) => [
         key,
-        typeof value === 'string' ? nunjucks.renderString(value, vars) : value,
+        typeof value === 'string'
+          ? nunjucks.renderString(autoWrapRawIfPartialNunjucks(value), vars)
+          : value,
       ]),
     );
 
+    // Pre-process: auto-wrap in {% raw %} if partial Nunjucks tags detected
+    basePrompt = autoWrapRawIfPartialNunjucks(basePrompt);
     // Note: Explicitly not using `renderVarsInObject` as it will re-call `renderString`; each call will
     // strip Nunjucks Tags, which breaks using raw (https://mozilla.github.io/nunjucks/templating.html#raw) e.g.
     // {% raw %}{{some_string}}{% endraw %} -> {{some_string}} -> ''
@@ -282,7 +340,7 @@ export async function runExtensionHook(
     return;
   }
 
-  telemetry.record('feature_used', {
+  telemetry.recordOnce('feature_used', {
     feature: 'extension_hook',
   });
 

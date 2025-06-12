@@ -1,6 +1,7 @@
 import opener from 'opener';
-import { VERSION, DEFAULT_PORT } from '../../src/constants';
+import { VERSION, getDefaultPort } from '../../src/constants';
 import logger from '../../src/logger';
+import * as readlineUtils from '../../src/util/readline';
 // Import the module under test after mocks are set up
 import { BrowserBehavior, checkServerRunning, openBrowser } from '../../src/util/server';
 
@@ -14,15 +15,11 @@ jest.mock('../../src/logger', () => ({
   error: jest.fn(),
 }));
 
-// Mock readline
-const mockQuestion = jest.fn();
-const mockClose = jest.fn();
-jest.mock('readline', () => ({
-  createInterface: jest.fn(() => ({
-    question: mockQuestion,
-    close: mockClose,
-    on: jest.fn(),
-  })),
+// Mock the readline utilities
+jest.mock('../../src/util/readline', () => ({
+  promptYesNo: jest.fn(),
+  promptUser: jest.fn(),
+  createReadlineInterface: jest.fn(),
 }));
 
 // Properly mock fetch
@@ -34,6 +31,7 @@ describe('Server Utilities', () => {
     jest.clearAllMocks();
     // Setup global.fetch as a Jest mock
     global.fetch = mockFetch;
+    mockFetch.mockReset();
   });
 
   afterEach(() => {
@@ -48,7 +46,7 @@ describe('Server Utilities', () => {
 
       const result = await checkServerRunning();
 
-      expect(mockFetch).toHaveBeenCalledWith(`http://localhost:${DEFAULT_PORT}/health`);
+      expect(mockFetch).toHaveBeenCalledWith(`http://localhost:${getDefaultPort()}/health`);
       expect(result).toBe(true);
     });
 
@@ -99,20 +97,20 @@ describe('Server Utilities', () => {
     it('should open browser with default URL when BrowserBehavior.OPEN', async () => {
       await openBrowser(BrowserBehavior.OPEN);
 
-      expect(opener).toHaveBeenCalledWith(`http://localhost:${DEFAULT_PORT}`);
+      expect(opener).toHaveBeenCalledWith(`http://localhost:${getDefaultPort()}`);
       expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Press Ctrl+C'));
     });
 
     it('should open browser with report URL when BrowserBehavior.OPEN_TO_REPORT', async () => {
       await openBrowser(BrowserBehavior.OPEN_TO_REPORT);
 
-      expect(opener).toHaveBeenCalledWith(`http://localhost:${DEFAULT_PORT}/report`);
+      expect(opener).toHaveBeenCalledWith(`http://localhost:${getDefaultPort()}/report`);
     });
 
     it('should open browser with redteam setup URL when BrowserBehavior.OPEN_TO_REDTEAM_CREATE', async () => {
       await openBrowser(BrowserBehavior.OPEN_TO_REDTEAM_CREATE);
 
-      expect(opener).toHaveBeenCalledWith(`http://localhost:${DEFAULT_PORT}/redteam/setup`);
+      expect(opener).toHaveBeenCalledWith(`http://localhost:${getDefaultPort()}/redteam/setup`);
     });
 
     it('should not open browser when BrowserBehavior.SKIP', async () => {
@@ -133,30 +131,22 @@ describe('Server Utilities', () => {
     });
 
     it('should ask user before opening browser when BrowserBehavior.ASK', async () => {
-      // Setup readline to return 'y'
-      mockQuestion.mockImplementationOnce((_, callback) => callback('y'));
+      // Mock promptYesNo to return true
+      jest.mocked(readlineUtils.promptYesNo).mockResolvedValueOnce(true);
 
       await openBrowser(BrowserBehavior.ASK);
 
-      expect(mockQuestion).toHaveBeenCalledWith(
-        'Open URL in browser? (y/N): ',
-        expect.any(Function),
-      );
-      expect(mockClose).toHaveBeenCalledWith();
-      expect(opener).toHaveBeenCalledWith(`http://localhost:${DEFAULT_PORT}`);
+      expect(readlineUtils.promptYesNo).toHaveBeenCalledWith('Open URL in browser?', false);
+      expect(opener).toHaveBeenCalledWith(`http://localhost:${getDefaultPort()}`);
     });
 
     it('should not open browser when user answers no to ASK prompt', async () => {
-      // Setup readline to return 'n'
-      mockQuestion.mockImplementationOnce((_, callback) => callback('n'));
+      // Mock promptYesNo to return false
+      jest.mocked(readlineUtils.promptYesNo).mockResolvedValueOnce(false);
 
       await openBrowser(BrowserBehavior.ASK);
 
-      expect(mockQuestion).toHaveBeenCalledWith(
-        'Open URL in browser? (y/N): ',
-        expect.any(Function),
-      );
-      expect(mockClose).toHaveBeenCalledWith();
+      expect(readlineUtils.promptYesNo).toHaveBeenCalledWith('Open URL in browser?', false);
       expect(opener).not.toHaveBeenCalled();
     });
 

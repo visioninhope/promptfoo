@@ -12,7 +12,7 @@ jest.mock('../../../src/cache');
 
 describe('failApiCall', () => {
   it('should format OpenAI API errors', () => {
-    const error = new OpenAI.APIError(400, {}, 'Bad request', {});
+    const error = new OpenAI.APIError(400, {}, 'Bad request', new Headers());
     Object.defineProperty(error, 'type', {
       value: 'invalid_request_error',
       writable: true,
@@ -186,6 +186,16 @@ describe('calculateOpenAICost', () => {
     expect(cost).toBeCloseTo((1000 * 0.5 + 500 * 1.5) / 1e6, 6);
   });
 
+  it('should calculate cost correctly for o4-mini', () => {
+    const cost = calculateOpenAICost('o4-mini', {}, 1000, 500);
+    expect(cost).toBeCloseTo((1000 * 1.1 + 500 * 4.4) / 1e6, 6);
+  });
+
+  it('should calculate cost correctly for codex-mini-latest', () => {
+    const cost = calculateOpenAICost('codex-mini-latest', {}, 1000, 500);
+    expect(cost).toBeCloseTo((1000 * 1.5 + 500 * 6.0) / 1e6, 6);
+  });
+
   it('should handle undefined token counts', () => {
     const cost = calculateOpenAICost('gpt-4', {}, undefined, undefined);
     expect(cost).toBeUndefined();
@@ -223,9 +233,29 @@ describe('calculateOpenAICost', () => {
     expect(cost).toBeCloseTo((1000 * 150 + 500 * 600) / 1e6, 6);
   });
 
+  it('should calculate cost correctly for o3-pro', () => {
+    const cost = calculateOpenAICost('o3-pro', {}, 1000, 500);
+    expect(cost).toBeCloseTo((1000 * 20 + 500 * 80) / 1e6, 6);
+  });
+
   it('should calculate cost correctly for o1-pro-2025-03-19', () => {
     const cost = calculateOpenAICost('o1-pro-2025-03-19', {}, 1000, 500);
     expect(cost).toBeCloseTo((1000 * 150 + 500 * 600) / 1e6, 6);
+  });
+
+  it('should calculate cost correctly for o3', () => {
+    const cost = calculateOpenAICost('o3', {}, 1000, 500);
+    expect(cost).toBeCloseTo((1000 * 2 + 500 * 8) / 1e6, 6);
+  });
+
+  it('should calculate cost correctly for o3-2025-04-16', () => {
+    const cost = calculateOpenAICost('o3-2025-04-16', {}, 1000, 500);
+    expect(cost).toBeCloseTo((1000 * 2 + 500 * 8) / 1e6, 6);
+  });
+
+  it('should calculate cost correctly for o3-pro-2025-06-10', () => {
+    const cost = calculateOpenAICost('o3-pro-2025-06-10', {}, 1000, 500);
+    expect(cost).toBeCloseTo((1000 * 20 + 500 * 80) / 1e6, 6);
   });
 
   it('should calculate audio token costs for gpt-4o-realtime-preview-2024-12-17', () => {

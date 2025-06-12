@@ -20,7 +20,6 @@ import {
   type EvaluateTable,
   type PromptWithMetadata,
   type ResultsFile,
-  type TestCase,
   type TestCasesWithMetadata,
   type TestCasesWithMetadataPrompt,
   type UnifiedConfig,
@@ -93,12 +92,24 @@ export async function writeResultsToDatabase(
 
   // Record dataset relation
   const datasetId = sha256(JSON.stringify(config.tests || []));
+  const testsForStorage = Array.isArray(config.tests) ? config.tests : [];
+
+  // Log when non-array tests are converted to empty array for database storage
+  if (config.tests && !Array.isArray(config.tests)) {
+    const testsType = typeof config.tests;
+    const hasPath =
+      typeof config.tests === 'object' && config.tests !== null && 'path' in config.tests;
+    logger.debug(
+      `Converting non-array test configuration to empty array for database storage. Type: ${testsType}, hasPath: ${hasPath}`,
+    );
+  }
+
   promises.push(
     db
       .insert(datasetsTable)
       .values({
         id: datasetId,
-        tests: config.tests,
+        tests: testsForStorage,
       })
       .onConflictDoNothing()
       .run(),
@@ -270,12 +281,6 @@ export function getPromptsForTestCasesHash(
   }, limit);
 }
 
-export function getPromptsForTestCases(testCases: TestCase[]) {
-  const testCasesJson = JSON.stringify(testCases);
-  const testCasesSha256 = sha256(testCasesJson);
-  return getPromptsForTestCasesHash(testCasesSha256);
-}
-
 export async function getTestCasesWithPredicate(
   predicate: (result: ResultsFile) => boolean,
   limit: number,
@@ -290,7 +295,20 @@ export async function getTestCasesWithPredicate(
     const testCases = resultWrapper.config.tests;
     if (testCases && predicate(resultWrapper)) {
       const evalId = eval_.id;
-      const datasetId = sha256(JSON.stringify(testCases));
+      // For database storage, we need to handle the union type properly
+      // Only store actual test case arrays, not generator configs
+      let storableTestCases: string | Array<string | any>;
+      if (typeof testCases === 'string') {
+        storableTestCases = testCases;
+      } else if (Array.isArray(testCases)) {
+        storableTestCases = testCases;
+      } else {
+        // If it's a TestGeneratorConfig object, we can't store it directly
+        // This case should be rare as the database typically stores resolved tests
+        logger.warn('Skipping TestGeneratorConfig object in database storage');
+        continue;
+      }
+      const datasetId = sha256(JSON.stringify(storableTestCases));
 
       if (datasetId in groupedTestCases) {
         groupedTestCases[datasetId].recentEvalDate = new Date(
@@ -324,7 +342,7 @@ export async function getTestCasesWithPredicate(
         groupedTestCases[datasetId] = {
           id: datasetId,
           count: 1,
-          testCases,
+          testCases: storableTestCases,
           recentEvalDate: new Date(createdAt),
           recentEvalId: evalId,
           prompts: Object.values(promptsById),
@@ -427,15 +445,15 @@ export async function getEvalFromId(hash: string) {
 
 export async function deleteEval(evalId: string) {
   const db = getDb();
-  await db.transaction(async () => {
+  db.transaction(() => {
     // We need to clean up foreign keys first. We don't have onDelete: 'cascade' set on all these relationships.
-    await db.delete(evalsToPromptsTable).where(eq(evalsToPromptsTable.evalId, evalId)).run();
-    await db.delete(evalsToDatasetsTable).where(eq(evalsToDatasetsTable.evalId, evalId)).run();
-    await db.delete(evalsToTagsTable).where(eq(evalsToTagsTable.evalId, evalId)).run();
-    await db.delete(evalResultsTable).where(eq(evalResultsTable.evalId, evalId)).run();
+    db.delete(evalsToPromptsTable).where(eq(evalsToPromptsTable.evalId, evalId)).run();
+    db.delete(evalsToDatasetsTable).where(eq(evalsToDatasetsTable.evalId, evalId)).run();
+    db.delete(evalsToTagsTable).where(eq(evalsToTagsTable.evalId, evalId)).run();
+    db.delete(evalResultsTable).where(eq(evalResultsTable.evalId, evalId)).run();
 
     // Finally, delete the eval record
-    const deletedIds = await db.delete(evalsTable).where(eq(evalsTable.id, evalId)).run();
+    const deletedIds = db.delete(evalsTable).where(eq(evalsTable.id, evalId)).run();
     if (deletedIds.changes === 0) {
       throw new Error(`Eval with ID ${evalId} not found`);
     }
@@ -449,12 +467,12 @@ export async function deleteEval(evalId: string) {
  */
 export async function deleteAllEvals(): Promise<void> {
   const db = getDb();
-  await db.transaction(async (tx) => {
-    await tx.delete(evalResultsTable).run();
-    await tx.delete(evalsToPromptsTable).run();
-    await tx.delete(evalsToDatasetsTable).run();
-    await tx.delete(evalsToTagsTable).run();
-    await tx.delete(evalsTable).run();
+  db.transaction(() => {
+    db.delete(evalResultsTable).run();
+    db.delete(evalsToPromptsTable).run();
+    db.delete(evalsToDatasetsTable).run();
+    db.delete(evalsToTagsTable).run();
+    db.delete(evalsTable).run();
   });
 }
 

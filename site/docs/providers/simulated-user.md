@@ -1,3 +1,7 @@
+---
+sidebar_label: Simulated User
+---
+
 # Simulated User
 
 The Simulated User Provider enables testing of multi-turn conversations between an AI agent and a simulated user. This is useful for testing chatbots, virtual assistants, and other conversational AI applications.
@@ -62,7 +66,7 @@ prompts:
   - file://agent_policy.txt
 
 providers:
-  - 'openai:gpt-4o-mini'
+  - 'openai:gpt-4.1-mini'
 
 defaultTest:
   provider:

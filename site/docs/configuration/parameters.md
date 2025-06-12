@@ -196,10 +196,10 @@ prompts:
     label: llama_completion_prompt
 
 providers:
-  - id: openai:gpt-4o-mini
+  - id: openai:gpt-4.1-mini
     prompts:
       - gpt_chat_prompt
-  - id: openai:gpt-4o
+  - id: openai:gpt-4.1
     prompts:
       - gpt_chat_prompt
   - id: replicate:meta/meta-llama-3.1-405b-instruct
@@ -274,7 +274,7 @@ import sys
 
 def my_prompt_function(context: dict) -> str:
     provider: dict = context['provider']
-    provider_id: str = provider['id']  # ex. openai:gpt-4o or bedrock:anthropic.claude-3-sonnet-20240229-v1:0
+    provider_id: str = provider['id']  # ex. openai:gpt-4.1 or bedrock:anthropic.claude-3-sonnet-20240229-v1:0
     provider_label: str | None = provider.get('label') # exists if set in promptfoo config.
 
     variables: dict = context['vars'] # access the test case variables
@@ -366,7 +366,7 @@ Register it in your configuration:
 prompts:
   - file://prompts.txt
 providers:
-  - openai:gpt-4o-mini
+  - openai:gpt-4.1-mini
 // highlight-start
 nunjucksFilters:
   allcaps: ./allcaps.js
@@ -476,6 +476,46 @@ def generate_tests():
         test_cases.append(test_case)
     return test_cases
 ```
+
+#### Passing configuration to test generators
+
+Both JavaScript/TypeScript and Python generators can accept a configuration
+object. Provide a `path` and optional `config` field:
+
+```yaml title="promptfooconfig.yaml"
+tests:
+  - path: file://path/to/tests.py:generate_tests
+    config:
+      dataset: truthfulqa
+      split: validation
+```
+
+The configuration object is passed as the first argument to the
+`generate_tests` function.
+
+Values in the config object can reference external files using `file://` paths.
+These files are loaded and replaced with their contents before your generator is
+called.
+
+:::note file:// Path Handling
+
+The `file://` prefix is handled differently in the `path` field versus the `config` object:
+
+- **In the `path` field**: `file://` is treated as a standard file URI to locate the test generator function. This is how promptfoo knows to load and execute your generator function from a file.
+
+- **In the `config` object**: `file://` triggers special content loading. When promptfoo encounters `file://` in any config value, it loads the file contents and substitutes them in place before passing the config to your generator.
+
+**Example:**
+
+```yaml
+tests:
+  - path: file://generators/tests.py:generate_tests # Standard file URI
+    config:
+      prompts: file://data/prompts.txt # Content will be loaded
+      schema: file://schema.json # Content will be loaded and parsed
+```
+
+:::
 
 ### Import from JSON/JSONL
 
