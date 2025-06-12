@@ -87,6 +87,7 @@ jobs:
               "extends": "./tsconfig.app.json",
               "include": [
                 "{{file}}",
+                "src/setupTests.ts",
                 "**/*.d.ts"
               ]
             }
