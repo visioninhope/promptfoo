@@ -7,13 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       runId:
-        description: "Tusk Run ID"
+        description: 'Tusk Run ID'
         required: true
       tuskUrl:
-        description: "Tusk server URL"
+        description: 'Tusk server URL'
         required: true
       commitSha:
-        description: "Commit SHA to checkout"
+        description: 'Commit SHA to checkout'
         required: true
 
 jobs:
@@ -31,8 +31,8 @@ jobs:
       - name: Use Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
+          node-version-file: '.nvmrc'
+          cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
@@ -56,13 +56,13 @@ jobs:
           authToken: ${{ secrets.TUSK_AUTH_TOKEN }}
 
           # Vitest for the React app tests
-          testFramework: "Vitest"
+          testFramework: 'Vitest'
 
           # Test file regex to match Vitest test files in src/app
           testFileRegex: '^src/app/.*\.(test|spec)\.(js|jsx|ts|tsx)$'
 
           # This will be the working directory for all commands
-          appDir: "src/app"
+          appDir: 'src/app'
 
           # The script to run to lint the code for React/TypeScript files
           # Create a unique tsconfig file so we can check tsc just for the file
@@ -97,7 +97,7 @@ jobs:
             npx tsc --project $TMP_TSCONFIG --skipLibCheck --noEmit
 
           # The script to run Vitest tests for individual files
-          testScript: "npx vitest run {{file}}"
+          testScript: 'npx vitest run {{file}}'
 
           # The runner may run tests in parallel.
           # Set this value to 1 if you know that your tests should not be run concurrently.
