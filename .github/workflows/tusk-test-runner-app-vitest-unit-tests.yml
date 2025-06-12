@@ -84,7 +84,7 @@ jobs:
 
             cat >$TMP_TSCONFIG <<EOF
             {
-              "extends": "./tsconfig.json",
+              "extends": "./tsconfig.app.json",
               "include": [
                 "{{file}}",
                 "**/*.d.ts"
