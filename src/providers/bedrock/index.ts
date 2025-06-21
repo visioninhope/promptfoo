@@ -1322,6 +1322,7 @@ export const AWS_BEDROCK_MODELS: Record<string, IBedrockModel> = {
   'apac.amazon.nova-pro-v1:0': BEDROCK_MODEL.AMAZON_NOVA,
   'apac.amazon.nova-premier-v1:0': BEDROCK_MODEL.AMAZON_NOVA,
   'apac.anthropic.claude-3-5-sonnet-20240620-v1:0': BEDROCK_MODEL.CLAUDE_MESSAGES,
+  'apac.anthropic.claude-3-5-sonnet-20241022-v2:0': BEDROCK_MODEL.CLAUDE_MESSAGES,
   'apac.anthropic.claude-3-haiku-20240307-v1:0': BEDROCK_MODEL.CLAUDE_MESSAGES,
   'apac.anthropic.claude-3-sonnet-20240229-v1:0': BEDROCK_MODEL.CLAUDE_MESSAGES,
   'apac.anthropic.claude-sonnet-4-20250514-v1:0': BEDROCK_MODEL.CLAUDE_MESSAGES,
