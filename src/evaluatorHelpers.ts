@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import * as path from 'path';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import cliState from './cliState';
 import { getEnvBool } from './envars';
 import { importModule } from './esm';
@@ -23,6 +23,7 @@ import {
   type EvaluateResult,
   TestSuiteSchema,
   type TestCase,
+  type Vars,
 } from './types';
 import { renderVarsInObject } from './util';
 import { isJavascriptFile, isImageFile, isVideoFile, isAudioFile } from './util/fileExtensions';
@@ -50,8 +51,8 @@ export async function extractTextFromPDF(pdfPath: string): Promise<string> {
 }
 
 export function resolveVariables(
-  variables: Record<string, string | object>,
-): Record<string, string | object> {
+  variables: Vars,
+): Vars {
   let resolved = true;
   const regex = /\{\{\s*(\w+)\s*\}\}/; // Matches {{variableName}}, {{ variableName }}, etc.
 
@@ -98,7 +99,7 @@ function autoWrapRawIfPartialNunjucks(prompt: string): string {
  * @param vars The variables object containing potential file references
  * @returns An object mapping variable names to their file metadata
  */
-export function collectFileMetadata(vars: Record<string, string | object>): FileMetadata {
+export function collectFileMetadata(vars: Vars): FileMetadata {
   const fileMetadata: FileMetadata = {};
 
   for (const [varName, value] of Object.entries(vars)) {
@@ -133,7 +134,7 @@ export function collectFileMetadata(vars: Record<string, string | object>): File
 
 export async function renderPrompt(
   prompt: Prompt,
-  vars: Record<string, string | object>,
+  vars: Vars,
   nunjucksFilters?: NunjucksFilterMap,
   provider?: ApiProvider,
 ): Promise<string> {

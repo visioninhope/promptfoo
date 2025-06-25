@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import dedent from 'dedent';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import cliState from '../../cliState';
 import { CLOUD_PROVIDER_PREFIX } from '../../constants';
 import { DEFAULT_MAX_CONCURRENCY } from '../../evaluator';
@@ -93,7 +93,7 @@ export function redteamRunCommand(program: Command) {
       } catch (error) {
         if (error instanceof z.ZodError) {
           logger.error('Invalid options:');
-          error.errors.forEach((err: z.ZodIssue) => {
+          error.issues.forEach((err: z.ZodIssue) => {
             logger.error(`  ${err.path.join('.')}: ${err.message}`);
           });
         } else {

@@ -1,7 +1,7 @@
 import type winston from 'winston';
 import type { EnvOverrides } from './env';
 import type { Prompt } from './prompts';
-import type { NunjucksFilterMap, TokenUsage } from './shared';
+import type { NunjucksFilterMap, TokenUsage, Vars } from './shared';
 
 export type ProviderId = string;
 export type ProviderLabel = string;
@@ -15,7 +15,7 @@ export type ProviderTypeMap = Partial<Record<ProviderType, string | ProviderOpti
 // Local interface to avoid circular dependency with src/types/index.ts
 interface AtomicTestCase {
   description?: string;
-  vars?: Record<string, string | object>;
+  vars?: Vars;
   providerResponse?: ProviderResponse;
   tokenUsage?: TokenUsage;
   success?: boolean;
@@ -50,7 +50,7 @@ export interface CallApiContextParams {
   logger?: winston.Logger;
   originalProvider?: ApiProvider;
   prompt: Prompt;
-  vars: Record<string, string | object>;
+  vars: Vars;
   debug?: boolean;
   // This was added so we have access to the grader inside the provider.
   // Vars and prompts should be access using the arguments above.

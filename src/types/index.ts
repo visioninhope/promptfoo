@@ -1,6 +1,6 @@
 // Note: This file is in the process of being deconstructed into `types/` and `validators/`
 // Right now Zod and pure types are mixed together!
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type {
   PluginConfig,
   RedteamAssertionTypes,
@@ -9,7 +9,7 @@ import type {
 } from '../redteam/types';
 import type { EnvOverrides } from '../types/env';
 import { ProviderEnvOverridesSchema } from '../types/env';
-import { TokenUsageSchema } from '../types/shared';
+import { TokenUsageSchema, VarsSchema, Vars } from '../types/shared';
 import { isJavascriptFile, JAVASCRIPT_EXTENSIONS } from '../util/fileExtensions';
 import { PromptConfigSchema, PromptSchema } from '../validators/prompts';
 import { ApiProviderSchema, ProviderOptionsSchema, ProvidersSchema } from '../validators/providers';
@@ -26,49 +26,61 @@ export * from './shared';
 
 export type { EnvOverrides };
 
-export const CommandLineOptionsSchema = z.object({
-  // Shared with TestSuite
-  description: z.string().optional(),
-  prompts: z.array(z.string()).optional(),
-  providers: z.array(z.string()),
-  output: z.array(z.string()),
+export const CommandLineOptionsSchema = z
+  .object({
+    // Shared with TestSuite
+    description: z.string().optional(),
+    prompts: z.array(z.string()).optional(),
+    providers: z.array(z.string()),
+    output: z.array(z.string()),
 
-  // Shared with EvaluateOptions
-  maxConcurrency: z.coerce.number().int().positive().optional(),
-  repeat: z.coerce.number().int().positive().optional(),
-  delay: z.coerce.number().int().nonnegative().default(0),
+    // Shared with EvaluateOptions
+    maxConcurrency: z.coerce.number().int().positive().optional(),
+    repeat: z.coerce.number().int().positive().optional(),
+    delay: z.coerce.number().int().nonnegative().default(0),
 
-  // Command line only
-  vars: z.string().optional(),
-  tests: z.string().optional(),
-  config: z.array(z.string()).optional(),
-  assertions: z.string().optional(),
-  modelOutputs: z.string().optional(),
-  verbose: z.boolean().optional(),
-  grader: z.string().optional(),
-  tableCellMaxLength: z.coerce.number().int().positive().optional(),
-  write: z.boolean().optional(),
-  cache: z.boolean().optional(),
-  table: z.boolean().optional(),
-  share: z.boolean().optional(),
-  progressBar: z.boolean().optional(),
-  watch: z.boolean().optional(),
-  filterErrorsOnly: z.string().optional(),
-  filterFailing: z.string().optional(),
-  filterFirstN: z.coerce.number().int().positive().optional(),
-  filterMetadata: z.string().optional(),
-  filterPattern: z.string().optional(),
-  filterProviders: z.string().optional(),
-  filterSample: z.coerce.number().int().positive().optional(),
-  filterTargets: z.string().optional(),
-  var: z.record(z.string()).optional(),
+    // Command line only
+    vars: z.string().optional(),
+    tests: z.string().optional(),
+    config: z.array(z.string()).optional(),
+    assertions: z.string().optional(),
+    modelOutputs: z.string().optional(),
+    verbose: z.boolean().optional(),
+    grader: z.string().optional(),
+    tableCellMaxLength: z.coerce.number().int().positive().optional(),
+    write: z.boolean().optional(),
+    cache: z.boolean().optional(),
+    table: z.boolean().optional(),
+    share: z.boolean().optional(),
+    progressBar: z.boolean().optional(),
+    watch: z.boolean().optional(),
+    filterErrorsOnly: z.string().optional(),
+    filterFailing: z.string().optional(),
+    filterFirstN: z.coerce.number().int().positive().optional(),
+    filterMetadata: z.string().optional(),
+    filterPattern: z.string().optional(),
+    filterProviders: z.string().optional(),
+    filterSample: z.coerce.number().int().positive().optional(),
+    filterTargets: z.string().optional(),
+    var: z.record(z.string(), z.string()).optional(),
 
-  generateSuggestions: z.boolean().optional(),
-  promptPrefix: z.string().optional(),
-  promptSuffix: z.string().optional(),
+    generateSuggestions: z.boolean().optional(),
+    promptPrefix: z.string().optional(),
+    promptSuffix: z.string().optional(),
 
-  envPath: z.string().optional(),
-});
+    envPath: z.string().optional(),
+  })
+  .meta({
+    title: 'Command Line Options',
+    description: 'Configuration options that can be passed via command line interface',
+    examples: [
+      {
+        providers: ['openai:gpt-4'],
+        output: ['html', 'json'],
+        maxConcurrency: 5,
+      },
+    ],
+  });
 
 export type CommandLineOptions = z.infer<typeof CommandLineOptionsSchema>;
 
@@ -167,29 +179,28 @@ const EvaluateOptionsSchema = z.object({
    * @author mldangelo
    */
   interactiveProviders: z.boolean().optional(),
-  maxConcurrency: z.number().optional(),
+  maxConcurrency: z.int32().positive().optional(),
   progressCallback: z
-    .function(
-      z.tuple([
-        z.number(),
-        z.number(),
-        z.number(),
-        z.custom<RunEvalOptions>(),
-        z.custom<PromptMetrics>(),
-      ]),
-      z.void(),
-    )
+    .custom<
+      (
+        completed: number,
+        total: number,
+        index: number,
+        evalStep: RunEvalOptions,
+        metrics: PromptMetrics,
+      ) => void
+    >()
     .optional(),
-  repeat: z.number().optional(),
+  repeat: z.int32().positive().optional(),
   showProgressBar: z.boolean().optional(),
   /**
    * Timeout in milliseconds for each evaluation step. Default is 0 (no timeout).
    */
-  timeoutMs: z.number().optional(),
+  timeoutMs: z.uint32().default(0).optional(),
   /**
    * Maximum runtime in milliseconds for the entire evaluation. Default is 0 (no limit).
    */
-  maxEvalTimeMs: z.number().optional(),
+  maxEvalTimeMs: z.uint32().default(0).optional(),
 });
 export type EvaluateOptions = z.infer<typeof EvaluateOptionsSchema> & { abortSignal?: AbortSignal };
 
@@ -533,8 +544,8 @@ export type Assertion = z.infer<typeof AssertionSchema>;
 
 export interface AssertionValueFunctionContext {
   prompt: string | undefined;
-  vars: Record<string, string | object>;
-  test: AtomicTestCase<Record<string, string | object>>;
+  vars: Vars;
+  test: AtomicTestCase;
   logProbs: number[] | undefined;
   config?: Record<string, any>;
   provider: ApiProvider | undefined;
@@ -585,18 +596,7 @@ const ProviderPromptMapSchema = z.record(
 // Metadata is a key-value store for arbitrary data
 const MetadataSchema = z.record(z.string(), z.any());
 
-export const VarsSchema = z.record(
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.array(z.union([z.string(), z.number(), z.boolean()])),
-    z.record(z.string(), z.any()),
-    z.array(z.any()),
-  ]),
-);
 
-export type Vars = z.infer<typeof VarsSchema>;
 
 export type ScoringFunction = (
   namedScores: Record<string, number>,
@@ -628,7 +628,7 @@ export const TestCaseSchema = z.object({
   provider: z.union([z.string(), ProviderOptionsSchema, ApiProviderSchema]).optional(),
 
   // Output related from running values in Vars with provider. Having this value would skip running the prompt through the provider, and go straight to the assertions
-  providerOutput: z.union([z.string(), z.object({})]).optional(),
+  providerOutput: z.union([z.string(), z.any()]).optional(),
 
   // Optional list of automatic checks to run on the LLM output
   assert: z.array(z.union([AssertionSetSchema, AssertionSchema])).optional(),
@@ -676,7 +676,7 @@ export const TestCaseSchema = z.object({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type TestCase<vars = Record<string, string | string[] | object>> = z.infer<
+export type TestCase<vars = Vars> = z.infer<
   typeof TestCaseSchema
 >;
 
@@ -714,11 +714,11 @@ export type Scenario = z.infer<typeof ScenarioSchema>;
 
 // Same as a TestCase, except the `vars` object has been flattened into its final form.
 export const AtomicTestCaseSchema = TestCaseSchema.extend({
-  vars: z.record(z.union([z.string(), z.object({})])).optional(),
+  vars: VarsSchema.optional(),
 }).strict();
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type AtomicTestCase<vars = Record<string, string | object>> = z.infer<
+export type AtomicTestCase<vars = Vars> = z.infer<
   typeof AtomicTestCaseSchema
 >;
 
@@ -775,10 +775,7 @@ export const DerivedMetricSchema = z.object({
   // The function to calculate the metric - either a mathematical expression or a function that takes the scores and returns a number
   value: z.union([
     z.string(),
-    z
-      .function()
-      .args(z.record(z.string(), z.number()), z.custom<RunEvalOptions>())
-      .returns(z.number()),
+    z.custom<(scores: Record<string, number>, options: RunEvalOptions) => number>(),
   ]),
 });
 export type DerivedMetric = z.infer<typeof DerivedMetricSchema>;

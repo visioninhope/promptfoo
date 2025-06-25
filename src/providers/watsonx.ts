@@ -1,7 +1,7 @@
 import type { WatsonXAI as WatsonXAIClient } from '@ibm-cloud/watsonx-ai';
 import crypto from 'crypto';
 import type { IamAuthenticator, BearerTokenAuthenticator } from 'ibm-cloud-sdk-core';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { getCache, isCacheEnabled, fetchWithCache } from '../cache';
 import type { EnvVarKey } from '../envars';
 import { getEnvString } from '../envars';
@@ -200,7 +200,7 @@ export class WatsonXProvider implements ApiProvider {
   constructor(modelName: string, options: ProviderOptions) {
     const validationResult = ConfigSchema.safeParse(options.config);
     if (!validationResult.success) {
-      const errors = validationResult.error.errors.map((e) => e.message).join(', ');
+      const errors = validationResult.error.issues.map((e) => e.message).join(', ');
       throw new Error(`WatsonXProvider requires a valid config. Issues: ${errors}`);
     }
 
@@ -349,10 +349,10 @@ export class WatsonXProvider implements ApiProvider {
 
       if (!parsedResponse.success) {
         logger.error(
-          `Watsonx: Invalid response structure for response: ${JSON.stringify(apiResponse.result)}, errors: ${JSON.stringify(parsedResponse.error.errors)}`,
+          `Watsonx: Invalid response structure for response: ${JSON.stringify(apiResponse.result)}, errors: ${JSON.stringify(parsedResponse.error.issues)}`,
         );
         throw new Error(
-          `Invalid API response structure: ${JSON.stringify(parsedResponse.error.errors)}`,
+          `Invalid API response structure: ${JSON.stringify(parsedResponse.error.issues)}`,
         );
       }
 

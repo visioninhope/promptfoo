@@ -10,6 +10,7 @@ import type {
   NunjucksFilterMap,
   RedteamFileConfig,
   ProviderResponse,
+  Vars,
 } from '../../types';
 import invariant from '../../util/invariant';
 import { extractFirstJsonObject } from '../../util/json';
@@ -209,7 +210,7 @@ async function runRedteamConversation({
 }: {
   prompt: Prompt;
   filters: NunjucksFilterMap | undefined;
-  vars: Record<string, string | object>;
+  vars: Vars;
   redteamProvider: ApiProvider;
   targetProvider: ApiProvider;
   injectVar: string;

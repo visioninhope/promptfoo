@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 // for reasoning models
 export const CompletionTokenDetailsSchema = z.object({
@@ -48,3 +48,31 @@ export type BaseTokenUsage = z.infer<typeof BaseTokenUsageSchema>;
 export type TokenUsage = z.infer<typeof TokenUsageSchema>;
 
 export type NunjucksFilterMap = Record<string, (...args: any[]) => string>;
+
+export const VarsSchema = z
+  .record(
+    z.string(),
+    z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.array(z.union([z.string(), z.number(), z.boolean()])),
+      z.record(z.string(), z.any()),
+      z.array(z.any()),
+    ]),
+  )
+  .meta({
+    title: 'Variables Schema',
+    description: 'Flexible variable system supporting strings, numbers, booleans, arrays, and objects',
+    examples: [
+      {
+        name: 'John Doe',
+        age: 30,
+        isActive: true,
+        skills: ['JavaScript', 'Python'],
+        preferences: { theme: 'dark', notifications: true },
+      },
+    ],
+  });
+
+export type Vars = z.infer<typeof VarsSchema>;

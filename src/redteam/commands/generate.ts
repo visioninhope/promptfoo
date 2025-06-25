@@ -5,8 +5,7 @@ import dedent from 'dedent';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
-import { z } from 'zod';
-import { fromError } from 'zod-validation-error';
+import { z } from 'zod/v4';
 import { synthesize } from '../';
 import { disableCache } from '../../cache';
 import cliState from '../../cliState';
@@ -299,7 +298,7 @@ export async function doGenerateRedteam(
   const parsedConfig = RedteamConfigSchema.safeParse(config);
   if (!parsedConfig.success) {
     logger.error('Invalid redteam configuration:');
-    logger.error(fromError(parsedConfig.error).toString());
+    logger.error(z.prettifyError(parsedConfig.error));
     throw new Error('Invalid redteam configuration');
   }
 
@@ -594,7 +593,7 @@ export function redteamGenerateCommand(
           });
           if (!parsed.success) {
             logger.error('Invalid options:');
-            parsed.error.errors.forEach((err: z.ZodIssue) => {
+            parsed.error.issues.forEach((err: z.ZodIssue) => {
               logger.error(`  ${err.path.join('.')}: ${err.message}`);
             });
             process.exit(1);
@@ -615,7 +614,7 @@ export function redteamGenerateCommand(
       } catch (error) {
         if (error instanceof z.ZodError) {
           logger.error('Invalid options:');
-          error.errors.forEach((err: z.ZodIssue) => {
+          error.issues.forEach((err: z.ZodIssue) => {
             logger.error(`  ${err.path.join('.')}: ${err.message}`);
           });
         } else {

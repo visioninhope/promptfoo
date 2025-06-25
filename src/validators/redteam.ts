@@ -1,5 +1,5 @@
 import dedent from 'dedent';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
   ADDITIONAL_PLUGINS as REDTEAM_ADDITIONAL_PLUGINS,
   ADDITIONAL_STRATEGIES as REDTEAM_ADDITIONAL_STRATEGIES,
@@ -36,25 +36,24 @@ export const RedteamPluginObjectSchema = z.object({
       z.enum(pluginOptions as [string, ...string[]]).superRefine((val, ctx) => {
         if (!pluginOptions.includes(val)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.invalid_enum_value,
-            options: pluginOptions,
-            received: val,
+            code: z.ZodIssueCode.invalid_value,
+            input: val,
+            values: pluginOptions,
             message: `Invalid plugin name. Must be one of: ${pluginOptions.join(', ')} (or a path starting with file://)`,
           });
         }
       }),
-      z.string().startsWith('file://', {
-        message: 'Custom plugins must start with file:// (or use one of the built-in plugins)',
+      z.templateLiteral(['file://', z.string()], {
+        error: 'Custom plugins must start with file:// (or use one of the built-in plugins)',
       }),
     ])
     .describe('Name of the plugin'),
   numTests: z
-    .number()
-    .int()
+    .int32()
     .positive()
     .default(DEFAULT_NUM_TESTS_PER_PLUGIN)
     .describe('Number of tests to generate for this plugin'),
-  config: z.record(z.unknown()).optional().describe('Plugin-specific configuration'),
+  config: z.record(z.string(), z.unknown()).optional().describe('Plugin-specific configuration'),
   severity: z.nativeEnum(Severity).optional().describe('Severity level for this plugin'),
 });
 
@@ -67,15 +66,15 @@ export const RedteamPluginSchema = z.union([
       z.enum(pluginOptions as [string, ...string[]]).superRefine((val, ctx) => {
         if (!pluginOptions.includes(val)) {
           ctx.addIssue({
-            code: z.ZodIssueCode.invalid_enum_value,
-            options: pluginOptions,
-            received: val,
+            code: z.ZodIssueCode.invalid_value,
+            input: val,
+            values: pluginOptions,
             message: `Invalid plugin name. Must be one of: ${pluginOptions.join(', ')} (or a path starting with file://)`,
           });
         }
       }),
-      z.string().startsWith('file://', {
-        message: 'Custom plugins must start with file:// (or use one of the built-in plugins)',
+      z.templateLiteral(['file://', z.string()], {
+        error: 'Custom plugins must start with file:// (or use one of the built-in plugins)',
       }),
     ])
     .describe('Name of the plugin or path to custom plugin'),
@@ -87,9 +86,9 @@ export const strategyIdSchema = z
     z.enum(ALL_STRATEGIES as unknown as [string, ...string[]]).superRefine((val, ctx) => {
       if (!ALL_STRATEGIES.includes(val as Strategy)) {
         ctx.addIssue({
-          code: z.ZodIssueCode.invalid_enum_value,
-          options: [...ALL_STRATEGIES] as [string, ...string[]],
-          received: val,
+          code: z.ZodIssueCode.invalid_value,
+          input: val,
+          values: [...ALL_STRATEGIES] as [string, ...string[]],
           message: `Invalid strategy name. Must be one of: ${[...ALL_STRATEGIES].join(', ')} (or a path starting with file://)`,
         });
       }
@@ -111,7 +110,10 @@ export const RedteamStrategySchema = z.union([
   strategyIdSchema,
   z.object({
     id: strategyIdSchema,
-    config: z.record(z.unknown()).optional().describe('Strategy-specific configuration'),
+    config: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('Strategy-specific configuration'),
   }),
 ]);
 
@@ -130,7 +132,7 @@ export const RedteamGenerateOptionsSchema = z.object({
     .describe('Additional strategies to include'),
   cache: z.boolean().describe('Whether to use caching'),
   config: z.string().optional().describe('Path to the configuration file'),
-  defaultConfig: z.record(z.unknown()).describe('Default configuration object'),
+  defaultConfig: z.record(z.string(), z.unknown()).describe('Default configuration object'),
   defaultConfigPath: z.string().optional().describe('Path to the default configuration file'),
   delay: z
     .number()

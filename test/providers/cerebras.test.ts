@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import { loadApiProvider } from '../../src/providers';
 import { createCerebrasProvider } from '../../src/providers/cerebras';
 import type { OpenAiChatCompletionProvider } from '../../src/providers/openai/chat';

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { z } from 'zod';
-import { fromError } from 'zod-validation-error';
+import { z } from 'zod/v4';
 import { getEnvBool } from '../../envars';
 import { checkEmailStatus, getUserEmail, setUserEmail } from '../../globalConfig/accounts';
 import logger from '../../logger';
@@ -20,7 +19,7 @@ userRouter.get('/email', async (req: Request, res: Response): Promise<void> => {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.error(`Error getting email: ${fromError(error)}`);
+      logger.error(`Error getting email: ${z.prettifyError(error)}`);
     } else {
       logger.error(`Error getting email: ${error}`);
     }
@@ -49,7 +48,7 @@ userRouter.post('/email', async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     logger.error(`Error setting email: ${error}`);
     if (error instanceof z.ZodError) {
-      res.status(400).json({ error: fromError(error).toString() });
+      res.status(400).json({ error: z.prettifyError(error) });
     } else {
       res.status(500).json({ error: String(error) });
     }
@@ -71,7 +70,7 @@ userRouter.get('/email/status', async (req: Request, res: Response): Promise<voi
   } catch (error) {
     logger.error(`Error checking email status: ${error}`);
     if (error instanceof z.ZodError) {
-      res.status(400).json({ error: fromError(error).toString() });
+      res.status(400).json({ error: z.prettifyError(error) });
     } else {
       res.status(500).json({ error: 'Failed to check email status' });
     }

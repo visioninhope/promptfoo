@@ -1,6 +1,6 @@
 import confirm from '@inquirer/confirm';
 import type { Command } from 'commander';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { getUserEmail, setUserEmail } from '../globalConfig/accounts';
 import { cloudConfig } from '../globalConfig/cloud';
 import logger from '../logger';

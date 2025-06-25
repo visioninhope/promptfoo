@@ -450,7 +450,7 @@ export async function runRedteamConversation({
   gradingProvider: ApiProvider;
   targetProvider: ApiProvider;
   test?: AtomicTestCase;
-  vars: Record<string, string | object>;
+  vars: Vars;
   excludeTargetOutputFromAgenticAttackGeneration: boolean;
 }): Promise<RedteamTreeResponse> {
   const nunjucks = getNunjucksEngine();

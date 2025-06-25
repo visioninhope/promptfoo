@@ -1,8 +1,9 @@
 import type { AnySchema } from 'ajv';
 import type { GoogleAuth } from 'google-auth-library';
 import Clone from 'rfdc';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import logger from '../../logger';
+import type { Vars } from '../../types';
 import { renderVarsInObject } from '../../util';
 import { maybeLoadFromExternalFile } from '../../util/file';
 import { getAjv } from '../../util/json';
@@ -369,7 +370,7 @@ export function normalizeTools(tools: Tool[]): Tool[] {
 
 export function loadFile(
   config_var: Tool[] | string | undefined,
-  context_vars: Record<string, string | object> | undefined,
+  context_vars: Vars | undefined,
 ) {
   // Ensures that files are loaded correctly. Files may be defined in multiple ways:
   // 1. Directly in the provider:
@@ -398,7 +399,7 @@ export function loadFile(
 
 export function geminiFormatAndSystemInstructions(
   prompt: string,
-  contextVars?: Record<string, string | object>,
+  contextVars?: Vars,
   configSystemInstruction?: Content | string,
 ): {
   contents: GeminiFormat;
@@ -522,7 +523,7 @@ export function parseStringObject(input: string | any) {
 export function validateFunctionCall(
   output: string | object,
   functions?: Tool[] | string,
-  vars?: Record<string, string | object>,
+  vars?: Vars,
 ) {
   let functionCalls: FunctionCall[];
   try {

@@ -223,7 +223,7 @@ export class CrescendoProvider implements ApiProvider {
   }: {
     prompt: Prompt;
     filters: NunjucksFilterMap | undefined;
-    vars: Record<string, string | object>;
+    vars: Vars;
     provider: ApiProvider;
     context?: CallApiContextParams;
     options?: CallApiOptionsParams;
@@ -663,7 +663,7 @@ export class CrescendoProvider implements ApiProvider {
   private async sendPrompt(
     attackPrompt: string,
     originalPrompt: Prompt,
-    vars: Record<string, string | object>,
+    vars: Vars,
     filters: NunjucksFilterMap | undefined,
     provider: ApiProvider,
     roundNum: number,

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { Prompt, PromptConfig, PromptFunction } from '../types/prompts';
 import type { ApiProvider } from '../types/providers';
 
@@ -8,15 +8,7 @@ export const PromptConfigSchema = z.object({
   suffix: z.string().optional(),
 });
 
-export const PromptFunctionSchema = z
-  .function()
-  .args(
-    z.object({
-      vars: z.record(z.union([z.string(), z.any()])),
-      provider: z.custom<ApiProvider>().optional(),
-    }),
-  )
-  .returns(z.promise(z.union([z.string(), z.any()])));
+export const PromptFunctionSchema = z.custom<PromptFunction>();
 
 export const PromptSchema = z.object({
   id: z.string().optional(),

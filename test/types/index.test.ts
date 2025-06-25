@@ -2,7 +2,7 @@ import fs from 'fs';
 import { globSync } from 'glob';
 import yaml from 'js-yaml';
 import path from 'path';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { TestSuite } from '../../src/types';
 import {
   AssertionSchema,

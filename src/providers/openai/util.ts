@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { TokenUsage } from '../../types';
+import type { TokenUsage, Vars } from '../../types';
 import { renderVarsInObject } from '../../util';
 import { maybeLoadFromExternalFile } from '../../util/file';
 import { getAjv } from '../../util/json';
@@ -422,7 +422,7 @@ export interface OpenAiTool {
 export function validateFunctionCall(
   output: string | object,
   functions?: OpenAiFunction[],
-  vars?: Record<string, string | object>,
+  vars?: Vars,
 ) {
   if (typeof output === 'object' && 'function_call' in output) {
     output = (output as { function_call: any }).function_call;

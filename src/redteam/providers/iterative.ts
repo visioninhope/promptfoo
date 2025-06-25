@@ -12,6 +12,7 @@ import {
   type NunjucksFilterMap,
   type Prompt,
   type RedteamFileConfig,
+  type Vars,
 } from '../../types';
 import invariant from '../../util/invariant';
 import { extractFirstJsonObject, safeJsonStringify } from '../../util/json';
@@ -75,7 +76,7 @@ export async function runRedteamConversation({
   gradingProvider: ApiProvider;
   targetProvider: ApiProvider;
   test?: AtomicTestCase;
-  vars: Record<string, string | object>;
+  vars: Vars;
   excludeTargetOutputFromAgenticAttackGeneration: boolean;
 }): Promise<{
   output: string;
