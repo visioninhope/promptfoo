@@ -7,8 +7,11 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
 
 interface ProviderConfigDialogProps {
   open: boolean;
@@ -46,12 +49,26 @@ const ProviderConfigDialog: React.FC<ProviderConfigDialogProps> = ({
 
   // Create an ordered list of keys with deployment_id first for Azure providers
   const configKeys = React.useMemo(() => {
-    const keys = Object.keys(localConfig);
+    const keys = Object.keys(localConfig).filter(key => 
+      !['stateful', 'sessionSource', 'sessionParser'].includes(key)
+    );
     if (isAzureProvider) {
       return ['deployment_id', ...keys.filter((key) => key !== 'deployment_id')];
     }
     return keys;
   }, [localConfig, isAzureProvider]);
+
+  const handleStatefulChange = (checked: boolean) => {
+    setLocalConfig({ ...localConfig, stateful: checked });
+  };
+
+  const handleSessionSourceChange = (value: string) => {
+    setLocalConfig({ ...localConfig, sessionSource: value || undefined });
+  };
+
+  const handleSessionParserChange = (value: string) => {
+    setLocalConfig({ ...localConfig, sessionParser: value || undefined });
+  };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -75,6 +92,64 @@ const ProviderConfigDialog: React.FC<ProviderConfigDialogProps> = ({
             </Alert>
           </Box>
         )}
+
+        {/* Stateful Configuration Section */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+            Stateful Configuration
+          </Typography>
+          
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localConfig.stateful || false}
+                onChange={(e) => handleStatefulChange(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body1">Enable Stateful Mode</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Maintain conversation history and session state across requests
+                </Typography>
+              </Box>
+            }
+            sx={{ mb: 2 }}
+          />
+
+          {localConfig.stateful && (
+            <Box sx={{ ml: 4, mb: 2 }}>
+              <TextField
+                fullWidth
+                label="Session Source"
+                value={localConfig.sessionSource || ''}
+                onChange={(e) => handleSessionSourceChange(e.target.value)}
+                placeholder="client or server (default: client)"
+                helperText="Source of session management: 'client' for client-side, 'server' for server-side"
+                sx={{ mb: 2 }}
+              />
+              
+              <TextField
+                fullWidth
+                label="Session Parser"
+                value={localConfig.sessionParser || ''}
+                onChange={(e) => handleSessionParserChange(e.target.value)}
+                placeholder="e.g., data.body.sessionId"
+                helperText="JavaScript expression to extract sessionId from response (e.g., 'data.body.sessionId')"
+                multiline
+                rows={2}
+              />
+            </Box>
+          )}
+        </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* Regular Configuration Options */}
+        <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+          Provider Settings
+        </Typography>
 
         {configKeys.map((key) => {
           const value = localConfig[key];
@@ -151,6 +226,21 @@ const ProviderConfigDialog: React.FC<ProviderConfigDialogProps> = ({
             );
           }
         })}
+
+        {/* Information Box for SessionId Usage */}
+        {localConfig.stateful && (
+          <Box sx={{ mt: 3 }}>
+            <Alert severity="info">
+              <Typography variant="body2">
+                <strong>SessionId Usage:</strong> When stateful mode is enabled, you can use <code>{'{{sessionId}}'}</code> in your HTTP headers, body, or other configuration. 
+                The system will automatically generate unique session IDs for each evaluation run.
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                <strong>Example:</strong> Add <code>"x-session-id": "{'{{sessionId}}'}"</code> to headers for session tracking.
+              </Typography>
+            </Alert>
+          </Box>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
