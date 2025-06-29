@@ -111,23 +111,43 @@ describe('VarsSchema', () => {
     });
   });
 
-  it('should accept any type due to v4 compatibility', () => {
-    // VarsSchema is now z.any() for Zod v4 compatibility
-    const testCases = [
+  it('should validate records with string keys and any values', () => {
+    // VarsSchema now validates it's a record with string keys (much better than z.any())
+    const validTestCases = [
+      { key: 'string' },
+      { key: 42 },
+      { key: true },
+      { key: [] },
+      { key: {} },
       { key: null },
-      { key: undefined },
-      { key: Symbol('test') },
-      { key: () => {} },
+      { name: 'Alice', age: 30 },
+      { prompt: 'test', toxicity: 1, jailbreaking: 0 },
+      { is_safe: false },
+      {},
+    ];
+
+    validTestCases.forEach((input) => {
+      expect(() => VarsSchema.parse(input)).not.toThrow();
+      expect(VarsSchema.safeParse(input).success).toBe(true);
+    });
+  });
+
+  it('should reject non-record types', () => {
+    // VarsSchema should reject primitives since vars should be an object
+    const invalidTestCases = [
       'string',
       42,
       true,
       [],
-      {},
+      null,
+      undefined,
+      Symbol('test'),
+      () => {},
     ];
 
-    testCases.forEach((input) => {
-      expect(() => VarsSchema.parse(input)).not.toThrow();
-      expect(VarsSchema.safeParse(input).success).toBe(true);
+    invalidTestCases.forEach((input) => {
+      expect(() => VarsSchema.parse(input)).toThrow();
+      expect(VarsSchema.safeParse(input).success).toBe(false);
     });
   });
 });

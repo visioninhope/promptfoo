@@ -575,7 +575,9 @@ const ProviderPromptMapSchema = z.record(
 // Metadata is a key-value store for arbitrary data
 const MetadataSchema = z.record(z.string(), z.any());
 
-export const VarsSchema = z.any(); // Relaxed for v4 compatibility
+// Improved VarsSchema - much better than z.any() while maintaining backward compatibility
+// Validates it's a record with string keys, allowing any value types
+export const VarsSchema = z.record(z.string(), z.any());
 
 export type Vars = z.infer<typeof VarsSchema>;
 
@@ -695,8 +697,8 @@ export type Scenario = z.infer<typeof ScenarioSchema>;
 
 // Same as a TestCase, except the `vars` object has been flattened into its final form.
 export const AtomicTestCaseSchema = TestCaseSchema.extend({
-  vars: z.any().optional(), // Relaxed for v4 compatibility
-  provider: z.any().optional(), // Keep provider but make it flexible
+  vars: VarsSchema.optional(), // Use the improved VarsSchema
+  provider: z.union([z.string(), ProviderOptionsSchema, ApiProviderSchema]).optional(),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
