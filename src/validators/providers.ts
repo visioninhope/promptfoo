@@ -12,7 +12,7 @@ import type {
 } from '../types/providers';
 import { TokenUsageSchema } from '../types/shared';
 import { PromptSchema } from './prompts';
-import { NunjucksFilterMapSchema } from './shared';
+import { NunjucksFilterMapSchema, createFunctionSchema } from './shared';
 
 export const ProviderOptionsSchema = z.strictObject({
   id: z.custom<ProviderId>().optional(),
@@ -38,13 +38,14 @@ export const CallApiOptionsParamsSchema = z.object({
   includeLogProbs: z.optional(z.boolean()),
 });
 
-const CallApiFunctionSchema = z.any(); // Simplified function schema
+// Use standardized function validation
+const CallApiFunctionSchema = createFunctionSchema<CallApiFunction>('API call');
 
 export const ApiProviderSchema = z.object({
-  id: z.any(), // Simplified function schema
+  id: createFunctionSchema<() => string>('provider ID'),
   callApi: z.custom<CallApiFunction>(),
-  callEmbeddingApi: z.any().optional(), // Simplified function schema
-  callClassificationApi: z.any().optional(), // Simplified function schema
+  callEmbeddingApi: createFunctionSchema<(text: string) => Promise<ProviderEmbeddingResponse>>('embedding API').optional(),
+  callClassificationApi: createFunctionSchema<(text: string) => Promise<ProviderClassificationResponse>>('classification API').optional(),
   label: z.custom<ProviderLabel>().optional(),
   transform: z.string().optional(),
   delay: z.number().optional(),
