@@ -131,13 +131,19 @@ export const HttpProviderConfigSchema = z.object({
     .boolean()
     .optional()
     .describe('Use HTTPS for the request. This only works with the raw request option'),
+  // These functions have well-known signatures but use z.any() for compatibility:
+  // sessionParser: (data: SessionParserData) => string
   sessionParser: z.union([z.string(), z.any()]).optional(),
+  // transformRequest: (prompt: string) => any
   transformRequest: z.union([z.string(), z.any()]).optional(),
+  // transformResponse: (data: any, text: string, context?: TransformResponseContext) => ProviderResponse
   transformResponse: z.union([z.string(), z.any()]).optional(),
   url: z.string().optional(),
+  // validateStatus: (status: number) => boolean
   validateStatus: z.union([z.string(), z.any()]).optional(),
   /**
    * @deprecated use transformResponse instead
+   * transformResponse: (data: any, text: string, context?: TransformResponseContext) => ProviderResponse
    */
   responseParser: z.union([z.string(), z.any()]).optional(),
   // Token estimation configuration

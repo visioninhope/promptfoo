@@ -62,6 +62,7 @@ export const ProviderResponseSchema = z.object({
     })
     .catchall(z.any())
     .optional(),
+  // output can be string or any complex object depending on provider response
   output: z.union([z.string(), z.any()]).optional(),
   tokenUsage: TokenUsageSchema.optional(),
 });
