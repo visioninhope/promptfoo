@@ -2,8 +2,7 @@ import dedent from 'dedent';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import type { ZodError } from 'zod-validation-error';
-import { fromZodError } from 'zod-validation-error';
+import { z } from 'zod/v4';
 import { getEnvString } from '../../envars';
 import logger from '../../logger';
 import { loadApiProvider } from '../../providers';
@@ -24,7 +23,7 @@ providersRouter.post('/test', async (req: Request, res: Response): Promise<void>
   try {
     providerOptions = ProviderOptionsSchema.parse(body);
   } catch (e) {
-    res.status(400).json({ error: fromZodError(e as ZodError).toString() });
+    res.status(400).json({ error: z.prettifyError(e as z.ZodError) });
     return;
   }
   invariant(providerOptions.id, 'id is required');
@@ -132,7 +131,7 @@ providersRouter.post(
     try {
       providerOptions = ProviderOptionsSchema.parse(body);
     } catch (e) {
-      res.status(400).json({ error: fromZodError(e as ZodError).toString() });
+      res.status(400).json({ error: z.prettifyError(e as z.ZodError) });
       return;
     }
     invariant(providerOptions.id, 'Provider ID (`id`) is required');

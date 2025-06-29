@@ -6,7 +6,6 @@ import express from 'express';
 import http from 'node:http';
 import path from 'node:path';
 import { Server as SocketIOServer } from 'socket.io';
-import { fromError } from 'zod-validation-error';
 import { getDefaultPort, VERSION } from '../constants';
 import { setupSignalWatcher } from '../database/signal';
 import { getDirectory } from '../esm';
@@ -18,6 +17,7 @@ import Eval, { getEvalSummaries } from '../models/eval';
 import { getRemoteHealthUrl } from '../redteam/remoteGeneration';
 import { createShareableUrl, determineShareDomain } from '../share';
 import telemetry, { TelemetryEventSchema } from '../telemetry';
+import { z } from 'zod/v4';
 import { synthesizeFromTestSuite } from '../testCase/synthesis';
 import type { EvalSummary } from '../types';
 import { checkRemoteHealth } from '../util/apiHealth';
@@ -223,7 +223,7 @@ export function createApp() {
       if (!result.success) {
         res
           .status(400)
-          .json({ error: 'Invalid request body', details: fromError(result.error).toString() });
+          .json({ error: 'Invalid request body', details: z.prettifyError(result.error) });
         return;
       }
       const { event, properties } = result.data;

@@ -6,7 +6,6 @@ import { globSync } from 'glob';
 import yaml from 'js-yaml';
 import * as path from 'path';
 import process from 'process';
-import { fromError } from 'zod-validation-error';
 import { z } from 'zod/v4';
 import { readAssertions } from '../../assertions';
 import { validateAssertions } from '../../assertions/validateAssertions';
@@ -171,7 +170,7 @@ export async function readConfig(configPath: string): Promise<UnifiedConfig> {
     const validationResult = UnifiedConfigSchemaWithoutPrompts.safeParse(dereferencedConfig);
     if (!validationResult.success) {
       logger.warn(
-        `Invalid configuration file ${configPath}:\n${fromError(validationResult.error).message}`,
+        `Invalid configuration file ${configPath}:\n${z.prettifyError(validationResult.error)}`,
       );
     }
     ret = dereferencedConfig;
@@ -180,7 +179,7 @@ export async function readConfig(configPath: string): Promise<UnifiedConfig> {
     const validationResult = UnifiedConfigSchema.safeParse(imported);
     if (!validationResult.success) {
       logger.warn(
-        `Invalid configuration file ${configPath}:\n${fromError(validationResult.error).message}`,
+        `Invalid configuration file ${configPath}:\n${z.prettifyError(validationResult.error)}`,
       );
     }
     ret = imported as UnifiedConfig;

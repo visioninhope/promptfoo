@@ -4,7 +4,6 @@ import type { Command } from 'commander';
 import dedent from 'dedent';
 import fs from 'fs';
 import * as path from 'path';
-import { fromError } from 'zod-validation-error';
 import { z } from 'zod/v4';
 import { disableCache } from '../cache';
 import cliState from '../cliState';
@@ -249,12 +248,12 @@ export async function doEval(
 
     const testSuiteSchema = TestSuiteSchema.safeParse(testSuite);
     if (!testSuiteSchema.success) {
-      const validationError = fromError(testSuiteSchema.error);
+      const validationError = z.prettifyError(testSuiteSchema.error);
       logger.warn(
         chalk.yellow(dedent`
       TestSuite Schema Validation Error:
 
-        ${validationError.toString()}
+        ${validationError}
 
       Please review your promptfooconfig.yaml configuration.`),
       );
@@ -816,10 +815,10 @@ export function evalCommand(
       try {
         validatedOpts = EvalCommandSchema.parse(opts);
       } catch (err) {
-        const validationError = fromError(err);
+        const validationError = z.prettifyError(err as z.ZodError);
         logger.error(dedent`
         Invalid command options:
-        ${validationError.toString()}
+        ${validationError}
         `);
         process.exitCode = 1;
         return;

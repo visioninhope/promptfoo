@@ -5,7 +5,6 @@ import dedent from 'dedent';
 import * as fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
-import { fromError } from 'zod-validation-error';
 import { z } from 'zod/v4';
 import { synthesize } from '../';
 import { disableCache } from '../../cache';
@@ -294,7 +293,7 @@ export async function doGenerateRedteam(
   const parsedConfig = RedteamConfigSchema.safeParse(config);
   if (!parsedConfig.success) {
     logger.error('Invalid redteam configuration:');
-    logger.error(fromError(parsedConfig.error).toString());
+    logger.error(z.prettifyError(parsedConfig.error));
     throw new Error('Invalid redteam configuration');
   }
 
