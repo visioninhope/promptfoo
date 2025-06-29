@@ -121,26 +121,25 @@ export const TokenEstimationConfigSchema = z.object({
 export type TokenEstimationConfig = z.infer<typeof TokenEstimationConfigSchema>;
 
 // Define custom function validators with specific type signatures
-// Note: Using 'any' for function parameters to avoid circular type dependencies 
+// Note: Using 'any' for function parameters to avoid circular type dependencies
 // The actual type checking will happen at runtime and in the function implementations
 const SessionParserFunctionSchema = z.custom<(data: any) => string>(
-  (val) => typeof val === 'function', 
-  { message: 'Expected function' }
+  (val) => typeof val === 'function',
+  { message: 'Expected function' },
 );
 
 const TransformRequestFunctionSchema = z.custom<(prompt: string) => any>(
-  (val) => typeof val === 'function', 
-  { message: 'Expected function' }
+  (val) => typeof val === 'function',
+  { message: 'Expected function' },
 );
 
-const TransformResponseFunctionSchema = z.custom<(data: any, text: string, context?: any) => ProviderResponse>(
-  (val) => typeof val === 'function', 
-  { message: 'Expected function' }
-);
+const TransformResponseFunctionSchema = z.custom<
+  (data: any, text: string, context?: any) => ProviderResponse
+>((val) => typeof val === 'function', { message: 'Expected function' });
 
 const ValidateStatusFunctionSchema = z.custom<(status: number) => boolean>(
-  (val) => typeof val === 'function', 
-  { message: 'Expected function' }
+  (val) => typeof val === 'function',
+  { message: 'Expected function' },
 );
 
 // Create union types for each field with proper function validation

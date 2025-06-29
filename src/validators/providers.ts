@@ -44,8 +44,14 @@ const CallApiFunctionSchema = createFunctionSchema<CallApiFunction>('API call');
 export const ApiProviderSchema = z.object({
   id: createFunctionSchema<() => string>('provider ID'),
   callApi: z.custom<CallApiFunction>(),
-  callEmbeddingApi: createFunctionSchema<(text: string) => Promise<ProviderEmbeddingResponse>>('embedding API').optional(),
-  callClassificationApi: createFunctionSchema<(text: string) => Promise<ProviderClassificationResponse>>('classification API').optional(),
+  callEmbeddingApi:
+    createFunctionSchema<(text: string) => Promise<ProviderEmbeddingResponse>>(
+      'embedding API',
+    ).optional(),
+  callClassificationApi:
+    createFunctionSchema<(text: string) => Promise<ProviderClassificationResponse>>(
+      'classification API',
+    ).optional(),
   label: z.custom<ProviderLabel>().optional(),
   transform: z.string().optional(),
   delay: z.number().optional(),

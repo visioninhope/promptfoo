@@ -134,19 +134,10 @@ describe('VarsSchema', () => {
 
   it('should reject non-record types', () => {
     // VarsSchema should reject primitives since vars should be an object
-    const invalidTestCases = [
-      'string',
-      42,
-      true,
-      [],
-      null,
-      undefined,
-      Symbol('test'),
-      () => {},
-    ];
+    const invalidTestCases = ['string', 42, true, [], null, undefined, Symbol('test'), () => {}];
 
     invalidTestCases.forEach((input) => {
-      expect(() => VarsSchema.parse(input)).toThrow();
+      expect(() => VarsSchema.parse(input)).toThrow('Invalid input: expected record');
       expect(VarsSchema.safeParse(input).success).toBe(false);
     });
   });
