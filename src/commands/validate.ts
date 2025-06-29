@@ -1,7 +1,6 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import dedent from 'dedent';
-import { fromError } from 'zod-validation-error';
 import logger from '../logger';
 import telemetry from '../telemetry';
 import type { UnifiedConfig } from '../types';
@@ -28,17 +27,23 @@ export async function doValidate(
     );
     const configParse = UnifiedConfigSchema.safeParse(config);
     if (!configParse.success) {
+      const errorMessage = configParse.error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('\n');
       logger.error(
         dedent`Configuration validation error:
 Config file path(s): ${Array.isArray(configPaths) ? configPaths.join(', ') : (configPaths ?? 'N/A')}
-${fromError(configParse.error).message}`,
+${errorMessage}`,
       );
       process.exitCode = 1;
       return;
     }
     const suiteParse = TestSuiteSchema.safeParse(testSuite);
     if (!suiteParse.success) {
-      logger.error(dedent`Test suite validation error:\n${fromError(suiteParse.error).message}`);
+      const errorMessage = suiteParse.error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('\n');
+      logger.error(dedent`Test suite validation error:\n${errorMessage}`);
       process.exitCode = 1;
       return;
     }

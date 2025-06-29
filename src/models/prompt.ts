@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { z } from 'zod/v4';
 import { sha256 } from '../util/createHash';
 import type { PromptSchema } from '../validators/prompts';
 

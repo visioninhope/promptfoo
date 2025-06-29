@@ -1,6 +1,5 @@
 import dedent from 'dedent';
-import { z } from 'zod';
-import { fromError } from 'zod-validation-error';
+import { z } from 'zod/v4';
 import logger from '../../logger';
 import type { ApiProvider, Assertion } from '../../types';
 import { maybeLoadFromExternalFile } from '../../util/file';
@@ -22,13 +21,16 @@ export function loadCustomPluginDefinition(filePath: string): CustomPluginDefini
 
   const result = CustomPluginDefinitionSchema.safeParse(maybeLoadFromExternalFile(filePath));
   if (!result.success) {
-    const validationError = fromError(result.error);
+    // Handle Zod v4 error format
+    const errorMessage = result.error.issues
+      .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+      .join('\n');
     throw new Error(
       '\n' +
         dedent`
-    Custom Plugin Schema Validation Error:
+    Custom Plugin Schema Validation Error
 
-      ${validationError.toString()}
+      ${errorMessage}
 
     Please review your plugin file ${filePath} configuration.`,
     );

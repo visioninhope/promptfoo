@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { z } from 'zod';
 import { fromError } from 'zod-validation-error';
+import { z } from 'zod/v4';
 import { getEnvBool } from '../../envars';
 import { checkEmailStatus, getUserEmail, setUserEmail } from '../../globalConfig/accounts';
 import logger from '../../logger';

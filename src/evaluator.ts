@@ -1243,7 +1243,13 @@ class Evaluator {
     const originalProgressCallback = this.options.progressCallback;
     const isWebUI = Boolean(cliState.webUI);
 
-    this.options.progressCallback = (completed, total, index, evalStep, metrics) => {
+    this.options.progressCallback = (
+      completed: any,
+      total: any,
+      index: any,
+      evalStep: any,
+      metrics: any,
+    ) => {
       if (originalProgressCallback) {
         originalProgressCallback(completed, total, index, evalStep, metrics);
       }

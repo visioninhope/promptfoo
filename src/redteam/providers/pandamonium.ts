@@ -1,5 +1,5 @@
 import async from 'async';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { fetchWithRetries } from '../../fetch';
 import { getUserEmail } from '../../globalConfig/accounts';
 import { cloudConfig } from '../../globalConfig/cloud';

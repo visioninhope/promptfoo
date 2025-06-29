@@ -3,7 +3,7 @@ import fs from 'fs';
 import http from 'http';
 import httpZ from 'http-z';
 import path from 'path';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { fetchWithCache, type FetchWithCacheResult } from '../cache';
 import cliState from '../cliState';
 import { importModule } from '../esm';
@@ -121,27 +121,25 @@ export const TokenEstimationConfigSchema = z.object({
 export type TokenEstimationConfig = z.infer<typeof TokenEstimationConfigSchema>;
 
 export const HttpProviderConfigSchema = z.object({
-  body: z.union([z.record(z.any()), z.string(), z.array(z.any())]).optional(),
-  headers: z.record(z.string()).optional(),
+  body: z.union([z.record(z.string(), z.any()), z.string(), z.array(z.any())]).optional(),
+  headers: z.record(z.string(), z.string()).optional(),
   maxRetries: z.number().min(0).optional(),
   method: z.string().optional(),
-  queryParams: z.record(z.string()).optional(),
+  queryParams: z.record(z.string(), z.string()).optional(),
   request: z.string().optional(),
   useHttps: z
     .boolean()
     .optional()
     .describe('Use HTTPS for the request. This only works with the raw request option'),
-  sessionParser: z.union([z.string(), z.function()]).optional(),
-  transformRequest: z.union([z.string(), z.function()]).optional(),
-  transformResponse: z.union([z.string(), z.function()]).optional(),
+  sessionParser: z.union([z.string(), z.any()]).optional(),
+  transformRequest: z.union([z.string(), z.any()]).optional(),
+  transformResponse: z.union([z.string(), z.any()]).optional(),
   url: z.string().optional(),
-  validateStatus: z
-    .union([z.string(), z.function().returns(z.boolean()).args(z.number())])
-    .optional(),
+  validateStatus: z.union([z.string(), z.any()]).optional(),
   /**
    * @deprecated use transformResponse instead
    */
-  responseParser: z.union([z.string(), z.function()]).optional(),
+  responseParser: z.union([z.string(), z.any()]).optional(),
   // Token estimation configuration
   tokenEstimation: TokenEstimationConfigSchema.optional(),
   // Digital Signature Authentication

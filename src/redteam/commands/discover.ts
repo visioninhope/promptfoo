@@ -4,7 +4,7 @@ import { type Command } from 'commander';
 import { randomUUID } from 'crypto';
 import dedent from 'dedent';
 import * as fs from 'fs';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { VERSION } from '../../constants';
 import { renderPrompt } from '../../evaluatorHelpers';
 import { fetchWithProxy } from '../../fetch';

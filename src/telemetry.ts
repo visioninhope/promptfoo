@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import cliState from './cliState';
 import { VERSION } from './constants';
 import { getEnvBool, isCI } from './envars';
@@ -16,7 +16,10 @@ export const TelemetryEventSchema = z.object({
     'webui_page_view',
   ]),
   packageVersion: z.string().optional().default(VERSION),
-  properties: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])),
+  properties: z.record(
+    z.string(),
+    z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]),
+  ),
 });
 export type TelemetryEvent = z.infer<typeof TelemetryEventSchema>;
 export type TelemetryEventTypes = TelemetryEvent['event'];

@@ -1,5 +1,5 @@
 import dedent from 'dedent';
-import z from 'zod';
+import { z } from 'zod/v4';
 import invariant from '../../../util/invariant';
 import { RedteamGraderBase } from '../base';
 import { REDTEAM_MEMORY_POISONING_PLUGIN_ID } from './constants';

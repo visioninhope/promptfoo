@@ -2,8 +2,8 @@ import dedent from 'dedent';
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
+import { z } from 'zod/v4';
 import { getUserEmail, setUserEmail } from '../../globalConfig/accounts';
 import type {
   EvaluateSummaryV2,
@@ -155,7 +155,7 @@ evalRouter.patch('/:id/author', async (req: Request, res: Response): Promise<voi
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const validationError = fromZodError(error);
+      const validationError = fromZodError(error as any);
       res.status(400).json({ error: validationError.message });
     } else {
       logger.error(`Failed to update eval author: ${error}`);

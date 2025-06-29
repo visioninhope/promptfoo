@@ -169,9 +169,9 @@ describe('redteamPluginSchema', () => {
       return;
     }
 
-    const errorMessage = result.error.errors[0].message;
-    expect(errorMessage).toContain('Custom plugins must start with file://');
-    expect(errorMessage).toContain('built-in plugins');
+    const errorJson = JSON.stringify(result.error.issues);
+    expect(errorJson).toContain('Custom plugins must start with file://');
+    expect(errorJson).toContain('built-in plugins');
   });
 
   it('should provide helpful error message for invalid file:// paths', () => {
@@ -182,9 +182,9 @@ describe('redteamPluginSchema', () => {
       return;
     }
 
-    const errorMessage = result.error.errors[0].message;
-    expect(errorMessage).toContain('Custom plugins must start with file://');
-    expect(errorMessage).toContain('built-in plugins');
+    const errorJson = JSON.stringify(result.error.issues);
+    expect(errorJson).toContain('Custom plugins must start with file://');
+    expect(errorJson).toContain('built-in plugins');
   });
 
   it('should provide helpful error message for invalid plugin object', () => {
@@ -198,9 +198,9 @@ describe('redteamPluginSchema', () => {
       return;
     }
 
-    const errorMessage = result.error.errors[0].message;
-    expect(errorMessage).toContain('Custom plugins must start with file://');
-    expect(errorMessage).toContain('built-in plugins');
+    const errorJson = JSON.stringify(result.error.issues);
+    expect(errorJson).toContain('Custom plugins must start with file://');
+    expect(errorJson).toContain('built-in plugins');
   });
 });
 
@@ -1133,23 +1133,7 @@ describe('RedteamConfigSchema transform', () => {
         RedteamConfigSchema.parse({
           plugins: ['custom/path/without/file/protocol.js'],
         }),
-      ).toThrow(
-        JSON.stringify(
-          [
-            {
-              code: 'invalid_string',
-              validation: {
-                startsWith: 'file://',
-              },
-              message:
-                'Custom plugins must start with file:// (or use one of the built-in plugins)',
-              path: ['plugins', 0],
-            },
-          ],
-          null,
-          2,
-        ),
-      );
+      ).toThrow(/Custom plugins must start with file:\/\//);
     });
   });
 
@@ -1338,11 +1322,11 @@ describe('RedteamStrategySchema', () => {
       return;
     }
 
-    const errorMessage = result.error.errors[0].message;
-    expect(errorMessage).toContain('Custom strategies must start with file://');
-    expect(errorMessage).toContain('built-in strategies:');
+    const errorJson = JSON.stringify(result.error.issues);
+    expect(errorJson).toContain('Custom strategies must start with file://');
+    expect(errorJson).toContain('built-in strategies:');
     REDTEAM_ALL_STRATEGIES.forEach((strategy) => {
-      expect(errorMessage).toContain(strategy);
+      expect(errorJson).toContain(strategy);
     });
   });
 
@@ -1354,12 +1338,12 @@ describe('RedteamStrategySchema', () => {
       return;
     }
 
-    const errorMessage = result.error.errors[0].message;
-    expect(errorMessage).toContain('Custom strategies must start with file://');
-    expect(errorMessage).toContain('.js or .ts');
-    expect(errorMessage).toContain('built-in strategies:');
+    const errorJson = JSON.stringify(result.error.issues);
+    expect(errorJson).toContain('Custom strategies must start with file://');
+    expect(errorJson).toContain('.js or .ts');
+    expect(errorJson).toContain('built-in strategies:');
     REDTEAM_ALL_STRATEGIES.forEach((strategy) => {
-      expect(errorMessage).toContain(strategy);
+      expect(errorJson).toContain(strategy);
     });
   });
 
@@ -1371,12 +1355,12 @@ describe('RedteamStrategySchema', () => {
       return;
     }
 
-    const errorMessage = result.error.errors[0].message;
-    expect(errorMessage).toContain('Custom strategies must start with file://');
-    expect(errorMessage).toContain('.js or .ts');
-    expect(errorMessage).toContain('built-in strategies:');
+    const errorJson = JSON.stringify(result.error.issues);
+    expect(errorJson).toContain('Custom strategies must start with file://');
+    expect(errorJson).toContain('.js or .ts');
+    expect(errorJson).toContain('built-in strategies:');
     REDTEAM_ALL_STRATEGIES.forEach((strategy) => {
-      expect(errorMessage).toContain(strategy);
+      expect(errorJson).toContain(strategy);
     });
   });
 
@@ -1391,11 +1375,11 @@ describe('RedteamStrategySchema', () => {
       return;
     }
 
-    const errorMessage = result.error.errors[0].message;
-    expect(errorMessage).toContain('Custom strategies must start with file://');
-    expect(errorMessage).toContain('built-in strategies:');
+    const errorJson = JSON.stringify(result.error.issues);
+    expect(errorJson).toContain('Custom strategies must start with file://');
+    expect(errorJson).toContain('built-in strategies:');
     REDTEAM_ALL_STRATEGIES.forEach((strategy) => {
-      expect(errorMessage).toContain(strategy);
+      expect(errorJson).toContain(strategy);
     });
   });
 });

@@ -1,6 +1,6 @@
 import input from '@inquirer/input';
 import chalk from 'chalk';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import type { GlobalConfig } from '../configTypes';
 import { TERMINAL_MAX_WIDTH } from '../constants';
 import { getEnvString, isCI } from '../envars';
@@ -91,7 +91,7 @@ export async function promptForEmailUnverified() {
       message: 'Redteam evals require email verification. Please enter your work email:',
       validate: (input: string) => {
         const result = emailSchema.safeParse(input);
-        return result.success || result.error.errors[0].message;
+        return result.success || result.error.issues[0].message;
       },
     });
     setUserEmail(email);
