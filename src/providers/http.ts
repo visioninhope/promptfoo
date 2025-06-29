@@ -120,6 +120,35 @@ export const TokenEstimationConfigSchema = z.object({
 
 export type TokenEstimationConfig = z.infer<typeof TokenEstimationConfigSchema>;
 
+// Define custom function validators with specific type signatures
+// Note: Using 'any' for function parameters to avoid circular type dependencies 
+// The actual type checking will happen at runtime and in the function implementations
+const SessionParserFunctionSchema = z.custom<(data: any) => string>(
+  (val) => typeof val === 'function', 
+  { message: 'Expected function' }
+);
+
+const TransformRequestFunctionSchema = z.custom<(prompt: string) => any>(
+  (val) => typeof val === 'function', 
+  { message: 'Expected function' }
+);
+
+const TransformResponseFunctionSchema = z.custom<(data: any, text: string, context?: any) => ProviderResponse>(
+  (val) => typeof val === 'function', 
+  { message: 'Expected function' }
+);
+
+const ValidateStatusFunctionSchema = z.custom<(status: number) => boolean>(
+  (val) => typeof val === 'function', 
+  { message: 'Expected function' }
+);
+
+// Create union types for each field with proper function validation
+const SessionParserSchema = z.union([z.string(), SessionParserFunctionSchema]);
+const TransformRequestSchema = z.union([z.string(), TransformRequestFunctionSchema]);
+const TransformResponseSchema = z.union([z.string(), TransformResponseFunctionSchema]);
+const ValidateStatusSchema = z.union([z.string(), ValidateStatusFunctionSchema]);
+
 export const HttpProviderConfigSchema = z.object({
   body: z.union([z.record(z.string(), z.any()), z.string(), z.array(z.any())]).optional(),
   headers: z.record(z.string(), z.string()).optional(),
@@ -131,21 +160,21 @@ export const HttpProviderConfigSchema = z.object({
     .boolean()
     .optional()
     .describe('Use HTTPS for the request. This only works with the raw request option'),
-  // These functions have well-known signatures but use z.any() for compatibility:
+  // Using proper function validation with documented signatures:
   // sessionParser: (data: SessionParserData) => string
-  sessionParser: z.union([z.string(), z.any()]).optional(),
+  sessionParser: SessionParserSchema.optional(),
   // transformRequest: (prompt: string) => any
-  transformRequest: z.union([z.string(), z.any()]).optional(),
+  transformRequest: TransformRequestSchema.optional(),
   // transformResponse: (data: any, text: string, context?: TransformResponseContext) => ProviderResponse
-  transformResponse: z.union([z.string(), z.any()]).optional(),
+  transformResponse: TransformResponseSchema.optional(),
   url: z.string().optional(),
   // validateStatus: (status: number) => boolean
-  validateStatus: z.union([z.string(), z.any()]).optional(),
+  validateStatus: ValidateStatusSchema.optional(),
   /**
    * @deprecated use transformResponse instead
    * transformResponse: (data: any, text: string, context?: TransformResponseContext) => ProviderResponse
    */
-  responseParser: z.union([z.string(), z.any()]).optional(),
+  responseParser: TransformResponseSchema.optional(),
   // Token estimation configuration
   tokenEstimation: TokenEstimationConfigSchema.optional(),
   // Digital Signature Authentication
