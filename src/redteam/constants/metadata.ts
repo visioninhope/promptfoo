@@ -233,7 +233,7 @@ export const displayNameOverrides: Record<Plugin | Strategy, string> = {
   rot13: 'ROT13 Payload Encoding',
   'shell-injection': 'Command Injection',
   'sql-injection': 'SQL Injection',
-  ssrf: 'SSRFEnforcement',
+  ssrf: 'Server-Side Request Forgery',
   'system-prompt-override': 'System Prompt Override',
   'tool-discovery': 'Tool Discovery',
   unsafebench: 'UnsafeBench',
