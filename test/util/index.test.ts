@@ -25,6 +25,7 @@ import {
   renderVarsInObject,
 } from '../../src/util';
 import { TestGrader } from './utils';
+import cliState from '../../src/cliState';
 
 jest.mock('../../src/database', () => ({
   getDb: jest.fn(),
@@ -405,7 +406,7 @@ describe('util', () => {
       jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue({} as any);
 
       await expect(writeOutput('file://handler.js', eval_, null)).rejects.toThrow(
-        /Output handler .+handler\.js must export a function \(or export default\)/
+        /Output handler .+handler\.js must export a function \(or export default\)/,
       );
     });
 
@@ -431,6 +432,31 @@ describe('util', () => {
       await expect(writeOutput('file://handler.txt', eval_, null)).rejects.toThrow(
         'Unsupported handler file type: .txt',
       );
+    });
+
+    it('uses cliState.basePath for handler file resolution', async () => {
+      const handler = jest.fn();
+      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      importModule.mockResolvedValue(handler);
+
+      // Set a custom base path
+      const originalBasePath = cliState.basePath;
+      cliState.basePath = '/custom/base/path';
+
+      const eval_ = new Eval({});
+      const summary = { foo: 'bar' } as any;
+      jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue(summary);
+
+      await writeOutput('file://handler.js', eval_, null);
+
+      expect(importModule).toHaveBeenCalledWith(
+        expect.stringContaining('/custom/base/path/handler.js'),
+        undefined
+      );
+      expect(handler).toHaveBeenCalled();
+
+      // Restore original base path
+      cliState.basePath = originalBasePath;
     });
   });
 

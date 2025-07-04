@@ -131,6 +131,7 @@ promptfoo eval --output ./handlers/results.py:save_results
 The handler receives the same object as the JSON output.
 
 **Supported file extensions:**
+
 - JavaScript: `.js`, `.mjs`, `.cjs`
 - TypeScript: `.ts`, `.mts`, `.cts`
 - Python: `.py`
@@ -138,6 +139,7 @@ The handler receives the same object as the JSON output.
 **Error handling:** If a handler throws an error, the evaluation will still complete successfully and the error will be logged.
 
 **Handler function requirements:**
+
 - JavaScript handlers must export a function (either as default export or named export)
 - Python handlers must define a function (default: `handle_output`)
 - Handlers can be synchronous or asynchronous
@@ -174,6 +176,7 @@ def save(data):
 ```
 
 **Data structure:**
+
 ```typescript
 {
   evalId: string | null;           // Unique evaluation ID

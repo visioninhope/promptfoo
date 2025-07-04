@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { globSync } from 'glob';
 import yaml from 'js-yaml';
 import * as path from 'path';
+import cliState from '../cliState';
 import { TERMINAL_MAX_WIDTH } from '../constants';
 import { getEnvBool, getEnvString } from '../envars';
 import { getDirectory, importModule } from '../esm';
@@ -101,7 +102,10 @@ export async function writeOutput(
 
     // Parse the path to extract file and function name
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const { filePath, functionName, extension } = parsePathOrGlob(process.cwd(), handlerPath);
+    const { filePath, functionName, extension } = parsePathOrGlob(
+      cliState.basePath || process.cwd(),
+      handlerPath,
+    );
 
     // Prepare the output data
     const summary = await evalRecord.toEvaluateSummary();
