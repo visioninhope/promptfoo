@@ -48,10 +48,20 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn(),
 }));
 
-jest.mock('../../src/esm');
+jest.mock('../../src/esm', () => {
+  const actual = jest.requireActual('../../src/__mocks__/esm.ts');
+  return {
+    importModule: jest.fn(actual.importModule),
+    getDirectory: jest.fn(actual.getDirectory),
+  };
+});
 
 jest.mock('../../src/googleSheets', () => ({
   writeCsvToGoogleSheet: jest.fn(),
+}));
+
+jest.mock('../../src/python/pythonUtils', () => ({
+  runPython: jest.fn(),
 }));
 
 describe('maybeLoadToolsFromExternalFile', () => {
@@ -256,6 +266,115 @@ describe('util', () => {
 
       expect(googleSheets.writeCsvToGoogleSheet).toHaveBeenCalledTimes(1);
     });
+
+    it('writes output to JavaScript handler', async () => {
+      const handler = jest.fn();
+      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      importModule.mockResolvedValue(handler);
+
+      const eval_ = new Eval({});
+      const summary = { foo: 'bar' } as any;
+      jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue(summary);
+
+      await writeOutput('file://handler.js', eval_, null);
+
+      expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handler.js'), undefined);
+      expect(handler).toHaveBeenCalledWith({
+        evalId: eval_.id,
+        results: summary,
+        config: eval_.config,
+        shareableUrl: null,
+      });
+    });
+
+    it('writes output to JavaScript handler with function name', async () => {
+      const handler = { processResults: jest.fn() };
+      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      importModule.mockResolvedValue(handler.processResults);
+
+      const eval_ = new Eval({});
+      const summary = { foo: 'bar' } as any;
+      jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue(summary);
+
+      await writeOutput('file://handler.js:processResults', eval_, null);
+
+      expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handler.js'), 'processResults');
+      expect(handler.processResults).toHaveBeenCalledWith({
+        evalId: eval_.id,
+        results: summary,
+        config: eval_.config,
+        shareableUrl: null,
+      });
+    });
+
+    it('writes output to JavaScript handler without file:// prefix', async () => {
+      const handler = jest.fn();
+      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      importModule.mockResolvedValue(handler);
+
+      const eval_ = new Eval({});
+      const summary = { foo: 'bar' } as any;
+      jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue(summary);
+
+      await writeOutput('./handlers/results.js', eval_, null);
+
+      expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handlers/results.js'), undefined);
+      expect(handler).toHaveBeenCalledWith({
+        evalId: eval_.id,
+        results: summary,
+        config: eval_.config,
+        shareableUrl: null,
+      });
+    });
+
+    it('writes output to Python handler', async () => {
+      const runPython = require('../../src/python/pythonUtils').runPython;
+      runPython.mockResolvedValue(undefined);
+
+      const eval_ = new Eval({});
+      const summary = { foo: 'bar' } as any;
+      jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue(summary);
+
+      await writeOutput('file://handler.py:save', eval_, 'url');
+
+      expect(runPython).toHaveBeenCalledWith(expect.stringContaining('handler.py'), 'save', [
+        {
+          evalId: eval_.id,
+          results: summary,
+          config: eval_.config,
+          shareableUrl: 'url',
+        },
+      ]);
+    });
+
+    it('writes output to Python handler with default function', async () => {
+      const runPython = require('../../src/python/pythonUtils').runPython;
+      runPython.mockResolvedValue(undefined);
+
+      const eval_ = new Eval({});
+      const summary = { foo: 'bar' } as any;
+      jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue(summary);
+
+      await writeOutput('file://handler.py', eval_, null);
+
+      expect(runPython).toHaveBeenCalledWith(expect.stringContaining('handler.py'), 'handle_output', [
+        {
+          evalId: eval_.id,
+          results: summary,
+          config: eval_.config,
+          shareableUrl: null,
+        },
+      ]);
+    });
+
+    it('throws error for unsupported handler file type', async () => {
+      const eval_ = new Eval({});
+      jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue({} as any);
+
+      await expect(writeOutput('file://handler.txt', eval_, null)).rejects.toThrow(
+        'Unsupported handler file type: .txt'
+      );
+    });
   });
 
   describe('readOutput', () => {
@@ -288,6 +407,9 @@ describe('util', () => {
     jest.doMock(path.resolve('filter.js'), () => mockFilter, { virtual: true });
 
     jest.mocked(globSync).mockImplementation((pathOrGlob) => [pathOrGlob].flat());
+
+    const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+    importModule.mockImplementation(() => mockFilter);
 
     const filters = await readFilters({ testFilter: 'filter.js' });
 

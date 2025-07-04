@@ -110,6 +110,51 @@ promptfoo eval --output results.yaml
 
 **Use when:** Reviewing results in a text editor or version control.
 
+### JavaScript or Python Handlers
+
+Send results directly to custom code instead of a file:
+
+```bash
+# Inferred from file extension
+promptfoo eval --output file://handle-results.js
+promptfoo eval --output file://handle_results.py
+
+# With explicit function name
+promptfoo eval --output file://handle-results.js:processResults
+promptfoo eval --output file://handle_results.py:save
+
+# Direct paths also work (extension-based inference)
+promptfoo eval --output ./handlers/results.js
+promptfoo eval --output ./handlers/results.py:save_results
+```
+
+The handler receives the same object as the JSON output.
+
+```javascript title="handle-results.js"
+module.exports = async function (data) {
+  console.log(`Eval ID: ${data.evalId}`);
+  console.log(`Results: ${data.results.stats.successes}/${data.results.stats.total} passed`);
+  
+  // Process failures
+  data.results.results.forEach(result => {
+    if (!result.success) {
+      console.error(`Failed: ${result.prompt.raw}`);
+    }
+  });
+};
+```
+
+```python title="handle_results.py"
+def save(data):
+    print(f"Eval ID: {data['evalId']}")
+    print(f"Results: {data['results']['stats']['successes']}/{data['results']['stats']['total']} passed")
+    
+    # Process failures
+    for result in data['results']['results']:
+        if not result['success']:
+            print(f"Failed: {result['prompt']['raw']}")
+```
+
 ## Configuration Options
 
 ### Setting Output Path in Config
