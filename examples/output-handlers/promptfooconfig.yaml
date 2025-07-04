@@ -18,4 +18,4 @@ tests:
 # Output to a handler function
 outputPath:
   - file://output-handler.js
-  - results.json  # Also save to JSON for comparison 
+  - results.json # Also save to JSON for comparison

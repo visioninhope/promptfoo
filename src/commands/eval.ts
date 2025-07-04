@@ -382,7 +382,11 @@ export async function doEval(
         await writeMultipleOutputs(paths, evalRecord, shareableUrl);
         logger.info(chalk.yellow(`Writing output to ${paths.join(', ')}`));
       } catch (error) {
-        logger.error(chalk.red(`Failed to write output: ${error instanceof Error ? error.message : String(error)}`));
+        logger.error(
+          chalk.red(
+            `Failed to write output: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        );
         // Continue execution - don't fail the entire eval run due to output handler errors
       }
     }
@@ -856,7 +860,8 @@ export function evalCommand(
 
       for (const maybeFilePath of validatedOpts.output ?? []) {
         // Skip validation for handler paths (file:// prefix or script files)
-        const isHandlerPath = maybeFilePath.startsWith('file://') || 
+        const isHandlerPath =
+          maybeFilePath.startsWith('file://') ||
           maybeFilePath.endsWith('.js') ||
           maybeFilePath.endsWith('.mjs') ||
           maybeFilePath.endsWith('.ts') ||
@@ -865,7 +870,7 @@ export function evalCommand(
           maybeFilePath.includes('.py:') ||
           maybeFilePath.includes('.mjs:') ||
           maybeFilePath.includes('.ts:');
-          
+
         if (isHandlerPath) {
           continue;
         }

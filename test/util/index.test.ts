@@ -298,7 +298,10 @@ describe('util', () => {
 
       await writeOutput('file://handler.js:processResults', eval_, null);
 
-      expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handler.js'), 'processResults');
+      expect(importModule).toHaveBeenCalledWith(
+        expect.stringContaining('handler.js'),
+        'processResults',
+      );
       expect(handler.processResults).toHaveBeenCalledWith({
         evalId: eval_.id,
         results: summary,
@@ -318,7 +321,10 @@ describe('util', () => {
 
       await writeOutput('./handlers/results.js', eval_, null);
 
-      expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handlers/results.js'), undefined);
+      expect(importModule).toHaveBeenCalledWith(
+        expect.stringContaining('handlers/results.js'),
+        undefined,
+      );
       expect(handler).toHaveBeenCalledWith({
         evalId: eval_.id,
         results: summary,
@@ -357,14 +363,18 @@ describe('util', () => {
 
       await writeOutput('file://handler.py', eval_, null);
 
-      expect(runPython).toHaveBeenCalledWith(expect.stringContaining('handler.py'), 'handle_output', [
-        {
-          evalId: eval_.id,
-          results: summary,
-          config: eval_.config,
-          shareableUrl: null,
-        },
-      ]);
+      expect(runPython).toHaveBeenCalledWith(
+        expect.stringContaining('handler.py'),
+        'handle_output',
+        [
+          {
+            evalId: eval_.id,
+            results: summary,
+            config: eval_.config,
+            shareableUrl: null,
+          },
+        ],
+      );
     });
 
     it('throws error for unsupported handler file type', async () => {
@@ -372,7 +382,7 @@ describe('util', () => {
       jest.spyOn(eval_, 'toEvaluateSummary').mockResolvedValue({} as any);
 
       await expect(writeOutput('file://handler.txt', eval_, null)).rejects.toThrow(
-        'Unsupported handler file type: .txt'
+        'Unsupported handler file type: .txt',
       );
     });
   });

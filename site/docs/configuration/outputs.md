@@ -134,9 +134,9 @@ The handler receives the same object as the JSON output.
 module.exports = async function (data) {
   console.log(`Eval ID: ${data.evalId}`);
   console.log(`Results: ${data.results.stats.successes}/${data.results.stats.total} passed`);
-  
+
   // Process failures
-  data.results.results.forEach(result => {
+  data.results.results.forEach((result) => {
     if (!result.success) {
       console.error(`Failed: ${result.prompt.raw}`);
     }
@@ -148,7 +148,7 @@ module.exports = async function (data) {
 def save(data):
     print(f"Eval ID: {data['evalId']}")
     print(f"Results: {data['results']['stats']['successes']}/{data['results']['stats']['total']} passed")
-    
+
     # Process failures
     for result in data['results']['results']:
         if not result['success']:

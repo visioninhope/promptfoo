@@ -5,6 +5,7 @@ This example demonstrates how to use custom output handlers to process evaluatio
 ## Features
 
 Output handlers allow you to:
+
 - Process evaluation results in real-time
 - Send metrics to monitoring systems
 - Trigger alerts based on success rates
@@ -40,7 +41,7 @@ You can also specify output handlers in your `promptfooconfig.yaml`:
 ```yaml
 outputPath:
   - file://output-handler.js
-  - results.json  # Can combine with regular file outputs
+  - results.json # Can combine with regular file outputs
 ```
 
 ## Handler Interface
@@ -49,14 +50,15 @@ Handlers receive an object with the following structure:
 
 ```typescript
 {
-  evalId: string;           // Unique evaluation ID
+  evalId: string; // Unique evaluation ID
   results: EvaluateSummary; // Full evaluation results
-  config: object;           // Evaluation configuration
+  config: object; // Evaluation configuration
   shareableUrl: string | null; // URL if shared
 }
 ```
 
 The `results` object contains:
+
 - `stats`: Overall statistics (successes, failures, token usage)
 - `results`: Array of individual test results
 - `table`: Formatted results table
@@ -76,7 +78,7 @@ npm install
 # Run with JavaScript handler
 promptfoo eval
 
-# Run with Python handler  
+# Run with Python handler
 promptfoo eval --output file://output-handler.py
 
 # Run with custom function
@@ -89,4 +91,4 @@ promptfoo eval --output file://output-handler.py:process_for_dashboard
 2. **Monitoring**: Send metrics to DataDog, Prometheus, etc.
 3. **Alerting**: Trigger PagerDuty or Slack alerts on failures
 4. **Custom Reporting**: Generate team-specific reports
-5. **Data Pipeline**: Feed results into data warehouses 
+5. **Data Pipeline**: Feed results into data warehouses

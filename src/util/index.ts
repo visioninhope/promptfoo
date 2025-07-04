@@ -84,8 +84,9 @@ export async function writeOutput(
   }
 
   // Check if this is a handler path (file:// prefix or direct script file)
-  const isHandlerPath = outputPath.startsWith('file://') || 
-    isJavascriptFile(outputPath) || 
+  const isHandlerPath =
+    outputPath.startsWith('file://') ||
+    isJavascriptFile(outputPath) ||
     outputPath.endsWith('.py') ||
     outputPath.includes('.js:') ||
     outputPath.includes('.py:') ||
@@ -94,12 +95,14 @@ export async function writeOutput(
 
   if (isHandlerPath) {
     // Remove file:// prefix if present
-    const handlerPath = outputPath.startsWith('file://') ? outputPath.slice('file://'.length) : outputPath;
-    
+    const handlerPath = outputPath.startsWith('file://')
+      ? outputPath.slice('file://'.length)
+      : outputPath;
+
     // Parse the path to extract file and function name
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const { filePath, functionName, extension } = parsePathOrGlob('', handlerPath);
-    
+
     // Prepare the output data
     const summary = await evalRecord.toEvaluateSummary();
     const output: OutputFile = {
@@ -122,7 +125,7 @@ export async function writeOutput(
           : typeof handler?.default === 'function'
             ? handler.default
             : null;
-      
+
       if (!fn) {
         throw new Error(
           `Output handler ${filePath} must export a function${
@@ -130,7 +133,7 @@ export async function writeOutput(
           }`,
         );
       }
-      
+
       await Promise.resolve(fn(output));
     } else {
       throw new Error(

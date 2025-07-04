@@ -951,39 +951,42 @@ export const TestSuiteConfigSchema = z.object({
   defaultTest: TestCaseSchema.partial().omit({ description: true }).optional(),
 
   // Path to write output. Writes to console/web viewer if not set.
-  outputPath: z.union([z.string(), z.array(z.string())]).optional()
+  outputPath: z
+    .union([z.string(), z.array(z.string())])
+    .optional()
     .refine(
       (val) => {
         if (!val) return true;
         const paths = Array.isArray(val) ? val : [val];
-        
+
         for (const path of paths) {
           // Check if it's a handler path
-          if (path.startsWith('file://') || 
-              path.endsWith('.js') || 
-              path.endsWith('.mjs') || 
-              path.endsWith('.ts') || 
-              path.endsWith('.py') ||
-              path.includes('.js:') ||
-              path.includes('.py:') ||
-              path.includes('.mjs:') ||
-              path.includes('.ts:')) {
-            
+          if (
+            path.startsWith('file://') ||
+            path.endsWith('.js') ||
+            path.endsWith('.mjs') ||
+            path.endsWith('.ts') ||
+            path.endsWith('.py') ||
+            path.includes('.js:') ||
+            path.includes('.py:') ||
+            path.includes('.mjs:') ||
+            path.includes('.ts:')
+          ) {
             // Extract the file path
             let filePath = path.startsWith('file://') ? path.slice('file://'.length) : path;
-            
+
             // Remove function name if present
             const colonIndex = filePath.lastIndexOf(':');
             if (colonIndex > 1) {
               const beforeColon = filePath.substring(0, colonIndex);
               const afterColon = filePath.substring(colonIndex + 1);
-              
+
               // Check if this is a function name separator (not a Windows drive)
               if (!(/^[A-Za-z]:/.test(filePath) && colonIndex === 1)) {
                 filePath = beforeColon;
               }
             }
-            
+
             // Validate extension
             const ext = filePath.substring(filePath.lastIndexOf('.'));
             if (!['.js', '.mjs', '.ts', '.cjs', '.mts', '.cts', '.py'].includes(ext)) {
@@ -995,7 +998,7 @@ export const TestSuiteConfigSchema = z.object({
       },
       {
         message: 'Output handler files must have .js, .mjs, .ts, or .py extension',
-      }
+      },
     ),
 
   // Determines whether or not sharing is enabled.
@@ -1175,10 +1178,10 @@ export type EvalSummary = ResultLightweightWithLabel & { passRate: number };
 
 /**
  * Type for output handler functions that process evaluation results
- * 
+ *
  * @param data - The evaluation results and metadata
  * @returns Promise or value that resolves when processing is complete
- * 
+ *
  * @example
  * ```javascript
  * // JavaScript handler
@@ -1187,7 +1190,7 @@ export type EvalSummary = ResultLightweightWithLabel & { passRate: number };
  *   // Send to monitoring, database, etc.
  * };
  * ```
- * 
+ *
  * @example
  * ```python
  * # Python handler
