@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import * as fs from 'fs';
 import { globSync } from 'glob';
 import * as path from 'path';
+import cliState from '../../src/cliState';
 import { getDb } from '../../src/database';
 import * as googleSheets from '../../src/googleSheets';
 import Eval from '../../src/models/eval';
@@ -25,7 +26,6 @@ import {
   renderVarsInObject,
 } from '../../src/util';
 import { TestGrader } from './utils';
-import cliState from '../../src/cliState';
 
 jest.mock('../../src/database', () => ({
   getDb: jest.fn(),
@@ -451,7 +451,7 @@ describe('util', () => {
 
       expect(importModule).toHaveBeenCalledWith(
         expect.stringContaining('/custom/base/path/handler.js'),
-        undefined
+        undefined,
       );
       expect(handler).toHaveBeenCalled();
 
