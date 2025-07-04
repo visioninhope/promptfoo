@@ -335,7 +335,7 @@ describe('util', () => {
     });
 
     it('writes output to Python handler', async () => {
-      const runPython = require('../../src/python/pythonUtils').runPython;
+      const runPython = jest.requireMock('../../src/python/pythonUtils').runPython;
       runPython.mockResolvedValue(undefined);
 
       const eval_ = new Eval({});
@@ -355,7 +355,7 @@ describe('util', () => {
     });
 
     it('writes output to Python handler with default function', async () => {
-      const runPython = require('../../src/python/pythonUtils').runPython;
+      const runPython = jest.requireMock('../../src/python/pythonUtils').runPython;
       runPython.mockResolvedValue(undefined);
 
       const eval_ = new Eval({});
@@ -380,7 +380,7 @@ describe('util', () => {
 
     it('writes output to JavaScript handler with default export', async () => {
       const handler = jest.fn();
-      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      const importModule = jest.mocked(jest.requireMock('../../src/esm').importModule);
       importModule.mockResolvedValue({ default: handler });
 
       const eval_ = new Eval({});
@@ -399,7 +399,7 @@ describe('util', () => {
     });
 
     it('throws error when handler does not export a function', async () => {
-      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      const importModule = jest.mocked(jest.requireMock('../../src/esm').importModule);
       importModule.mockResolvedValue({ notAFunction: 'test' });
 
       const eval_ = new Eval({});
@@ -412,7 +412,7 @@ describe('util', () => {
 
     it('handles TypeScript handler files', async () => {
       const handler = jest.fn();
-      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      const importModule = jest.mocked(jest.requireMock('../../src/esm').importModule);
       importModule.mockResolvedValue(handler);
 
       const eval_ = new Eval({});
@@ -422,7 +422,14 @@ describe('util', () => {
       await writeOutput('file://handler.ts', eval_, null);
 
       expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handler.ts'), undefined);
-      expect(handler).toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          evalId: eval_.id,
+          results: summary,
+          config: eval_.config,
+          shareableUrl: null,
+        }),
+      );
     });
 
     it('throws error for unsupported handler file type', async () => {
@@ -436,7 +443,7 @@ describe('util', () => {
 
     it('uses cliState.basePath for handler file resolution', async () => {
       const handler = jest.fn();
-      const importModule = jest.requireMock('../../src/esm').importModule as jest.Mock;
+      const importModule = jest.mocked(jest.requireMock('../../src/esm').importModule);
       importModule.mockResolvedValue(handler);
 
       // Set a custom base path
@@ -453,7 +460,14 @@ describe('util', () => {
         expect.stringContaining('/custom/base/path/handler.js'),
         undefined,
       );
-      expect(handler).toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          evalId: eval_.id,
+          results: summary,
+          config: eval_.config,
+          shareableUrl: null,
+        }),
+      );
 
       // Restore original base path
       cliState.basePath = originalBasePath;

@@ -981,7 +981,6 @@ export const TestSuiteConfigSchema = z.object({
             const colonIndex = filePath.lastIndexOf(':');
             if (colonIndex > 1) {
               const beforeColon = filePath.substring(0, colonIndex);
-              const afterColon = filePath.substring(colonIndex + 1);
 
               // Check if this is a function name separator (not a Windows drive)
               if (!(/^[A-Za-z]:/.test(filePath) && colonIndex === 1)) {
