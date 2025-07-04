@@ -130,7 +130,20 @@ promptfoo eval --output ./handlers/results.py:save_results
 
 The handler receives the same object as the JSON output.
 
+**Supported file extensions:**
+- JavaScript: `.js`, `.mjs`, `.cjs`
+- TypeScript: `.ts`, `.mts`, `.cts`
+- Python: `.py`
+
+**Error handling:** If a handler throws an error, the evaluation will still complete successfully and the error will be logged.
+
+**Handler function requirements:**
+- JavaScript handlers must export a function (either as default export or named export)
+- Python handlers must define a function (default: `handle_output`)
+- Handlers can be synchronous or asynchronous
+
 ```javascript title="handle-results.js"
+// Default export
 module.exports = async function (data) {
   console.log(`Eval ID: ${data.evalId}`);
   console.log(`Results: ${data.results.stats.successes}/${data.results.stats.total} passed`);
@@ -141,6 +154,11 @@ module.exports = async function (data) {
       console.error(`Failed: ${result.prompt.raw}`);
     }
   });
+};
+
+// Or named export
+module.exports.processResults = function (data) {
+  // Process data...
 };
 ```
 
@@ -153,6 +171,34 @@ def save(data):
     for result in data['results']['results']:
         if not result['success']:
             print(f"Failed: {result['prompt']['raw']}")
+```
+
+**Data structure:**
+```typescript
+{
+  evalId: string | null;           // Unique evaluation ID
+  results: {                       // Full evaluation results
+    stats: {
+      successes: number;
+      failures: number;
+      errors: number;
+      total: number;
+      tokenUsage: { /* ... */ };
+    };
+    results: Array<{               // Individual test results
+      success: boolean;
+      prompt: { raw: string; /* ... */ };
+      vars: Record<string, any>;
+      response?: { output: string; /* ... */ };
+      error?: string;
+      latencyMs: number;
+      // ... more fields
+    }>;
+    prompts: Array</* ... */>;     // Prompt configurations
+  };
+  config: object;                  // Evaluation configuration
+  shareableUrl: string | null;     // URL if sharing is enabled
+}
 ```
 
 ## Configuration Options

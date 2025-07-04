@@ -14,7 +14,7 @@ def handle_output(data):
     print(f"Timestamp: {datetime.now().isoformat()}")
     
     stats = data['results']['stats']
-    success_rate = (stats['successes'] / stats['total'] * 100)
+    success_rate = (stats['successes'] / stats['total'] * 100) if stats['total'] > 0 else 0
     
     print(f"\nOverall Results: {stats['successes']}/{stats['total']} passed ({success_rate:.2f}%)")
     print(f"Failures: {stats['failures']}")
@@ -33,6 +33,7 @@ def handle_output(data):
                 print(f"    Reason: {error_msg}")
     
     # Example: Export to CSV
+    # import csv
     # with open('results.csv', 'w') as f:
     #     writer = csv.writer(f)
     #     writer.writerow(['Test', 'Success', 'Prompt', 'Variables'])
@@ -76,12 +77,15 @@ def process_for_dashboard(data):
         results.append({
             'success': result['success'],
             'topic': result['vars'].get('topic', 'unknown'),
-            'response': result['response']['output'] if result['success'] else None,
+            'response': result.get('response', {}).get('output') if result['success'] else None,
             'latency': result['latencyMs']
         })
+    
+    results_list = data['results']['results']
+    avg_latency = sum(r['latencyMs'] for r in results_list) / len(results_list) if results_list else 0
     
     return {
         'evalId': data['evalId'],
         'results': results,
-        'avgLatency': sum(r['latencyMs'] for r in data['results']['results']) / len(data['results']['results'])
+        'avgLatency': avg_latency
     } 

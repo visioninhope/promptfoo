@@ -101,7 +101,7 @@ export async function writeOutput(
 
     // Parse the path to extract file and function name
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const { filePath, functionName, extension } = parsePathOrGlob('', handlerPath);
+    const { filePath, functionName, extension } = parsePathOrGlob(process.cwd(), handlerPath);
 
     // Prepare the output data
     const summary = await evalRecord.toEvaluateSummary();
@@ -137,7 +137,7 @@ export async function writeOutput(
       await Promise.resolve(fn(output));
     } else {
       throw new Error(
-        `Unsupported handler file type: ${extension}. Supported types: .js, .mjs, .ts, .py`,
+        `Unsupported handler file type: ${extension}. Supported types: .js, .mjs, .cjs, .ts, .mts, .cts, .py`,
       );
     }
     return;

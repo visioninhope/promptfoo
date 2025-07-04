@@ -47,7 +47,7 @@ module.exports = async function handleEvaluationResults(data) {
   const summary = {
     evalId: data.evalId,
     timestamp: new Date().toISOString(),
-    successRate: parseFloat(successRate),
+    successRate: Number.parseFloat(successRate),
     totalTests: stats.total,
     failures: stats.failures,
     tokenUsage: stats.tokenUsage.total,

@@ -956,7 +956,7 @@ export const TestSuiteConfigSchema = z.object({
     .optional()
     .refine(
       (val) => {
-        if (!val) return true;
+        if (!val) {return true;}
         const paths = Array.isArray(val) ? val : [val];
 
         for (const path of paths) {
