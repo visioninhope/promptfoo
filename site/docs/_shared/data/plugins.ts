@@ -228,7 +228,8 @@ export const PLUGINS = [
   },
   {
     category: 'Security and Access Control',
-    description: 'Tests object-property-level authorization mechanisms to detect unauthorized data access vulnerabilities (OWASP API Security Top 10 #3)',
+    description:
+      'Tests object-property-level authorization mechanisms to detect unauthorized data access vulnerabilities (OWASP API Security Top 10 #3)',
     label: 'technical',
     link: '/docs/red-team/plugins/bopla/',
     name: 'Object-Property-Level Authorization Bypass',
@@ -1251,7 +1252,8 @@ export const PLUGINS = [
   },
   {
     category: 'Security and Access Control',
-    description: 'Tests for unrestricted resource consumption vulnerabilities (OWASP API Security Top 10 #4)',
+    description:
+      'Tests for unrestricted resource consumption vulnerabilities (OWASP API Security Top 10 #4)',
     label: 'technical',
     link: '/docs/red-team/plugins/resource-consumption/',
     name: 'Resource Consumption',
@@ -1354,7 +1356,8 @@ export const PLUGINS = [
   },
   {
     category: 'Security and Access Control',
-    description: 'Tests for unrestricted access to sensitive business flows (OWASP API Security Top 10 #6)',
+    description:
+      'Tests for unrestricted access to sensitive business flows (OWASP API Security Top 10 #6)',
     label: 'technical',
     link: '/docs/red-team/plugins/unrestricted-access/',
     name: 'Unrestricted Access',
