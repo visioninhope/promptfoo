@@ -31,7 +31,7 @@ describe('CustomTargetConfiguration', () => {
 
     expect(screen.getByText('Custom Target Configuration')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /Target ID/i })).toBeInTheDocument();
-    expect(screen.getByText('Provider Configuration')).toBeInTheDocument();
+    expect(screen.getByText('Custom Configuration')).toBeInTheDocument();
   });
 
   it('updates target ID when changed', async () => {
@@ -45,68 +45,66 @@ describe('CustomTargetConfiguration', () => {
     });
   });
 
-  it('shows configure provider settings button', () => {
+  it('displays configuration JSON in textarea', () => {
     renderWithTheme(<CustomTargetConfiguration {...defaultProps} />);
 
-    const configButton = screen.getByRole('button', { name: /Configure Provider Settings/i });
-    expect(configButton).toBeInTheDocument();
+    const configTextarea = screen.getByRole('textbox', { name: /Configuration \(JSON\)/i });
+    expect(configTextarea).toBeInTheDocument();
+    expect(configTextarea).toHaveValue('{"temperature": 0.7}');
   });
 
-  it('displays current configuration when config exists', () => {
-    const propsWithConfig = {
+  it('updates configuration when JSON is changed', async () => {
+    renderWithTheme(<CustomTargetConfiguration {...defaultProps} />);
+
+    const configTextarea = screen.getByRole('textbox', { name: /Configuration \(JSON\)/i });
+    const newConfig = '{"temperature": 0.9, "max_tokens": 1024}';
+
+    fireEvent.change(configTextarea, { target: { value: newConfig } });
+
+    await waitFor(() => {
+      expect(defaultProps.setRawConfigJson).toHaveBeenCalledWith(newConfig);
+      expect(defaultProps.updateCustomTarget).toHaveBeenCalledWith('config', {
+        temperature: 0.9,
+        max_tokens: 1024,
+      });
+    });
+  });
+
+  it('displays error message when bodyError is provided', () => {
+    const propsWithError = {
       ...defaultProps,
-      selectedTarget: {
-        id: 'custom-provider',
-        config: {
-          temperature: 0.7,
-          max_tokens: 1024,
-          apiKey: 'test-key',
-        },
-      },
+      bodyError: 'Invalid JSON format',
     };
 
-    renderWithTheme(<CustomTargetConfiguration {...propsWithConfig} />);
+    renderWithTheme(<CustomTargetConfiguration {...propsWithError} />);
 
-    expect(screen.getByText('Current Configuration:')).toBeInTheDocument();
-    expect(screen.getByText(/"temperature": 0.7/)).toBeInTheDocument();
-    expect(screen.getByText(/"max_tokens": 1024/)).toBeInTheDocument();
+    expect(screen.getByText('Invalid JSON format')).toBeInTheDocument();
+    const configTextarea = screen.getByRole('textbox', { name: /Configuration \(JSON\)/i });
+    expect(configTextarea).toHaveAttribute('aria-invalid', 'true');
   });
 
-  it('opens provider config dialog when button is clicked', async () => {
+  it('displays helper text when no error', () => {
     renderWithTheme(<CustomTargetConfiguration {...defaultProps} />);
 
-    const configButton = screen.getByRole('button', { name: /Configure Provider Settings/i });
-    fireEvent.click(configButton);
-
-    await waitFor(() => {
-      const dialogTitle = screen.getByRole('heading', {
-        name: /Provider Configuration/i,
-        level: 2,
-      });
-      expect(dialogTitle).toBeInTheDocument();
-    });
+    expect(screen.getByText('Enter your custom configuration as JSON')).toBeInTheDocument();
   });
 
-  it('handles config save from dialog', async () => {
+  it('handles invalid JSON gracefully', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     renderWithTheme(<CustomTargetConfiguration {...defaultProps} />);
 
-    const configButton = screen.getByRole('button', { name: /Configure Provider Settings/i });
-    fireEvent.click(configButton);
+    const configTextarea = screen.getByRole('textbox', { name: /Configuration \(JSON\)/i });
+    const invalidJson = '{"temperature": invalid}';
+
+    fireEvent.change(configTextarea, { target: { value: invalidJson } });
 
     await waitFor(() => {
-      const dialogTitle = screen.getByRole('heading', {
-        name: /Provider Configuration/i,
-        level: 2,
-      });
-      expect(dialogTitle).toBeInTheDocument();
+      expect(defaultProps.setRawConfigJson).toHaveBeenCalledWith(invalidJson);
+      expect(defaultProps.updateCustomTarget).not.toHaveBeenCalledWith('config', expect.anything());
+      expect(consoleSpy).toHaveBeenCalledWith('Invalid JSON configuration:', expect.any(Error));
     });
 
-    const newConfig = { temperature: 0.9, apiKey: 'new-key' };
-
-    defaultProps.updateCustomTarget('config', newConfig);
-    defaultProps.setRawConfigJson(JSON.stringify(newConfig, null, 2));
-
-    expect(defaultProps.updateCustomTarget).toHaveBeenCalledWith('config', newConfig);
-    expect(defaultProps.setRawConfigJson).toHaveBeenCalledWith(JSON.stringify(newConfig, null, 2));
+    consoleSpy.mockRestore();
   });
 });
