@@ -122,10 +122,6 @@ promptfoo eval --output file://handle_results.py
 # With explicit function name
 promptfoo eval --output file://handle-results.js:processResults
 promptfoo eval --output file://handle_results.py:save
-
-# Direct paths also work (extension-based inference)
-promptfoo eval --output ./handlers/results.js
-promptfoo eval --output ./handlers/results.py:save_results
 ```
 
 The handler receives the same object as the JSON output.
