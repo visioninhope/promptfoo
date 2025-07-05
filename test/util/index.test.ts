@@ -300,7 +300,7 @@ describe('util', () => {
       await writeOutput('file://handler.js:processResults', eval_, null);
 
       expect(importModule).toHaveBeenCalledWith(
-        expect.stringContaining('handler.js'),
+        expect.stringMatching(/handler\.js$/),
         'processResults',
       );
       expect(handler.processResults).toHaveBeenCalledWith({
@@ -323,7 +323,7 @@ describe('util', () => {
       await writeOutput('./handlers/results.js', eval_, null);
 
       expect(importModule).toHaveBeenCalledWith(
-        expect.stringContaining('handlers/results.js'),
+        expect.stringMatching(/handlers[/\\]results\.js$/),
         undefined,
       );
       expect(handler).toHaveBeenCalledWith({
@@ -344,7 +344,7 @@ describe('util', () => {
 
       await writeOutput('file://handler.py:save', eval_, 'url');
 
-      expect(runPython).toHaveBeenCalledWith(expect.stringContaining('handler.py'), 'save', [
+      expect(runPython).toHaveBeenCalledWith(expect.stringMatching(/handler\.py$/), 'save', [
         {
           evalId: eval_.id,
           results: summary,
@@ -365,7 +365,7 @@ describe('util', () => {
       await writeOutput('file://handler.py', eval_, null);
 
       expect(runPython).toHaveBeenCalledWith(
-        expect.stringContaining('handler.py'),
+        expect.stringMatching(/handler\.py$/),
         'handle_output',
         [
           {
@@ -389,7 +389,7 @@ describe('util', () => {
 
       await writeOutput('file://handler.js', eval_, null);
 
-      expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handler.js'), undefined);
+      expect(importModule).toHaveBeenCalledWith(expect.stringMatching(/handler\.js$/), undefined);
       expect(handler).toHaveBeenCalledWith({
         evalId: eval_.id,
         results: summary,
@@ -421,7 +421,7 @@ describe('util', () => {
 
       await writeOutput('file://handler.ts', eval_, null);
 
-      expect(importModule).toHaveBeenCalledWith(expect.stringContaining('handler.ts'), undefined);
+      expect(importModule).toHaveBeenCalledWith(expect.stringMatching(/handler\.ts$/), undefined);
       expect(handler).toHaveBeenCalledWith(
         expect.objectContaining({
           evalId: eval_.id,
@@ -457,7 +457,7 @@ describe('util', () => {
       await writeOutput('file://handler.js', eval_, null);
 
       expect(importModule).toHaveBeenCalledWith(
-        expect.stringContaining('/custom/base/path/handler.js'),
+        expect.stringMatching(/[/\\]custom[/\\]base[/\\]path[/\\]handler\.js$/),
         undefined,
       );
       expect(handler).toHaveBeenCalledWith(
