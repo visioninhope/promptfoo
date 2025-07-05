@@ -908,6 +908,30 @@ export const TestSuiteSchema = z.object({
 export type TestSuite = z.infer<typeof TestSuiteSchema>;
 
 // TestSuiteConfig = Test Suite, but before everything is parsed and resolved.  Providers are just strings, prompts are filepaths, tests can be filepath or inline.
+// Helper functions for output path validation
+function parseOutputPath(path: string): { filePath: string; hasFunction: boolean; ext: string } {
+  let filePath = path.startsWith('file://') ? path.slice('file://'.length) : path;
+  let hasFunction = false;
+
+  // Check for function name (e.g., file.py:function_name)
+  const colonIndex = filePath.lastIndexOf(':');
+  if (colonIndex > 1 && !(/^[A-Za-z]:/.test(filePath) && colonIndex === 1)) {
+    const afterColon = filePath.substring(colonIndex + 1);
+    if (afterColon && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(afterColon)) {
+      hasFunction = true;
+      filePath = filePath.substring(0, colonIndex);
+    }
+  }
+
+  const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
+  return { filePath, hasFunction, ext };
+}
+
+function isHandlerExtension(ext: string): boolean {
+  const HANDLER_EXTENSIONS = ['.js', '.mjs', '.ts', '.cjs', '.mts', '.cts', '.py'];
+  return HANDLER_EXTENSIONS.includes(ext);
+}
+
 export const TestSuiteConfigSchema = z.object({
   // Optional tags to describe the test suite
   tags: z.record(z.string(), z.string()).optional(),
@@ -954,63 +978,34 @@ export const TestSuiteConfigSchema = z.object({
   outputPath: z
     .union([z.string(), z.array(z.string())])
     .optional()
-    .refine(
-      (val) => {
-        if (!val) {
-          return true;
+    .superRefine((val, ctx) => {
+      if (!val) {
+        return;
+      }
+      const paths = Array.isArray(val) ? val : [val];
+
+      for (const path of paths) {
+        // Skip Google Sheets URLs
+        if (path.match(/^https:\/\/docs\.google\.com\/spreadsheets\//)) {
+          continue;
         }
-        const paths = Array.isArray(val) ? val : [val];
 
-        for (const path of paths) {
-          // Skip Google Sheets URLs
-          if (path.match(/^https:\/\/docs\.google\.com\/spreadsheets\//)) {
-            continue;
-          }
+        // Parse the path to extract file and potential function name
+        const parsedPath = parseOutputPath(path);
 
-          // Extract the file path first to check extension
-          let filePath = path.startsWith('file://') ? path.slice('file://'.length) : path;
-
-          // Remove function name if present (for handler paths)
-          const colonIndex = filePath.lastIndexOf(':');
-          let hasFunction = false;
-          if (colonIndex > 1 && !(/^[A-Za-z]:/.test(filePath) && colonIndex === 1)) {
-            // Check if the part after colon looks like a function name
-            const afterColon = filePath.substring(colonIndex + 1);
-            if (afterColon && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(afterColon)) {
-              hasFunction = true;
-              filePath = filePath.substring(0, colonIndex);
-            }
-          }
-
-          // Get the file extension
-          const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
-
-          // Check if it's a handler path (JavaScript or Python file)
-          const isHandlerPath =
-            hasFunction || // If it has a function name, it's definitely a handler
-            ['.js', '.mjs', '.ts', '.cjs', '.mts', '.cts', '.py'].includes(ext);
-
-          if (isHandlerPath) {
-            // Validate extension for handler files
-            if (!['.js', '.mjs', '.ts', '.cjs', '.mts', '.cts', '.py'].includes(ext)) {
-              return false;
-            }
-          } else {
-            // For non-handler paths, validate against supported output formats
-            const extWithoutDot = ext.slice(1);
-            // Allow csv, json, jsonl, yaml, yml, txt, html as per OutputFileExtension
-            if (!['csv', 'json', 'jsonl', 'yaml', 'yml', 'txt', 'html'].includes(extWithoutDot)) {
-              // If it doesn't have a valid extension, it might still be a valid path
-              // (e.g., a directory), so we don't reject it
-            }
-          }
+        // If it has a function name or handler extension, validate as handler
+        if (
+          (parsedPath.hasFunction || isHandlerExtension(parsedPath.ext)) &&
+          !isHandlerExtension(parsedPath.ext)
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Output handler "${path}" has invalid extension "${parsedPath.ext}". Handler files must have .js, .mjs, .ts, .cjs, .mts, .cts, or .py extension.`,
+          });
         }
-        return true;
-      },
-      {
-        message: 'Output handler files must have .js, .mjs, .ts, or .py extension',
-      },
-    ),
+        // Non-handler paths are allowed (directories, standard output formats, etc.)
+      }
+    }),
 
   // Determines whether or not sharing is enabled.
   sharing: z
