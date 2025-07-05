@@ -962,36 +962,46 @@ export const TestSuiteConfigSchema = z.object({
         const paths = Array.isArray(val) ? val : [val];
 
         for (const path of paths) {
-          // Check if it's a handler path
-          if (
-            path.startsWith('file://') ||
-            path.endsWith('.js') ||
-            path.endsWith('.mjs') ||
-            path.endsWith('.ts') ||
-            path.endsWith('.py') ||
-            path.includes('.js:') ||
-            path.includes('.py:') ||
-            path.includes('.mjs:') ||
-            path.includes('.ts:')
-          ) {
-            // Extract the file path
-            let filePath = path.startsWith('file://') ? path.slice('file://'.length) : path;
+          // Skip Google Sheets URLs
+          if (path.match(/^https:\/\/docs\.google\.com\/spreadsheets\//)) {
+            continue;
+          }
 
-            // Remove function name if present
-            const colonIndex = filePath.lastIndexOf(':');
-            if (colonIndex > 1) {
-              const beforeColon = filePath.substring(0, colonIndex);
+          // Extract the file path first to check extension
+          let filePath = path.startsWith('file://') ? path.slice('file://'.length) : path;
 
-              // Check if this is a function name separator (not a Windows drive)
-              if (!(/^[A-Za-z]:/.test(filePath) && colonIndex === 1)) {
-                filePath = beforeColon;
-              }
+          // Remove function name if present (for handler paths)
+          const colonIndex = filePath.lastIndexOf(':');
+          let hasFunction = false;
+          if (colonIndex > 1 && !(/^[A-Za-z]:/.test(filePath) && colonIndex === 1)) {
+            // Check if the part after colon looks like a function name
+            const afterColon = filePath.substring(colonIndex + 1);
+            if (afterColon && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(afterColon)) {
+              hasFunction = true;
+              filePath = filePath.substring(0, colonIndex);
             }
+          }
 
-            // Validate extension
-            const ext = filePath.substring(filePath.lastIndexOf('.'));
+          // Get the file extension
+          const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
+
+          // Check if it's a handler path (JavaScript or Python file)
+          const isHandlerPath =
+            hasFunction || // If it has a function name, it's definitely a handler
+            ['.js', '.mjs', '.ts', '.cjs', '.mts', '.cts', '.py'].includes(ext);
+
+          if (isHandlerPath) {
+            // Validate extension for handler files
             if (!['.js', '.mjs', '.ts', '.cjs', '.mts', '.cts', '.py'].includes(ext)) {
               return false;
+            }
+          } else {
+            // For non-handler paths, validate against supported output formats
+            const extWithoutDot = ext.slice(1);
+            // Allow csv, json, jsonl, yaml, yml, txt, html as per OutputFileExtension
+            if (!['csv', 'json', 'jsonl', 'yaml', 'yml', 'txt', 'html'].includes(extWithoutDot)) {
+              // If it doesn't have a valid extension, it might still be a valid path
+              // (e.g., a directory), so we don't reject it
             }
           }
         }
