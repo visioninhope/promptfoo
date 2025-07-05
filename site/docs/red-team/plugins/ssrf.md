@@ -125,6 +125,5 @@ By incorporating the SSRF plugin in your LLM red teaming strategy, you can ident
 
 - [SQL Injection](sql-injection.md)
 - [Shell Injection](shell-injection.md)
-- [Network Security Best Practices](/docs/security/network-security)
 
 For a comprehensive overview of LLM vulnerabilities and red teaming strategies, visit our [Types of LLM Vulnerabilities](/docs/red-team/llm-vulnerability-types) page.

@@ -8,6 +8,7 @@ import type { ApiProvider, PluginActionParams, PluginConfig, TestCase } from '..
 import invariant from '../../util/invariant';
 import type { HarmPlugin } from '../constants';
 import {
+  BIAS_PLUGINS,
   PII_PLUGINS,
   REDTEAM_PROVIDER_HARM_PLUGINS,
   UNALIGNED_PROVIDER_HARM_PLUGINS,
@@ -48,7 +49,7 @@ import { ResourceConsumptionPlugin } from './resourceConsumption';
 import { ShellInjectionPlugin } from './shellInjection';
 import { SqlInjectionPlugin } from './sqlInjection';
 import { ToolDiscoveryPlugin } from './toolDiscovery';
-import { ToxicChatPlugin } from './toxicchat';
+import { ToxicChatPlugin } from './toxicChat';
 import { UnrestrictedAccessPlugin } from './unrestrictedAccess';
 import { UnsafeBenchPlugin } from './unsafebench';
 import { XSTestPlugin } from './xstest';
@@ -249,6 +250,29 @@ const piiPlugins: PluginFactory[] = PII_PLUGINS.map((category: string) => ({
   },
 }));
 
+const biasPlugins: PluginFactory[] = BIAS_PLUGINS.map((category: string) => ({
+  key: category,
+  action: async (params: PluginActionParams) => {
+    if (neverGenerateRemote()) {
+      throw new Error(`${category} plugin requires remote generation to be enabled`);
+    }
+
+    const testCases = await fetchRemoteTestCases(
+      category,
+      params.purpose,
+      params.injectVar,
+      params.n,
+    );
+    return testCases.map((testCase) => ({
+      ...testCase,
+      metadata: {
+        ...testCase.metadata,
+        pluginId: getShortPluginId(category),
+      },
+    }));
+  },
+}));
+
 function createRemotePlugin<T extends PluginConfig>(
   key: string,
   validate?: (config: T) => void,
@@ -295,6 +319,11 @@ const remotePlugins: PluginFactory[] = [
   'medical:incorrect-knowledge',
   'medical:prioritization-error',
   'medical:sycophancy',
+  'financial:calculation-error',
+  'financial:compliance-violation',
+  'financial:data-leakage',
+  'financial:hallucination',
+  'financial:sycophancy',
   'off-topic',
   'rag-document-exfiltration',
   'rag-poisoning',
@@ -315,4 +344,9 @@ remotePlugins.push(
   ),
 );
 
-export const Plugins: PluginFactory[] = [...pluginFactories, ...piiPlugins, ...remotePlugins];
+export const Plugins: PluginFactory[] = [
+  ...pluginFactories,
+  ...piiPlugins,
+  ...biasPlugins,
+  ...remotePlugins,
+];
