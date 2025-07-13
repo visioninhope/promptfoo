@@ -96,3 +96,20 @@ userRouter.get('/email/status', async (req: Request, res: Response): Promise<voi
     }
   }
 });
+
+userRouter.get('/cloud/status', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { cloudConfig } = await import('../../globalConfig/cloud');
+    const isAuthenticated = cloudConfig.isEnabled();
+    const apiKey = cloudConfig.getApiKey();
+
+    res.json({
+      isAuthenticated,
+      hasApiKey: !!apiKey,
+      appUrl: isAuthenticated ? cloudConfig.getAppUrl() : null,
+    });
+  } catch (error) {
+    logger.error(`Error checking cloud status: ${error}`);
+    res.status(500).json({ error: 'Failed to check cloud status' });
+  }
+});
