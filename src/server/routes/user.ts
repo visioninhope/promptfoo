@@ -103,11 +103,11 @@ userRouter.get('/cloud/status', async (req: Request, res: Response): Promise<voi
     const isAuthenticated = cloudConfig.isEnabled();
     const apiKey = cloudConfig.getApiKey();
     const appUrl = isAuthenticated ? cloudConfig.getAppUrl() : null;
-    
+
     // Determine if this is an enterprise deployment
     // If the appUrl is set and doesn't include promptfoo.app, it's enterprise
     const isEnterprise = appUrl ? !appUrl.includes('promptfoo.app') : false;
-    
+
     res.json({
       isAuthenticated,
       hasApiKey: !!apiKey,
