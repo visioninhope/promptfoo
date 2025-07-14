@@ -102,7 +102,7 @@ userRouter.get('/cloud/status', async (req: Request, res: Response): Promise<voi
     const { cloudConfig } = await import('../../globalConfig/cloud');
     const isAuthenticated = cloudConfig.isEnabled();
     const apiKey = cloudConfig.getApiKey();
-    const appUrl = isAuthenticated ? cloudConfig.getAppUrl() : null;
+    const appUrl = cloudConfig.getAppUrl(); // Always get the URL for enterprise detection
 
     // Determine if this is an enterprise deployment
     // If the appUrl is set and doesn't include promptfoo.app, it's enterprise
@@ -111,7 +111,7 @@ userRouter.get('/cloud/status', async (req: Request, res: Response): Promise<voi
     res.json({
       isAuthenticated,
       hasApiKey: !!apiKey,
-      appUrl,
+      appUrl: isAuthenticated ? appUrl : null, // Only expose URL if authenticated
       isEnterprise,
     });
   } catch (error) {
