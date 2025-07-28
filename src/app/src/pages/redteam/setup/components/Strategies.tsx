@@ -1,35 +1,41 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { useTelemetry } from '@app/hooks/useTelemetry';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
-import { Box, Typography, Button, Tooltip, Link } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Link from '@mui/material/Link';
 import { useTheme } from '@mui/material/styles';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import {
-  ALL_STRATEGIES,
-  MULTI_TURN_STRATEGIES,
   AGENTIC_STRATEGIES,
+  ALL_STRATEGIES,
   DEFAULT_STRATEGIES,
+  MULTI_MODAL_STRATEGIES,
+  MULTI_TURN_STRATEGIES,
   strategyDescriptions,
   strategyDisplayNames,
 } from '@promptfoo/redteam/constants';
-import type { RedteamStrategyObject } from '@promptfoo/redteam/types';
 import { useRedTeamConfig } from '../hooks/useRedTeamConfig';
 import StrategyConfigDialog from './StrategyConfigDialog';
 import { PresetSelector } from './strategies/PresetSelector';
 import { RecommendedOptions } from './strategies/RecommendedOptions';
 import { StrategySection } from './strategies/StrategySection';
 import { SystemConfiguration } from './strategies/SystemConfiguration';
-import { MULTI_MODAL_STRATEGIES } from './strategies/constants';
 import {
-  STRATEGY_PRESETS,
   PRESET_IDS,
   type PresetId,
+  STRATEGY_PRESETS,
   type StrategyPreset,
 } from './strategies/types';
-import type { ConfigDialogState, StrategyCardData } from './strategies/types';
 import { getEstimatedProbes, getStrategyId } from './strategies/utils';
+import type { RedteamStrategyObject } from '@promptfoo/redteam/types';
+
+import type { ConfigDialogState, StrategyCardData } from './strategies/types';
 
 // ------------------------------------------------------------------
 // Types & Interfaces
@@ -93,7 +99,12 @@ export default function Strategies({ onNext, onBack }: StrategiesProps) {
       (s) => !MULTI_TURN_STRATEGIES.includes(s.id as any),
     );
 
-    const agenticMultiTurn = allAgentic.filter((s) => MULTI_TURN_STRATEGIES.includes(s.id as any));
+    // Preserve the order from MULTI_TURN_STRATEGIES for agentic multi-turn strategies
+    const agenticMultiTurn = MULTI_TURN_STRATEGIES.map((strategyId) =>
+      availableStrategies.find(
+        (s) => s.id === strategyId && AGENTIC_STRATEGIES.includes(s.id as any),
+      ),
+    ).filter(Boolean) as StrategyCardData[];
 
     const multiModal = availableStrategies.filter((s) =>
       MULTI_MODAL_STRATEGIES.includes(s.id as any),
@@ -542,6 +553,9 @@ export default function Strategies({ onNext, onBack }: StrategiesProps) {
           })
         }
         onSave={updateStrategyConfig}
+        strategyData={
+          availableStrategies.find((s) => s.id === configDialog.selectedStrategy) ?? null
+        }
       />
     </Box>
   );
