@@ -178,28 +178,32 @@ def save(data):
 
 ```typescript
 {
-  evalId: string | null;           // Unique evaluation ID
-  results: {                       // Full evaluation results
+  evalId: string | null; // Unique evaluation ID
+  results: {
+    // Full evaluation results
     stats: {
       successes: number;
       failures: number;
       errors: number;
       total: number;
-      tokenUsage: { /* ... */ };
-    };
-    results: Array<{               // Individual test results
+      tokenUsage: {
+        /* ... */
+      }
+    }
+    results: Array<{
+      // Individual test results
       success: boolean;
-      prompt: { raw: string; /* ... */ };
+      prompt: { raw: string /* ... */ };
       vars: Record<string, any>;
-      response?: { output: string; /* ... */ };
+      response?: { output: string /* ... */ };
       error?: string;
       latencyMs: number;
       // ... more fields
     }>;
-    prompts: Array</* ... */>;     // Prompt configurations
-  };
-  config: object;                  // Evaluation configuration
-  shareableUrl: string | null;     // URL if sharing is enabled
+    prompts: Array</* ... */>; // Prompt configurations
+  }
+  config: object; // Evaluation configuration
+  shareableUrl: string | null; // URL if sharing is enabled
 }
 ```
 

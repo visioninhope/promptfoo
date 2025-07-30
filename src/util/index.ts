@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 
 import { stringify } from 'csv-stringify/sync';
 import dedent from 'dedent';
@@ -15,13 +14,10 @@ import { getEnvBool, getEnvString } from '../envars';
 import { getDirectory, importModule } from '../esm';
 import { writeCsvToGoogleSheet } from '../googleSheets';
 import logger from '../logger';
-import type Eval from '../models/eval';
-import type EvalResult from '../models/evalResult';
 import { runPython } from '../python/pythonUtils';
 import {
   type CsvRow,
   type EvaluateResult,
-  type Vars,
   type EvaluateTableOutput,
   isApiProvider,
   isProviderOptions,
