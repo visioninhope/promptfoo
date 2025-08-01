@@ -1,4 +1,8 @@
-import { CLOUD_API_HOST, cloudConfig } from '../../globalConfig/cloud';
+import { getEnvString } from '../../envars';
+import { readGlobalConfig } from '../../globalConfig/globalConfig';
+
+// Define CLOUD_API_HOST locally to avoid circular dependency
+const CLOUD_API_HOST = 'https://api.promptfoo.app';
 
 const originalFetch = global.fetch;
 
@@ -14,7 +18,8 @@ global.fetch = async (...args) => {
     (typeof url === 'string' && url.startsWith(CLOUD_API_HOST)) ||
     (url instanceof URL && url.host === CLOUD_API_HOST.replace(/^https?:\/\//, ''))
   ) {
-    const token = cloudConfig.getApiKey();
+    const globalConfig = readGlobalConfig();
+    const token = globalConfig.account?.apiKey || getEnvString('PROMPTFOO_API_KEY');
     if (token) {
       opts.headers = {
         ...(options?.headers || {}),
