@@ -250,6 +250,7 @@ To see the list of available plugins on the command line, run `promptfoo redteam
 - `pii`: Includes all available PII plugins
 - `toxicity`: Includes all available plugins related to toxicity
 - `bias`: Includes all available plugins related to bias
+- `medical`: Includes all available medical AI safety plugins
 - `misinformation`: Includes all available plugins related to misinformation
 - `illegal-activity`: Includes all available plugins related to illegal activity
 
@@ -259,6 +260,7 @@ Example usage:
 plugins:
   - toxicity
   - bias
+  - medical
 ```
 
 ### Standards
@@ -584,7 +586,7 @@ A local model via [ollama](/docs/providers/ollama/) would look similar:
 
 ```yaml
 redteam:
-  provider: ollama:chat:llama3.1
+  provider: ollama:chat:llama3.3
 ```
 
 :::warning
