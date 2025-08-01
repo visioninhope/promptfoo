@@ -1,4 +1,3 @@
-import { fetchWithCache } from '../../src/cache';
 import { getEnvString } from '../../src/envars';
 import { getUserEmail } from '../../src/globalConfig/accounts';
 import {
@@ -8,7 +7,6 @@ import {
 } from '../../src/providers/promptfoo';
 import { fetchWithRetries } from '../../src/util/fetch';
 
-jest.mock('../../src/cache');
 jest.mock('../../src/envars');
 jest.mock('../../src/util/fetch/index.ts');
 jest.mock('../../src/globalConfig/accounts');
@@ -130,16 +128,17 @@ describe('PromptfooChatCompletionProvider', () => {
   });
 
   it('should handle successful API call', async () => {
-    const mockResponse = {
-      data: {
+    const mockResponse = new Response(
+      JSON.stringify({
         result: 'test result',
         tokenUsage: { total: 100 },
+      }),
+      {
+        status: 200,
+        statusText: 'OK',
       },
-      status: 200,
-      statusText: 'OK',
-      cached: false,
-    };
-    jest.mocked(fetchWithCache).mockResolvedValue(mockResponse);
+    );
+    jest.mocked(fetchWithRetries).mockResolvedValue(mockResponse);
 
     const result = await provider.callApi('test prompt');
 
@@ -150,15 +149,16 @@ describe('PromptfooChatCompletionProvider', () => {
   });
 
   it('should handle missing result', async () => {
-    const mockResponse = {
-      data: {
+    const mockResponse = new Response(
+      JSON.stringify({
         result: null,
+      }),
+      {
+        status: 200,
+        statusText: 'OK',
       },
-      status: 200,
-      statusText: 'OK',
-      cached: false,
-    };
-    jest.mocked(fetchWithCache).mockResolvedValue(mockResponse);
+    );
+    jest.mocked(fetchWithRetries).mockResolvedValue(mockResponse);
 
     const result = await provider.callApi('test prompt');
 
@@ -166,7 +166,7 @@ describe('PromptfooChatCompletionProvider', () => {
   });
 
   it('should handle API error', async () => {
-    jest.mocked(fetchWithCache).mockRejectedValue(new Error('API Error'));
+    jest.mocked(fetchWithRetries).mockRejectedValue(new Error('API Error'));
 
     const result = await provider.callApi('test prompt');
 
