@@ -1,4 +1,3 @@
-import { getEnvString } from '../../envars';
 import { readGlobalConfig } from '../../globalConfig/globalConfig';
 
 // Define CLOUD_API_HOST locally to avoid circular dependency
@@ -19,7 +18,7 @@ global.fetch = async (...args) => {
     (url instanceof URL && url.host === CLOUD_API_HOST.replace(/^https?:\/\//, ''))
   ) {
     const globalConfig = readGlobalConfig();
-    const token = globalConfig.account?.apiKey || getEnvString('PROMPTFOO_API_KEY');
+    const token = globalConfig.cloud?.apiKey;
     if (token) {
       opts.headers = {
         ...(options?.headers || {}),

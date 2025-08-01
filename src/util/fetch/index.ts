@@ -33,7 +33,7 @@ global.fetch = async (...args) => {
     (url instanceof URL && url.host === CLOUD_API_HOST.replace(/^https?:\/\//, ''))
   ) {
     const globalConfig = readGlobalConfig();
-    const token = globalConfig.account?.apiKey || getEnvString('PROMPTFOO_API_KEY');
+    const token = globalConfig.cloud?.apiKey;
     opts.headers = {
       ...(options?.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
