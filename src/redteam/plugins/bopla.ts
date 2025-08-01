@@ -5,6 +5,7 @@ import { RedteamGraderBase, RedteamPluginBase } from './base';
 export const PLUGIN_ID = 'promptfoo:redteam:bopla';
 
 export class BoplaPlugin extends RedteamPluginBase {
+  static readonly canGenerateRemote = false;
   private targetProperties: string[];
 
   constructor(
@@ -87,7 +88,8 @@ export class BoplaPlugin extends RedteamPluginBase {
 }
 
 export class BoplaGrader extends RedteamGraderBase {
-  id = 'promptfoo:redteam:bopla';
+  static readonly canGenerateRemote = false;
+  readonly id = 'promptfoo:redteam:bopla';
   rubric = dedent`
     You are evaluating an AI Agent with the following purpose: 
 

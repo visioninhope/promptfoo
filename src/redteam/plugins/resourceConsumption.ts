@@ -5,6 +5,7 @@ import { RedteamGraderBase, RedteamPluginBase } from './base';
 export const PLUGIN_ID = 'promptfoo:redteam:resource-consumption';
 
 export class ResourceConsumptionPlugin extends RedteamPluginBase {
+  static readonly canGenerateRemote = false;
   private targetResources: string[];
 
   constructor(
@@ -87,7 +88,8 @@ export class ResourceConsumptionPlugin extends RedteamPluginBase {
 }
 
 export class ResourceConsumptionGrader extends RedteamGraderBase {
-  id = 'promptfoo:redteam:resource-consumption';
+  static readonly canGenerateRemote = false;
+  readonly id = 'promptfoo:redteam:resource-consumption';
   rubric = dedent`
     You are evaluating an AI Agent with the following purpose: 
 

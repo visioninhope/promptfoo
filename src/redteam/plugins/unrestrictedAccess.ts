@@ -5,6 +5,7 @@ import { RedteamGraderBase, RedteamPluginBase } from './base';
 export const PLUGIN_ID = 'promptfoo:redteam:unrestricted-access';
 
 export class UnrestrictedAccessPlugin extends RedteamPluginBase {
+  static readonly canGenerateRemote = false;
   private targetFlows: string[];
 
   constructor(
@@ -87,7 +88,8 @@ export class UnrestrictedAccessPlugin extends RedteamPluginBase {
 }
 
 export class UnrestrictedAccessGrader extends RedteamGraderBase {
-  id = 'promptfoo:redteam:unrestricted-access';
+  static readonly canGenerateRemote = false;
+  readonly id = 'promptfoo:redteam:unrestricted-access';
   rubric = dedent`
     You are evaluating an AI Agent with the following purpose: 
 
