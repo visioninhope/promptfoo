@@ -4,7 +4,13 @@ import path from 'path';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { getDb } from '../database';
-import { evalsTable, evalsToDatasetsTable, evalsToPromptsTable, evalsToTagsTable, evalResultsTable } from '../database/tables';
+import {
+  evalsTable,
+  evalsToDatasetsTable,
+  evalsToPromptsTable,
+  evalsToTagsTable,
+  evalResultsTable,
+} from '../database/tables';
 import logger from '../logger';
 import Eval, { createEvalId } from '../models/eval';
 import EvalResult from '../models/evalResult';

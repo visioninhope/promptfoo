@@ -7,7 +7,7 @@ import type { ImportFile } from '../types/schemas/import';
  */
 export async function parseImportFileStream(filePath: string): Promise<ImportFile> {
   const stats = await fs.promises.stat(filePath);
-  
+
   // For small files (< 10MB), use regular parsing
   if (stats.size < 10 * 1024 * 1024) {
     const content = await fs.promises.readFile(filePath, 'utf-8');
@@ -25,26 +25,26 @@ export async function parseImportFileStream(filePath: string): Promise<ImportFil
 
     stream.on('data', (chunk) => {
       buffer += chunk;
-      
+
       // Try to parse complete objects from the buffer
       for (let i = 0; i < buffer.length; i++) {
         const char = buffer[i];
-        
+
         if (escapeNext) {
           escapeNext = false;
           continue;
         }
-        
+
         if (char === '\\') {
           escapeNext = true;
           continue;
         }
-        
+
         if (char === '"' && !escapeNext) {
           inString = !inString;
           continue;
         }
-        
+
         if (!inString) {
           if (char === '{') {
             braceCount++;
@@ -52,13 +52,13 @@ export async function parseImportFileStream(filePath: string): Promise<ImportFil
             braceCount--;
           }
         }
-        
+
         // Check if we have a complete object
         if (braceCount === 0 && i > 0) {
           try {
             const objectStr = buffer.substring(0, i + 1);
             const parsed = JSON.parse(objectStr);
-            
+
             // Store the parsed data
             if ('results' in parsed && 'version' in parsed.results) {
               resolve(parsed);
@@ -70,9 +70,10 @@ export async function parseImportFileStream(filePath: string): Promise<ImportFil
           }
         }
       }
-      
+
       // Prevent buffer from growing too large
-      if (buffer.length > 50 * 1024 * 1024) { // 50MB buffer limit
+      if (buffer.length > 50 * 1024 * 1024) {
+        // 50MB buffer limit
         reject(new Error('File too complex for streaming parser'));
         stream.destroy();
       }
@@ -90,7 +91,7 @@ export async function parseImportFileStream(filePath: string): Promise<ImportFil
  */
 export async function* processResultsInBatches(
   results: any[],
-  batchSize: number = 1000
+  batchSize: number = 1000,
 ): AsyncGenerator<any[], void, unknown> {
   for (let i = 0; i < results.length; i += batchSize) {
     yield results.slice(i, i + batchSize);
