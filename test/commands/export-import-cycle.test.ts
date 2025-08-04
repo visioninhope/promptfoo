@@ -210,6 +210,7 @@ describe('Export/Import Cycle', () => {
     expect(EvalResult.createManyFromEvaluateResult).toHaveBeenCalledWith(
       exportedData.results.results,
       expect.any(String),
+      { returnInstances: false },
     );
   });
 

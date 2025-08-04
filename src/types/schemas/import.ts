@@ -54,8 +54,8 @@ const PromptWithMetricsSchema = BasePromptSchema.extend({
 });
 
 const ResponseSchema = z.object({
-  output: z.any().optional(),
-  raw: z.any().optional(), // Raw response text
+  output: z.unknown().optional(),
+  raw: z.unknown().optional(), // Raw response text
   error: z.string().optional(),
   tokenUsage: z
     .object({
@@ -67,12 +67,12 @@ const ResponseSchema = z.object({
     .optional(),
   cost: z.number().optional(),
   cached: z.boolean().optional(),
-  logProbs: z.any().optional(),
+  logProbs: z.array(z.number()).optional(),
   isRefusal: z.boolean().optional(), // Whether the response was a refusal
-  metadata: z.record(z.any()).optional(), // Additional metadata
+  metadata: z.record(z.unknown()).optional(), // Additional metadata
 });
 
-const GradingResultSchema = z.object({
+const GradingResultSchema: z.ZodType<any> = z.object({
   pass: z.boolean(),
   score: z.number(),
   reason: z.string(),
@@ -86,8 +86,8 @@ const GradingResultSchema = z.object({
       numRequests: z.number().optional(),
     })
     .optional(),
-  componentResults: z.array(z.any()).optional(),
-  assertion: z.any().optional(),
+  componentResults: z.array(z.lazy(() => GradingResultSchema)).optional(),
+  assertion: z.unknown().optional(),
   comment: z.string().optional(),
 });
 
@@ -118,7 +118,7 @@ const EvalResultV2Schema = z.object({
   gradingResult: GradingResultSchema.optional(),
   namedScores: z.record(z.number()).optional(),
   cost: z.number().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 // V2 Eval Table Schema
@@ -129,9 +129,9 @@ const EvalTableSchema = z.object({
   }),
   body: z.array(
     z.object({
-      outputs: z.array(z.any()),
+      outputs: z.array(z.unknown()),
       vars: z.array(z.string()),
-      test: z.any().optional(),
+      test: z.unknown().optional(),
     }),
   ),
 });
@@ -159,11 +159,20 @@ const EvalResultV3Schema = z.object({
   testCase: z.object({
     vars: VarsSchema.optional(),
     assert: z.array(z.any()).optional(),
-    options: z.record(z.any()).optional(),
-    metadata: z.record(z.any()).optional(),
+    options: z.record(z.unknown()).optional(),
+    metadata: z.record(z.unknown()).optional(),
     description: z.string().optional(),
-    provider: z.any().optional(),
-    providerOutput: z.any().optional(),
+    provider: z
+      .union([
+        z.string(),
+        z.object({
+          id: z.string().optional(),
+          label: z.string().optional(),
+          config: z.unknown().optional(),
+        }),
+      ])
+      .optional(),
+    providerOutput: z.union([z.string(), z.object({})]).optional(),
   }),
   vars: VarsSchema,
   response: ResponseSchema.optional(),
@@ -174,7 +183,7 @@ const EvalResultV3Schema = z.object({
   gradingResult: GradingResultSchema.optional(),
   namedScores: z.record(z.number()).optional(),
   cost: z.number().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
   failureReason: z.number().optional(), // May not be present in older exports
 });
 
@@ -194,7 +203,7 @@ export const ImportFileV2Schema = z.object({
   author: z.string().optional(),
   description: z.string().optional(),
   results: EvaluateSummaryV2Schema,
-  config: z.record(z.any()),
+  config: z.record(z.unknown()),
   metadata: z
     .object({
       promptfooVersion: z.string().optional(),
@@ -215,7 +224,7 @@ export const ImportFileV3Schema = z.object({
   createdAt: z.string().optional(),
   author: z.string().optional(),
   results: EvaluateSummaryV3Schema,
-  config: z.record(z.any()),
+  config: z.record(z.unknown()),
   metadata: z
     .object({
       promptfooVersion: z.string().optional(),
@@ -231,8 +240,8 @@ export const ImportFileV3Schema = z.object({
   relationships: z
     .object({
       tags: z.array(z.string()).optional(),
-      datasets: z.array(z.any()).optional(),
-      prompts: z.array(z.any()).optional(),
+      datasets: z.array(z.unknown()).optional(),
+      prompts: z.array(z.unknown()).optional(),
     })
     .optional(),
 });

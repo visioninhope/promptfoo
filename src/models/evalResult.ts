@@ -4,6 +4,7 @@ import { and, eq, gte, inArray, lt } from 'drizzle-orm';
 import { getDb } from '../database';
 import { evalResultsTable } from '../database/tables';
 import { getEnvBool } from '../envars';
+import logger from '../logger';
 import { hashPrompt } from '../prompts/utils';
 import { type EvaluateResult } from '../types';
 import { isApiProvider, isProviderOptions } from '../types/providers';
@@ -126,6 +127,11 @@ export default class EvalResult {
       // Better-sqlite3 doesn't support async transactions, so we use sync transaction
       db.transaction((tx) => {
         for (const result of results) {
+          // Quick validation of critical fields
+          if (!result.promptIdx && result.promptIdx !== 0) {
+            logger.warn(`Result missing promptIdx, using default 0`);
+          }
+
           const insertData = {
             ...result,
             evalId,

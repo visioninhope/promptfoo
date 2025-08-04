@@ -161,11 +161,6 @@ describe('importCommand', () => {
 
       expect(fs.readFileSync).toHaveBeenCalledWith('test-v2.json', 'utf-8');
 
-      // Check if there was an error instead
-      if ((logger.error as jest.Mock).mock.calls.length > 0) {
-        console.log('Error logged:', (logger.error as jest.Mock).mock.calls);
-      }
-
       expect(logger.info).toHaveBeenCalledWith(
         'Eval with ID eval-v2-test has been successfully imported.',
       );
