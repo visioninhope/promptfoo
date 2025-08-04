@@ -1,12 +1,10 @@
 import { z } from 'zod';
+import { PromptSchema as BasePromptSchema } from '../../validators/prompts';
+import { VarsSchema, AtomicTestCaseSchema } from '../index';
 
-// Base schemas for common structures
-const PromptSchema = z.object({
-  raw: z.string(),
-  label: z.string(),
-  function: z.any().optional(),
+// Extended prompt schema for import/export that includes metrics
+const PromptWithMetricsSchema = BasePromptSchema.extend({
   provider: z.string().optional(),
-  id: z.string().optional(),
   metrics: z.object({
     score: z.number(),
     testPassCount: z.number(),
@@ -44,8 +42,6 @@ const PromptSchema = z.object({
     cost: z.number().optional(),
   }).optional(),
 });
-
-const VarsSchema = z.record(z.any());
 
 const ResponseSchema = z.object({
   output: z.any().optional(),
@@ -102,7 +98,7 @@ const StatsSchema = z.object({
 
 // V2 Eval Result Schema
 const EvalResultV2Schema = z.object({
-  prompt: PromptSchema,
+  prompt: BasePromptSchema,
   vars: VarsSchema,
   response: ResponseSchema.optional(),
   error: z.string().optional(),
@@ -118,7 +114,7 @@ const EvalResultV2Schema = z.object({
 // V2 Eval Table Schema
 const EvalTableSchema = z.object({
   head: z.object({
-    prompts: z.array(PromptSchema),
+    prompts: z.array(BasePromptSchema),
     vars: z.array(z.string()),
   }),
   body: z.array(
@@ -146,7 +142,7 @@ const EvalResultV3Schema = z.object({
     id: z.string(),
     label: z.string().optional(),
   }),
-  prompt: PromptSchema,
+  prompt: BasePromptSchema,
   promptId: z.string(), // Reference to prompt
   promptIdx: z.number(),
   testIdx: z.number(),
@@ -173,7 +169,7 @@ const EvalResultV3Schema = z.object({
 export const EvaluateSummaryV3Schema = z.object({
   version: z.literal(3),
   timestamp: z.string(),
-  prompts: z.array(PromptSchema),
+  prompts: z.array(PromptWithMetricsSchema),
   results: z.array(EvalResultV3Schema),
   stats: StatsSchema,
 });
