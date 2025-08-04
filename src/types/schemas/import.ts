@@ -72,7 +72,8 @@ const ResponseSchema = z.object({
   metadata: z.record(z.unknown()).optional(), // Additional metadata
 });
 
-const GradingResultSchema: z.ZodType<any> = z.object({
+// Define base grading result without recursive field
+const BaseGradingResultSchema = z.object({
   pass: z.boolean(),
   score: z.number(),
   reason: z.string(),
@@ -86,9 +87,17 @@ const GradingResultSchema: z.ZodType<any> = z.object({
       numRequests: z.number().optional(),
     })
     .optional(),
-  componentResults: z.array(z.lazy(() => GradingResultSchema)).optional(),
   assertion: z.unknown().optional(),
   comment: z.string().optional(),
+});
+
+// Add recursive componentResults separately
+type GradingResult = z.infer<typeof BaseGradingResultSchema> & {
+  componentResults?: GradingResult[];
+};
+
+const GradingResultSchema: z.ZodType<GradingResult> = BaseGradingResultSchema.extend({
+  componentResults: z.lazy(() => z.array(GradingResultSchema)).optional(),
 });
 
 const TokenUsageSchema = z

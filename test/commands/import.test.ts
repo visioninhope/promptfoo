@@ -159,7 +159,10 @@ describe('importCommand', () => {
       importCommand(program);
       await program.parseAsync(['node', 'test', 'import', 'test-v2.json']);
 
-      expect(fs.readFileSync).toHaveBeenCalledWith('test-v2.json', 'utf-8');
+      expect(fs.readFileSync).toHaveBeenCalledWith(
+        expect.stringContaining('test-v2.json'),
+        'utf-8',
+      );
 
       expect(logger.info).toHaveBeenCalledWith(
         'Eval with ID eval-v2-test has been successfully imported.',
@@ -297,7 +300,12 @@ describe('importCommand', () => {
 
   describe('error handling', () => {
     it('should handle file not found error', async () => {
-      jest.mocked(fs.existsSync).mockReturnValue(false);
+      // Mock readFileSync to throw ENOENT error
+      jest.mocked(fs.readFileSync).mockImplementation(() => {
+        const error = new Error('ENOENT: no such file or directory');
+        (error as any).code = 'ENOENT';
+        throw error;
+      });
 
       importCommand(program);
 

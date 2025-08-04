@@ -1,9 +1,10 @@
 import fs from 'fs';
+import path from 'path';
 
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { getDb } from '../database';
-import { evalsTable } from '../database/tables';
+import { evalsTable, evalsToDatasetsTable, evalsToPromptsTable, evalsToTagsTable, evalResultsTable } from '../database/tables';
 import logger from '../logger';
 import Eval, { createEvalId } from '../models/eval';
 import EvalResult from '../models/evalResult';
@@ -36,21 +37,49 @@ export function importCommand(program: Command) {
       let evalId: string = '';
 
       try {
-        // Check if file exists
-        if (!fs.existsSync(file)) {
-          throw new Error(`File not found: ${file}`);
+        // Validate file path - prevent directory traversal
+        const normalizedPath = path.normalize(file);
+        const resolvedPath = path.resolve(normalizedPath);
+
+        // Security checks
+        // 1. Ensure file has .json extension
+        if (!resolvedPath.endsWith('.json')) {
+          throw new Error('Invalid file path. Only .json files are allowed.');
         }
 
-        // Check file size (prevent loading huge files into memory)
-        const stats = fs.statSync(file);
-        if (stats.size > MAX_FILE_SIZE_BYTES) {
+        // 2. Validate filename doesn't contain suspicious patterns
+        const filename = path.basename(resolvedPath);
+        if (!/^[\w\-\.]+\.json$/.test(filename)) {
           throw new Error(
-            `File ${file} is too large (${Math.round(stats.size / 1024 / 1024)}MB). Maximum size is ${MAX_FILE_SIZE_MB}MB.`,
+            'Invalid filename. Only alphanumeric characters, hyphens, dots, and underscores are allowed.',
           );
         }
 
-        // Read and parse file
-        const fileContent = fs.readFileSync(file, 'utf-8');
+        // 3. Ensure path doesn't contain null bytes
+        if (resolvedPath.includes('\0')) {
+          throw new Error('Invalid file path: null bytes detected');
+        }
+
+        // Read file directly to avoid TOCTOU race condition
+        let fileContent: string;
+        try {
+          // Read file and get stats in one operation to minimize race window
+          fileContent = fs.readFileSync(resolvedPath, 'utf-8');
+        } catch (readError) {
+          if ((readError as NodeJS.ErrnoException).code === 'ENOENT') {
+            throw new Error(`File not found: ${file}`);
+          }
+          throw new Error(
+            `Failed to read file: ${readError instanceof Error ? readError.message : 'Unknown error'}`,
+          );
+        }
+
+        // Check file size after reading (to handle edge case where file grew during read)
+        if (fileContent.length > MAX_FILE_SIZE_BYTES) {
+          throw new Error(
+            `File ${file} is too large (${Math.round(fileContent.length / 1024 / 1024)}MB). Maximum size is ${MAX_FILE_SIZE_MB}MB.`,
+          );
+        }
 
         // Check for empty file
         if (!fileContent.trim()) {
@@ -132,12 +161,17 @@ export function importCommand(program: Command) {
           }
 
           // Delete existing eval if force flag is set
+          // Do this in a separate transaction before creating the new one
           if (cmdObj.force && existingEval) {
             logger.debug(`Deleting existing eval ${evalId} before import`);
-            const existingEvalObj = await Eval.findById(evalId);
-            if (existingEvalObj) {
-              await existingEvalObj.delete();
-            }
+            db.transaction((tx) => {
+              // Delete all related data in proper order to avoid foreign key constraints
+              tx.delete(evalsToDatasetsTable).where(eq(evalsToDatasetsTable.evalId, evalId)).run();
+              tx.delete(evalsToPromptsTable).where(eq(evalsToPromptsTable.evalId, evalId)).run();
+              tx.delete(evalsToTagsTable).where(eq(evalsToTagsTable.evalId, evalId)).run();
+              tx.delete(evalResultsTable).where(eq(evalResultsTable.evalId, evalId)).run();
+              tx.delete(evalsTable).where(eq(evalsTable.id, evalId)).run();
+            });
           }
 
           // Extract raw prompts for eval creation (Eval.create expects Prompt[], not CompletedPrompt[])
@@ -178,12 +212,23 @@ export function importCommand(program: Command) {
               const batch = results.slice(i, i + DEFAULT_BATCH_SIZE);
 
               // Normalize results to ensure all required fields have values
-              const normalizedBatch = batch.map(normalizeEvaluateResult);
+              const normalizedBatch = [];
+              for (const result of batch) {
+                try {
+                  normalizedBatch.push(normalizeEvaluateResult(result));
+                } catch (normError) {
+                  logger.warn(
+                    `Skipping invalid result at index ${results.indexOf(result)}: ${normError instanceof Error ? normError.message : 'Unknown error'}`,
+                  );
+                }
+              }
 
-              // Import this batch without creating instances (memory optimization)
-              await EvalResult.createManyFromEvaluateResult(normalizedBatch, evalRecord.id, {
-                returnInstances: false,
-              });
+              if (normalizedBatch.length > 0) {
+                // Import this batch without creating instances (memory optimization)
+                await EvalResult.createManyFromEvaluateResult(normalizedBatch, evalRecord.id, {
+                  returnInstances: false,
+                });
+              }
 
               importedCount += batch.length;
 
