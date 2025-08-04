@@ -1,46 +1,56 @@
 import { z } from 'zod';
 import { PromptSchema as BasePromptSchema } from '../../validators/prompts';
-import { VarsSchema, AtomicTestCaseSchema } from '../index';
+import { VarsSchema } from '../index';
 
 // Extended prompt schema for import/export that includes metrics
 const PromptWithMetricsSchema = BasePromptSchema.extend({
   provider: z.string().optional(),
-  metrics: z.object({
-    score: z.number(),
-    testPassCount: z.number(),
-    testFailCount: z.number(),
-    testErrorCount: z.number(),
-    assertPassCount: z.number(),
-    assertFailCount: z.number(),
-    totalLatencyMs: z.number(),
-    tokenUsage: z.object({
-      prompt: z.number(),
-      completion: z.number(),
-      cached: z.number(),
-      total: z.number(),
-      numRequests: z.number(),
-      completionDetails: z.object({
-        reasoning: z.number(),
-        acceptedPrediction: z.number(),
-        rejectedPrediction: z.number(),
-      }).optional(),
-      assertions: z.object({
-        total: z.number(),
-        prompt: z.number(),
-        completion: z.number(),
-        cached: z.number(),
-        numRequests: z.number(),
-        completionDetails: z.object({
-          reasoning: z.number(),
-          acceptedPrediction: z.number(),
-          rejectedPrediction: z.number(),
-        }).optional(),
-      }).optional(),
-    }).optional(),
-    namedScores: z.record(z.number()).optional(),
-    namedScoresCount: z.record(z.number()).optional(),
-    cost: z.number().optional(),
-  }).optional(),
+  metrics: z
+    .object({
+      score: z.number(),
+      testPassCount: z.number(),
+      testFailCount: z.number(),
+      testErrorCount: z.number(),
+      assertPassCount: z.number(),
+      assertFailCount: z.number(),
+      totalLatencyMs: z.number(),
+      tokenUsage: z
+        .object({
+          prompt: z.number(),
+          completion: z.number(),
+          cached: z.number(),
+          total: z.number(),
+          numRequests: z.number(),
+          completionDetails: z
+            .object({
+              reasoning: z.number(),
+              acceptedPrediction: z.number(),
+              rejectedPrediction: z.number(),
+            })
+            .optional(),
+          assertions: z
+            .object({
+              total: z.number(),
+              prompt: z.number(),
+              completion: z.number(),
+              cached: z.number(),
+              numRequests: z.number(),
+              completionDetails: z
+                .object({
+                  reasoning: z.number(),
+                  acceptedPrediction: z.number(),
+                  rejectedPrediction: z.number(),
+                })
+                .optional(),
+            })
+            .optional(),
+        })
+        .optional(),
+      namedScores: z.record(z.number()).optional(),
+      namedScoresCount: z.record(z.number()).optional(),
+      cost: z.number().optional(),
+    })
+    .optional(),
 });
 
 const ResponseSchema = z.object({

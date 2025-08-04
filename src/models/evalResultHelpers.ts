@@ -27,7 +27,7 @@ export function normalizeEvaluateResult(result: Partial<EvaluateResult>): Evalua
  * Type guard to check if prompts have provider field
  */
 export function hasProvider<T extends { provider?: string }>(
-  prompt: T
+  prompt: T,
 ): prompt is T & { provider: string } {
   return typeof prompt.provider === 'string' && prompt.provider.length > 0;
 }

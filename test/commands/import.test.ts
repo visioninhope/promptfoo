@@ -85,9 +85,9 @@ describe('importCommand', () => {
       }
       return undefined as never;
     });
-    
+
     jest.clearAllMocks();
-    
+
     // Default mock for findById - return null by default
     jest.spyOn(Eval, 'findById').mockResolvedValue(null as any);
 
@@ -210,7 +210,9 @@ describe('importCommand', () => {
         results: {
           version: 3,
           timestamp: '2024-10-15T00:00:00.000Z',
-          prompts: [{ raw: 'test prompt {{var1}}', label: 'test-prompt', provider: 'openai:gpt-3.5-turbo' }],
+          prompts: [
+            { raw: 'test prompt {{var1}}', label: 'test-prompt', provider: 'openai:gpt-3.5-turbo' },
+          ],
           results: [
             {
               prompt: { raw: 'test prompt value1', label: 'test' },
@@ -303,10 +305,10 @@ describe('importCommand', () => {
       jest.mocked(fs.existsSync).mockReturnValue(false);
 
       importCommand(program);
-      
+
       try {
         await program.parseAsync(['node', 'test', 'import', 'nonexistent.json']);
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw because we mock process.exit to throw
       }
 
@@ -321,10 +323,10 @@ describe('importCommand', () => {
       jest.mocked(fs.readFileSync).mockReturnValue('invalid json {');
 
       importCommand(program);
-      
+
       try {
         await program.parseAsync(['node', 'test', 'import', 'invalid.json']);
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw because we mock process.exit to throw
       }
 
@@ -346,10 +348,10 @@ describe('importCommand', () => {
       jest.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(invalidData));
 
       importCommand(program);
-      
+
       try {
         await program.parseAsync(['node', 'test', 'import', 'no-version.json']);
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw because we mock process.exit to throw
       }
 
@@ -386,10 +388,10 @@ describe('importCommand', () => {
       });
 
       importCommand(program);
-      
+
       try {
         await program.parseAsync(['node', 'test', 'import', 'test.json']);
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw because we mock process.exit to throw
       }
 
@@ -413,10 +415,10 @@ describe('importCommand', () => {
       jest.spyOn(Eval, 'create').mockRejectedValue(new Error('Creation failed'));
 
       importCommand(program);
-      
+
       try {
         await program.parseAsync(['node', 'test', 'import', 'test-v3.json']);
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw because we mock process.exit to throw
       }
 

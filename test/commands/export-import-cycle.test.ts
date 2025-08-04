@@ -88,7 +88,7 @@ describe('Export/Import Cycle', () => {
     // Create a mock eval with v3 data
     const evalId = `eval-test-${uuidv4()}`;
     const exportPath = path.join(tmpDir, `${evalId}.json`);
-    
+
     const mockEval = {
       id: evalId,
       createdAt: '2024-10-20T00:00:00.000Z',
@@ -98,13 +98,15 @@ describe('Export/Import Cycle', () => {
         providers: ['openai:gpt-3.5-turbo'],
         tests: [
           { vars: { question: 'What is 2+2?' } },
-          { vars: { question: 'What is the capital of France?' } }
-        ]
+          { vars: { question: 'What is the capital of France?' } },
+        ],
       } as Partial<UnifiedConfig>,
       toEvaluateSummary: jest.fn().mockResolvedValue({
         version: 3,
         timestamp: '2024-10-20T00:00:00.000Z',
-        prompts: [{ raw: 'Answer: {{question}}', label: 'test-prompt', provider: 'openai:gpt-3.5-turbo' }],
+        prompts: [
+          { raw: 'Answer: {{question}}', label: 'test-prompt', provider: 'openai:gpt-3.5-turbo' },
+        ],
         results: [
           {
             provider: { id: 'openai:gpt-3.5-turbo', label: 'OpenAI GPT-3.5' },
@@ -125,9 +127,9 @@ describe('Export/Import Cycle', () => {
             score: 1.0,
             testIdx: 1,
             promptIdx: 0,
-          }
+          },
         ],
-        stats: { successes: 2, failures: 0, tokenUsage: { total: 50, prompt: 20, completion: 30 } }
+        stats: { successes: 2, failures: 0, tokenUsage: { total: 50, prompt: 20, completion: 30 } },
       }),
     };
 
@@ -137,17 +139,17 @@ describe('Export/Import Cycle', () => {
     // Test Export
     const exportProgram = new Command();
     exportCommand(exportProgram);
-    
+
     await exportProgram.parseAsync(['node', 'test', 'export', evalId, '--output', exportPath]);
 
     // Verify export
     expect(fs.existsSync(exportPath)).toBe(true);
     const exportedData = JSON.parse(fs.readFileSync(exportPath, 'utf-8'));
-    
+
     // Debug: log the exported data structure
     // console.log('Exported data keys:', Object.keys(exportedData));
     // console.log('Has config?', 'config' in exportedData);
-    
+
     expect(exportedData).toMatchObject({
       evalId,
       results: {
@@ -158,12 +160,12 @@ describe('Export/Import Cycle', () => {
           expect.objectContaining({
             success: true,
             score: 1.0,
-          })
+          }),
         ]),
         stats: expect.objectContaining({
           successes: 2,
-          failures: 0
-        })
+          failures: 0,
+        }),
       },
       config: mockEval.config,
       shareableUrl: null, // Add this field
@@ -171,18 +173,18 @@ describe('Export/Import Cycle', () => {
         promptfooVersion: expect.any(String),
         nodeVersion: expect.any(String),
         platform: expect.any(String),
-      })
+      }),
     });
 
     // Test Import
     const importProgram = new Command();
     importCommand(importProgram);
-    
+
     // Verify the file was created
     expect(fs.existsSync(exportPath)).toBe(true);
     const fileContent = fs.readFileSync(exportPath, 'utf-8');
     expect(fileContent).toBeTruthy();
-    
+
     // Mock the database and models for import
     const mockEvalWithPrompts = {
       id: evalId,
@@ -191,7 +193,7 @@ describe('Export/Import Cycle', () => {
     };
     jest.spyOn(Eval, 'create').mockResolvedValue(mockEvalWithPrompts as any);
     jest.spyOn(EvalResult, 'createManyFromEvaluateResult').mockResolvedValue([]);
-    
+
     // Import with new ID to avoid collision
     await importProgram.parseAsync(['node', 'test', 'import', exportPath, '--new-id']);
 
@@ -202,18 +204,18 @@ describe('Export/Import Cycle', () => {
       expect.objectContaining({
         author: expect.any(String),
         createdAt: expect.any(Date),
-      })
+      }),
     );
 
     expect(EvalResult.createManyFromEvaluateResult).toHaveBeenCalledWith(
       exportedData.results.results,
-      expect.any(String)
+      expect.any(String),
     );
   });
 
   it('should handle v3 format import', async () => {
     const v3File = path.join(tmpDir, 'test-v3.json');
-    
+
     const v3Data = {
       id: 'eval-v3-test',
       createdAt: '2024-10-20T00:00:00.000Z',
@@ -222,11 +224,11 @@ describe('Export/Import Cycle', () => {
         version: 3,
         timestamp: '2024-10-20T00:00:00.000Z',
         prompts: [
-          { 
-            raw: 'Answer: {{question}}', 
+          {
+            raw: 'Answer: {{question}}',
             label: 'test-prompt',
-            provider: 'openai:gpt-3.5-turbo'
-          }
+            provider: 'openai:gpt-3.5-turbo',
+          },
         ],
         results: [
           {
@@ -240,18 +242,18 @@ describe('Export/Import Cycle', () => {
             testIdx: 0,
             promptIdx: 0,
             testCase: { vars: { question: 'What is 2+2?' } },
-          }
+          },
         ],
-        stats: { successes: 1, failures: 0 }
+        stats: { successes: 1, failures: 0 },
       },
-      config: { prompts: ['test-prompt.txt'] }
+      config: { prompts: ['test-prompt.txt'] },
     };
-    
+
     fs.writeFileSync(v3File, JSON.stringify(v3Data, null, 2));
 
     const importProgram = new Command();
     importCommand(importProgram);
-    
+
     // Mock the database and models for import
     const mockEvalWithPrompts = {
       id: 'eval-v3-test',
@@ -260,9 +262,9 @@ describe('Export/Import Cycle', () => {
     };
     jest.spyOn(Eval, 'create').mockResolvedValue(mockEvalWithPrompts as any);
     jest.spyOn(EvalResult, 'createManyFromEvaluateResult').mockResolvedValue([]);
-    
+
     await importProgram.parseAsync(['node', 'test', 'import', v3File, '--new-id']);
-    
+
     expect(logger.info).toHaveBeenCalledWith(
       expect.stringMatching(/^Eval with ID .+ has been successfully imported\.$/),
     );
@@ -270,7 +272,7 @@ describe('Export/Import Cycle', () => {
 
   it('should handle v2 legacy format correctly', async () => {
     const v2File = path.join(tmpDir, 'test-v2.json');
-    
+
     const v2Data = {
       id: 'eval-v2-legacy',
       createdAt: '2024-01-01T00:00:00.000Z',
@@ -286,22 +288,22 @@ describe('Export/Import Cycle', () => {
             response: { output: 'result' },
             success: true,
             score: 1.0,
-          }
+          },
         ],
         table: {
           head: { prompts: [{ raw: 'test', label: 'test' }], vars: ['x'] },
-          body: [{ outputs: ['result'], vars: ['1'] }]
+          body: [{ outputs: ['result'], vars: ['1'] }],
         },
-        stats: { successes: 1, failures: 0 }
+        stats: { successes: 1, failures: 0 },
       },
-      config: { prompts: ['test.txt'] }
+      config: { prompts: ['test.txt'] },
     };
-    
+
     fs.writeFileSync(v2File, JSON.stringify(v2Data, null, 2));
 
     const importProgram = new Command();
     importCommand(importProgram);
-    
+
     // Mock database insert for v2
     const mockDb = {
       transaction: jest.fn(async (cb) => {
@@ -311,17 +313,17 @@ describe('Export/Import Cycle', () => {
           run: jest.fn(),
           delete: jest.fn().mockReturnThis(),
         });
-      })
+      }),
     };
-    
+
     jest.mock('../../src/database', () => ({
-      getDb: jest.fn(() => mockDb)
+      getDb: jest.fn(() => mockDb),
     }));
-    
+
     await importProgram.parseAsync(['node', 'test', 'import', v2File]);
-    
+
     expect(logger.info).toHaveBeenCalledWith(
-      `Eval with ID eval-v2-legacy has been successfully imported.`
+      `Eval with ID eval-v2-legacy has been successfully imported.`,
     );
   });
 });
