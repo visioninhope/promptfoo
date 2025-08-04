@@ -1,6 +1,4 @@
 import * as fs from 'fs';
-import * as readline from 'readline';
-import { z } from 'zod';
 import type { ImportFile } from '../types/schemas/import';
 
 /**
@@ -9,7 +7,6 @@ import type { ImportFile } from '../types/schemas/import';
  */
 export async function parseImportFileStream(filePath: string): Promise<ImportFile> {
   const stats = await fs.promises.stat(filePath);
-  const fileSizeKB = Math.round(stats.size / 1024);
   
   // For small files (< 10MB), use regular parsing
   if (stats.size < 10 * 1024 * 1024) {
@@ -22,9 +19,6 @@ export async function parseImportFileStream(filePath: string): Promise<ImportFil
   return new Promise((resolve, reject) => {
     const stream = fs.createReadStream(filePath, { encoding: 'utf-8' });
     let buffer = '';
-    let inResults = false;
-    let resultsArray: any[] = [];
-    let metadata: any = {};
     let braceCount = 0;
     let inString = false;
     let escapeNext = false;
@@ -52,8 +46,11 @@ export async function parseImportFileStream(filePath: string): Promise<ImportFil
         }
         
         if (!inString) {
-          if (char === '{') braceCount++;
-          else if (char === '}') braceCount--;
+          if (char === '{') {
+            braceCount++;
+          } else if (char === '}') {
+            braceCount--;
+          }
         }
         
         // Check if we have a complete object
@@ -68,7 +65,7 @@ export async function parseImportFileStream(filePath: string): Promise<ImportFil
               stream.destroy();
               return;
             }
-          } catch (e) {
+          } catch {
             // Not a complete object yet, continue
           }
         }
