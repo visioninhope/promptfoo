@@ -1,0 +1,19 @@
+description: "Test eval for import/export validation"
+
+prompts:
+  - "Answer: {{question}}"
+
+providers:
+  - id: echo
+
+tests:
+  - vars:
+      question: "What is 2+2?"
+    assert:
+      - type: contains
+        value: "2+2"
+  - vars:
+      question: "Capital of France?"
+    assert:
+      - type: contains
+        value: "France"

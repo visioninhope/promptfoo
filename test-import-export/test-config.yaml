@@ -1,0 +1,22 @@
+description: End-to-end test eval
+prompts:
+  - "Hello {{name}}, the answer is {{answer}}"
+providers:
+  - id: echo
+tests:
+  - vars:
+      name: Alice
+      answer: 42
+    assert:
+      - type: contains
+        value: Alice
+      - type: contains
+        value: "42"
+  - vars:
+      name: Bob
+      answer: 100
+    assert:
+      - type: contains
+        value: Bob
+      - type: contains
+        value: "100"
