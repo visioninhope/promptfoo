@@ -3,7 +3,7 @@ import { PromptSchema as BasePromptSchema } from '../../validators/prompts';
 import { ProviderOptionsSchema } from '../../validators/providers';
 import { VarsSchema } from '../index';
 import { BaseTokenUsageSchema } from '../shared';
-import type { GradingResult, ProviderResponse, UnifiedConfig } from '../index';
+import type { GradingResult, ProviderResponse } from '../index';
 
 // Extended prompt schema for import/export that includes metrics
 const PromptWithMetricsSchema = BasePromptSchema.extend({
