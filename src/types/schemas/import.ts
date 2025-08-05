@@ -150,12 +150,7 @@ const EvalResultV3Schema = z.object({
     options: z.record(z.any()).optional(),
     metadata: z.record(z.any()).optional(),
     description: z.string().optional(),
-    provider: z
-      .union([
-        z.string(),
-        ProviderOptionsSchema,
-      ])
-      .optional(),
+    provider: z.union([z.string(), ProviderOptionsSchema]).optional(),
     providerOutput: z.union([z.string(), z.object({})]).optional(),
   }),
   vars: VarsSchema,
