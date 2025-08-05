@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { PromptSchema as BasePromptSchema } from '../../validators/prompts';
+import { ProviderOptionsSchema } from '../../validators/providers';
 import { VarsSchema } from '../index';
+import { BaseTokenUsageSchema } from '../shared';
+import type { GradingResult, ProviderResponse, UnifiedConfig } from '../index';
 
 // Extended prompt schema for import/export that includes metrics
 const PromptWithMetricsSchema = BasePromptSchema.extend({
@@ -14,38 +17,9 @@ const PromptWithMetricsSchema = BasePromptSchema.extend({
       assertPassCount: z.number(),
       assertFailCount: z.number(),
       totalLatencyMs: z.number(),
-      tokenUsage: z
-        .object({
-          prompt: z.number(),
-          completion: z.number(),
-          cached: z.number(),
-          total: z.number(),
-          numRequests: z.number(),
-          completionDetails: z
-            .object({
-              reasoning: z.number(),
-              acceptedPrediction: z.number(),
-              rejectedPrediction: z.number(),
-            })
-            .optional(),
-          assertions: z
-            .object({
-              total: z.number(),
-              prompt: z.number(),
-              completion: z.number(),
-              cached: z.number(),
-              numRequests: z.number(),
-              completionDetails: z
-                .object({
-                  reasoning: z.number(),
-                  acceptedPrediction: z.number(),
-                  rejectedPrediction: z.number(),
-                })
-                .optional(),
-            })
-            .optional(),
-        })
-        .optional(),
+      tokenUsage: BaseTokenUsageSchema.extend({
+        assertions: BaseTokenUsageSchema.optional(),
+      }).optional(),
       namedScores: z.record(z.number()).optional(),
       namedScoresCount: z.record(z.number()).optional(),
       cost: z.number().optional(),
@@ -53,66 +27,71 @@ const PromptWithMetricsSchema = BasePromptSchema.extend({
     .optional(),
 });
 
+// Schema for ProviderResponse from src/types/providers.ts
 const ResponseSchema = z.object({
-  output: z.unknown().optional(),
-  raw: z.unknown().optional(), // Raw response text
+  cached: z.boolean().optional(),
+  cost: z.number().optional(),
   error: z.string().optional(),
-  tokenUsage: z
+  logProbs: z.array(z.number()).optional(),
+  metadata: z
     .object({
-      total: z.number().optional(),
-      prompt: z.number().optional(),
-      completion: z.number().optional(),
-      cached: z.number().optional(),
+      redteamFinalPrompt: z.string().optional(),
+      http: z
+        .object({
+          status: z.number(),
+          statusText: z.string(),
+          headers: z.record(z.string()),
+        })
+        .optional(),
+    })
+    .passthrough()
+    .optional(),
+  raw: z.unknown().optional(),
+  output: z.unknown().optional(),
+  tokenUsage: BaseTokenUsageSchema.optional(),
+  isRefusal: z.boolean().optional(),
+  sessionId: z.string().optional(),
+  guardrails: z
+    .object({
+      flaggedInput: z.boolean().optional(),
+      flaggedOutput: z.boolean().optional(),
+      flagged: z.boolean().optional(),
+      reason: z.string().optional(),
     })
     .optional(),
-  cost: z.number().optional(),
-  cached: z.boolean().optional(),
-  logProbs: z.array(z.number()).optional(),
-  isRefusal: z.boolean().optional(), // Whether the response was a refusal
-  metadata: z.record(z.unknown()).optional(), // Additional metadata
-});
+  finishReason: z.string().optional(),
+  audio: z
+    .object({
+      id: z.string().optional(),
+      expiresAt: z.number().optional(),
+      data: z.string().optional(),
+      transcript: z.string().optional(),
+      format: z.string().optional(),
+    })
+    .optional(),
+}) satisfies z.ZodType<ProviderResponse>;
 
-// Define base grading result without recursive field
+// Schema for GradingResult from src/types/index.ts
+// Note: We use z.any() for assertion to handle complex assertion types
 const BaseGradingResultSchema = z.object({
   pass: z.boolean(),
   score: z.number(),
   reason: z.string(),
   namedScores: z.record(z.number()).optional(),
-  tokensUsed: z
-    .object({
-      total: z.number().optional(),
-      prompt: z.number().optional(),
-      completion: z.number().optional(),
-      cached: z.number().optional(),
-      numRequests: z.number().optional(),
-    })
-    .optional(),
-  assertion: z.unknown().optional(),
+  tokensUsed: BaseTokenUsageSchema.optional(),
+  assertion: z.any().optional(), // Complex Assertion type, validated elsewhere
   comment: z.string().optional(),
 });
 
-// Add recursive componentResults separately
-type GradingResult = z.infer<typeof BaseGradingResultSchema> & {
-  componentResults?: GradingResult[];
-};
-
+// Add recursive componentResults separately to match the interface
 const GradingResultSchema: z.ZodType<GradingResult> = BaseGradingResultSchema.extend({
   componentResults: z.lazy(() => z.array(GradingResultSchema)).optional(),
 });
 
-const TokenUsageSchema = z
-  .object({
-    total: z.number().default(0),
-    prompt: z.number().default(0),
-    completion: z.number().default(0),
-    cached: z.number().default(0),
-  })
-  .optional();
-
 const StatsSchema = z.object({
   successes: z.number(),
   failures: z.number(),
-  tokenUsage: TokenUsageSchema,
+  tokenUsage: BaseTokenUsageSchema.optional(),
 });
 
 // V2 Eval Result Schema
@@ -127,7 +106,7 @@ const EvalResultV2Schema = z.object({
   gradingResult: GradingResultSchema.optional(),
   namedScores: z.record(z.number()).optional(),
   cost: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.any()).optional(),
 });
 
 // V2 Eval Table Schema
@@ -138,9 +117,9 @@ const EvalTableSchema = z.object({
   }),
   body: z.array(
     z.object({
-      outputs: z.array(z.unknown()),
+      outputs: z.array(z.any()), // Can be strings, objects, or ProviderResponse
       vars: z.array(z.string()),
-      test: z.unknown().optional(),
+      test: z.any().optional(), // References AtomicTestCase
     }),
   ),
 });
@@ -157,10 +136,10 @@ export const EvaluateSummaryV2Schema = z.object({
 // V3 Eval Result Schema (as exported)
 const EvalResultV3Schema = z.object({
   id: z.string().optional(), // Result ID
-  provider: z.object({
-    id: z.string(),
-    label: z.string().optional(),
-  }),
+  provider: ProviderOptionsSchema.pick({
+    id: true,
+    label: true,
+  }).required({ id: true }),
   prompt: BasePromptSchema,
   promptId: z.string(), // Reference to prompt
   promptIdx: z.number(),
@@ -168,17 +147,13 @@ const EvalResultV3Schema = z.object({
   testCase: z.object({
     vars: VarsSchema.optional(),
     assert: z.array(z.any()).optional(),
-    options: z.record(z.unknown()).optional(),
-    metadata: z.record(z.unknown()).optional(),
+    options: z.record(z.any()).optional(),
+    metadata: z.record(z.any()).optional(),
     description: z.string().optional(),
     provider: z
       .union([
         z.string(),
-        z.object({
-          id: z.string().optional(),
-          label: z.string().optional(),
-          config: z.unknown().optional(),
-        }),
+        ProviderOptionsSchema,
       ])
       .optional(),
     providerOutput: z.union([z.string(), z.object({})]).optional(),
@@ -192,7 +167,7 @@ const EvalResultV3Schema = z.object({
   gradingResult: GradingResultSchema.optional(),
   namedScores: z.record(z.number()).optional(),
   cost: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.any()).optional(),
   failureReason: z.number().optional(), // May not be present in older exports
 });
 
@@ -212,7 +187,7 @@ export const ImportFileV2Schema = z.object({
   author: z.string().optional(),
   description: z.string().optional(),
   results: EvaluateSummaryV2Schema,
-  config: z.record(z.unknown()),
+  config: z.record(z.any()), // UnifiedConfig is complex, validated elsewhere
   metadata: z
     .object({
       promptfooVersion: z.string().optional(),
@@ -233,7 +208,7 @@ export const ImportFileV3Schema = z.object({
   createdAt: z.string().optional(),
   author: z.string().optional(),
   results: EvaluateSummaryV3Schema,
-  config: z.record(z.unknown()),
+  config: z.record(z.any()), // UnifiedConfig is complex, validated elsewhere
   metadata: z
     .object({
       promptfooVersion: z.string().optional(),
@@ -249,8 +224,8 @@ export const ImportFileV3Schema = z.object({
   relationships: z
     .object({
       tags: z.array(z.string()).optional(),
-      datasets: z.array(z.unknown()).optional(),
-      prompts: z.array(z.unknown()).optional(),
+      datasets: z.array(z.any()).optional(),
+      prompts: z.array(z.any()).optional(),
     })
     .optional(),
 });
