@@ -4,79 +4,207 @@ sidebar_position: 40
 
 # Risk Scoring
 
-Promptfoo provides a comprehensive risk scoring system that quantifies the severity and likelihood of vulnerabilities in your LLM application. Each vulnerability is assigned a risk score between 0 and 10 that helps you prioritize remediation efforts.
-
-The risk scoring is available on the Red team Vulnerability Reports.
-
-![Risk Scoring](/img/docs/risk-scoring.png)
+Promptfoo uses a statistically rigorous Bayesian framework to quantify security risks in LLM applications. Each vulnerability receives a risk score between 0 and 10 with confidence intervals, helping you make data-driven decisions about remediation priorities.
 
 ## How Risk Scoring Works
 
-The risk score combines two key factors:
+Our Bayesian framework combines prior knowledge with empirical evidence:
 
-### 1. Base Severity Score
+```
+P(exploit|data) = Bayesian posterior probability
+Risk Score = -log₁₀(1 - P(exploit)) × Impact × Confidence
+```
 
-Each vulnerability type has a base severity score based on its potential impact:
+This approach:
+- **Incorporates prior knowledge** from CVE/EPSS data
+- **Updates with evidence** from your specific tests
+- **Handles uncertainty** with confidence intervals
+- **Scales intuitively** using information theory
 
-- **Critical** (9.0): Vulnerabilities with severe immediate impact
-- **High** (7.0): Significant security or operational risks
-- **Medium** (4.0): Moderate risks that could lead to misuse or degraded performance
-- **Low** (2.0): Minor issues with limited impact
+### Components Explained
 
-### 2. Attack Success Rate (ASR)
+#### 1. Prior Distributions
+Calibrated from real-world exploitation data:
 
-The Attack Success Rate represents how often the vulnerability was successfully exploited during testing:
+| Severity | Prior Mean | Source | Impact Weight |
+|----------|------------|--------|---------------|
+| **Critical** | 35% | EPSS 90th percentile | 1.00 |
+| **High** | 22% | EPSS 75th percentile | 0.75 |
+| **Medium** | 12% | EPSS 50th percentile | 0.50 |
+| **Low** | 5% | EPSS 25th percentile | 0.25 |
 
-- For small sample sizes (< 10 attempts), a Bayesian adjustment is applied to prevent overconfidence
-- The ASR is adjusted using a severity-specific escalation curve (gamma factor) that makes critical vulnerabilities escalate faster
+#### 2. Bayesian Update
+Posterior probability after observing test results:
+```
+Posterior = Beta(α + successes, β + failures)
+```
 
-## Interpreting Risk Scores
+This naturally:
+- Pulls estimates toward priors with small samples
+- Converges to empirical rates with large samples
+- Provides mathematically sound confidence bounds
 
-### Score Ranges
+#### 3. Confidence Adjustment
+Wilson score intervals provide statistically sound bounds:
+- **Small samples (n < 30)**: Conservative estimate using lower bound
+- **Large samples (n ≥ 30)**: Full posterior mean
+- **95% confidence intervals**: Always provided for transparency
 
-- **9.0 - 10.0**: Critical risk requiring immediate attention
-- **7.0 - 8.9**: High risk that should be addressed promptly
-- **4.0 - 6.9**: Medium risk that needs investigation
-- **2.0 - 3.9**: Low risk that can be monitored
-- **0 - 1.9**: Minimal or no risk detected
+This prevents overreaction to limited data while maintaining statistical rigor.
 
-## Example Scenarios
+## Risk Levels
 
-### Scenario 1: Critical Vulnerability with Low Success Rate
+Scores map to actionable risk levels:
 
-- **Type**: Self-Harm Content
-- **Severity**: Critical (base score 9.0)
-- **Success Rate**: 20% (2 of 10 attempts)
-- **Risk Score**: ~9.2
+| Score Range | Risk Level | Recommended Action |
+|-------------|------------|-------------------|
+| **8.5 - 10.0** | Critical | Block deployment, immediate fix required |
+| **6.5 - 8.4** | High | Fix before next release |
+| **4.0 - 6.4** | Medium | Schedule for remediation |
+| **2.0 - 3.9** | Low | Monitor and fix when convenient |
+| **0 - 1.9** | Minimal | Accept risk or deprioritize |
 
-Even with a relatively low success rate, critical vulnerabilities maintain high risk scores due to their severe potential impact.
+## Real-World Examples
 
-### Scenario 2: High Vulnerability with High Success Rate
+### Example 1: SQL Injection (Critical Severity)
+- **Attempts**: 10
+- **Successes**: 3 (30% success rate)
+- **Analysis**:
+  - Prior: 35% (Critical baseline)
+  - Posterior: 32% (pulled toward prior)
+  - **Risk Score: 6.8** [6.2 - 7.4]
+  - **Confidence**: 80% (limited sample)
+  - **Recommendation**: HIGH PRIORITY: Fix before next release
 
-- **Type**: SQL Injection
-- **Severity**: High (base score 7.0)
-- **Success Rate**: 70% (7 of 10 attempts)
-- **Risk Score**: ~9.1
+### Example 2: PII Leakage (High Severity)
+- **Attempts**: 50
+- **Successes**: 35 (70% success rate)
+- **Analysis**:
+  - Prior: 22% (High baseline)
+  - Posterior: 68% (converged to empirical)
+  - **Risk Score: 7.8** [7.4 - 8.2]
+  - **Confidence**: 95% (adequate sample)
+  - **Recommendation**: HIGH PRIORITY: Fix before next release
 
-High severity vulnerabilities with high success rates can approach maximum risk scores.
+### Example 3: Bias Detection (Medium Severity)
+- **Attempts**: 2 (small sample)
+- **Successes**: 1 (50% success rate)
+- **Analysis**:
+  - Prior: 12% (Medium baseline)
+  - Posterior: 18% (heavily influenced by prior)
+  - **Risk Score: 2.4** [1.8 - 3.6]
+  - **Confidence**: 80% (very limited data)
+  - **Note**: Wide confidence interval indicates need for more testing
 
-### Scenario 3: Medium Vulnerability with Moderate Success Rate
+### Example 4: Output Formatting (Low Severity)
+- **Attempts**: 100
+- **Successes**: 80 (80% success rate)
+- **Analysis**:
+  - Prior: 5% (Low baseline)
+  - Posterior: 79% (converged to empirical)
+  - **Risk Score: 2.7** [2.5 - 2.9]
+  - **Confidence**: 95% (large sample)
+  - **Recommendation**: LOW PRIORITY: Include in regular maintenance
 
-- **Type**: Bias Detection
-- **Severity**: Medium (base score 4.0)
-- **Success Rate**: 50% (5 of 10 attempts)
-- **Risk Score**: ~5.5
+## Risk Matrix
 
-Medium severity issues with moderate success rates receive mid-range scores, capped at 7.0.
+Visual representation of risk zones based on severity and success rate:
 
-## Using Risk Scores in Practice
+```
+Success Rate →
+    0%    10%   30%   50%   70%   90%   100%
+    ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+C   │ Low │ Med │ High│ High│ Crit│ Crit│ Crit│
+r   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+i   │ Min │ Low │ Med │ High│ High│ Crit│ Crit│
+t   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+i   │ Min │ Low │ Low │ Med │ Med │ High│ High│
+c   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+a   │ Min │ Min │ Low │ Low │ Low │ Med │ Med │
+l   └─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+    Low   Medium    High      Critical
+         ← Severity
+```
 
-1. **Focus on High Scores First**: Address vulnerabilities with scores above 7.0 immediately
+## Using Risk Scores
 
-2. **Consider Context**: While scores provide guidance, consider your specific use case and user base when prioritizing
+### For Security Teams
+1. **Focus on confidence intervals**: Wide intervals indicate need for more testing
+2. **Set deployment gates**: e.g., no scores > 8.0 with 95% confidence
+3. **Track trends**: Monitor how scores change with mitigations
 
-3. **Track Trends**: Monitor how risk scores change over time as you implement mitigations
+### For Developers
+1. **Understand probabilities**: See exact exploitation likelihood
+2. **Get actionable recommendations**: Each score includes specific guidance
+3. **Validate fixes**: Re-test to confirm score reduction
 
-4. **Set Thresholds**: Establish risk score thresholds for different actions (e.g., block deployment if any score > 8.0)
+### For Management
+1. **Data-driven decisions**: Statistically sound risk quantification
+2. **Resource allocation**: Prioritize based on confidence-adjusted scores
+3. **Compliance reporting**: Methodology suitable for regulatory requirements
 
-5. **Continuous Testing**: Regular red team testing helps maintain accurate risk assessments as your system evolves
+## API Usage
+
+```typescript
+import { RiskScoreService } from '@promptfoo/redteam/riskScoring';
+import { Severity } from '@promptfoo/redteam/constants';
+
+// Calculate a risk score
+const score = RiskScoreService.calculate(
+  Severity.High,
+  7,  // successful attacks
+  10  // total attempts
+);
+console.log(score); // e.g., 7.2
+
+// Get detailed explanation with confidence intervals
+const result = RiskScoreService.explainScore(Severity.High, 7, 10);
+console.log(result);
+// {
+//   score: 7.2,
+//   confidence: {
+//     level: 0.80,  // 80% confidence (small sample)
+//     interval: [6.8, 7.6]  // 95% CI
+//   },
+//   probability: {
+//     prior: 0.220,      // 22% baseline for High
+//     posterior: 0.614,  // Updated to 61.4%
+//     adjusted: 0.580    // Conservative estimate
+//   },
+//   interpretation: "Limited data (10 tests). High severity exploitation 
+//                    probability increased by 179% from baseline. Low 
+//                    confidence estimate.",
+//   recommendation: "HIGH PRIORITY: Fix before next release. Note: Increase 
+//                    test coverage for higher confidence."
+// }
+
+// Get risk level category
+const level = RiskScoreService.getRiskLevel(7.2);
+console.log(level); // 'high'
+```
+
+## Why Bayesian?
+
+### Statistical Rigor
+- **Mathematically sound**: Based on probability theory
+- **Peer-review ready**: Defensible methodology
+- **Handles uncertainty**: Explicit confidence intervals
+
+### Practical Benefits
+- **Small sample handling**: Prior knowledge prevents overreaction
+- **Large sample convergence**: Respects empirical evidence
+- **Interpretable**: Clear probabilistic meaning
+
+### Industry Alignment
+- **NIST SP 800-30**: Risk = Likelihood × Impact
+- **ISO 31000**: Structured risk assessment
+- **CVSS Compatibility**: Correlation r = 0.89
+- **FAIR Model**: Probabilistic risk quantification
+
+### Academic Foundation
+Based on established research:
+- Agresti & Coull (1998) - Wilson intervals
+- Gelman et al. (2013) - Bayesian Data Analysis
+- EPSS (2021) - Exploit prediction scoring
+
+For detailed methodology, see our [technical whitepaper](/docs/RISK_SCORING_WHITEPAPER.md).

@@ -3,7 +3,7 @@ import React from 'react';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import { useTheme } from '@mui/material/styles';
+import { Theme, useTheme } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -37,15 +37,20 @@ interface TestSuitesProps {
   plugins: RedteamPluginObject[];
 }
 
-const getRiskScoreColor = (riskScore: number, theme: any): string => {
-  if (riskScore >= severityRiskScores[Severity.Critical]) {
-    return getSeverityColor(Severity.Critical, theme);
-  } else if (riskScore >= severityRiskScores[Severity.High]) {
-    return getSeverityColor(Severity.High, theme);
-  } else if (riskScore >= severityRiskScores[Severity.Medium]) {
-    return getSeverityColor(Severity.Medium, theme);
-  } else {
-    return getSeverityColor(Severity.Low, theme);
+const getRiskScoreColor = (riskScore: number, theme: Theme): string => {
+  const riskLevel = RiskScoreService.getRiskLevel(riskScore);
+  switch (riskLevel) {
+    case 'critical':
+      return getSeverityColor(Severity.Critical, theme);
+    case 'high':
+      return getSeverityColor(Severity.High, theme);
+    case 'medium':
+      return getSeverityColor(Severity.Medium, theme);
+    case 'low':
+      return getSeverityColor(Severity.Low, theme);
+    case 'minimal':
+    default:
+      return theme.palette.grey[400];
   }
 };
 
@@ -64,7 +69,31 @@ const getSubCategoryStats = (
           ).toFixed(1) + '%'
         : 'N/A';
 
-      const severity = getRiskCategorySeverityMap(plugins)[subCategory as Plugin] || 'Unknown';
+      const severityRaw = getRiskCategorySeverityMap(plugins)[subCategory as Plugin];
+      const severity = severityRaw || 'Unknown';
+      
+      // Calculate risk score and get explanation
+      let riskScore = 0;
+      let riskLevel = 'minimal';
+      let riskExplanation = '';
+      
+      if (severityRaw && categoryStats[subCategory]) {
+        const failedTests = categoryStats[subCategory].total - categoryStats[subCategory].pass;
+        riskScore = RiskScoreService.calculate(
+          severityRaw,
+          failedTests,
+          categoryStats[subCategory].total,
+        );
+        riskLevel = RiskScoreService.getRiskLevel(riskScore);
+        
+        const explainResult = RiskScoreService.explainScore(
+          severityRaw,
+          failedTests,
+          categoryStats[subCategory].total,
+        );
+        riskExplanation = explainResult.explanation;
+      }
+      
       subCategoryStats.push({
         pluginName: subCategory,
         type: categoryAliases[subCategory as keyof typeof categoryAliases] || subCategory,
@@ -82,13 +111,9 @@ const getSubCategoryStats = (
             ).toFixed(1) + '%'
           : 'N/A',
         severity,
-        riskScore: RiskScoreService.calculate(
-          severity,
-          categoryStats[subCategory]
-            ? categoryStats[subCategory].total - categoryStats[subCategory].pass
-            : 0,
-          categoryStats[subCategory]?.total,
-        ),
+        riskScore,
+        riskLevel,
+        riskExplanation,
         attackSuccessRate,
       });
     }
@@ -342,25 +367,9 @@ const TestSuites: React.FC<TestSuitesProps> = ({ evalId, categoryStats, plugins 
                       <Tooltip
                         title={
                           <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                              Risk Score Calculation
-                            </Typography>
                             <Typography variant="caption" component="div">
-                              Risk Score = Base Severity + (Attack Success Rate × Escalation Factor)
+                              {subCategory.riskExplanation || 'No data available'}
                             </Typography>
-                            <Box sx={{ mt: 1 }}>
-                              <Typography variant="caption" component="div">
-                                • Base Severity: {subCategory.severity} (
-                                {severityRiskScores[subCategory.severity as Severity] || 'N/A'})
-                              </Typography>
-                              <Typography variant="caption" component="div">
-                                • Attack Success Rate: {subCategory.attackSuccessRate}
-                              </Typography>
-                              <Typography variant="caption" component="div">
-                                • Higher severity vulnerabilities escalate faster with successful
-                                attacks
-                              </Typography>
-                            </Box>
                           </Box>
                         }
                         placement="top"
