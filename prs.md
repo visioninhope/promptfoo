@@ -5,7 +5,7 @@
 **Total Open PRs:** 31 (30 authored + 1 assigned from others)
 
 - ✅ **Ready to merge (CI passing, no conflicts):** 15 PRs
-- ⚠️ **Has merge conflicts:** 14 PRs  
+- ⚠️ **Has merge conflicts:** 14 PRs
 - ❌ **CI failures:** 4 PRs
 - 📋 **Assigned from others:** 1 PR
 
@@ -48,15 +48,15 @@ These PRs have all CI checks passing and can be merged after rebasing:
    - CI: ✅ 36/36 checks passing
    - URL: https://github.com/promptfoo/promptfoo/pull/4950
 
-8.  **#4909**: feat(webui): add cloud status indicator to navbar
-    - Status: BEHIND (needs rebase)
-    - CI: ✅ 35/35 checks passing
-    - URL: https://github.com/promptfoo/promptfoo/pull/4909
+8. **#4909**: feat(webui): add cloud status indicator to navbar
+   - Status: BEHIND (needs rebase)
+   - CI: ✅ 35/35 checks passing
+   - URL: https://github.com/promptfoo/promptfoo/pull/4909
 
-9.  **#4872**: feat(cli): add self-upgrade command
-    - Status: BEHIND (needs rebase)
-    - CI: ✅ 36/36 checks passing
-    - URL: https://github.com/promptfoo/promptfoo/pull/4872
+9. **#4872**: feat(cli): add self-upgrade command
+   - Status: BEHIND (needs rebase)
+   - CI: ✅ 36/36 checks passing
+   - URL: https://github.com/promptfoo/promptfoo/pull/4872
 
 10. **#4759**: feat(webui): add additional provider configuration support to UI
     - Status: BEHIND (needs rebase)
@@ -174,6 +174,7 @@ These PRs have failing CI checks and need fixes:
 ## Quick Actions
 
 ### Batch rebase ready-to-merge PRs:
+
 ```bash
 # Rebase all ready-to-merge PRs
 for pr in 5243 5233 5216 5192 5168 5166 5111 4997 4950 4909 4872 4759 4675 4230; do
@@ -185,6 +186,7 @@ done
 ```
 
 ### Check specific PR details:
+
 ```bash
 gh pr view <PR_NUMBER> --web
 ```
