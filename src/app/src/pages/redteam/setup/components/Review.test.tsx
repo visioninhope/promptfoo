@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Review from './Review';
 
@@ -79,16 +79,28 @@ describe('Review Component', () => {
 
   describe('Component Integration', () => {
     it('renders all main sections including DefaultTestVariables component', () => {
-      render(<Review />);
+      render(
+        <Review
+          navigateToPlugins={vi.fn()}
+          navigateToStrategies={vi.fn()}
+          navigateToPurpose={vi.fn()}
+        />,
+      );
 
-      expect(screen.getByText('Review Your Configuration')).toBeInTheDocument();
+      expect(screen.getByText('Review & Run')).toBeInTheDocument();
       expect(screen.getByText('Configuration Summary')).toBeInTheDocument();
       expect(screen.getByTestId('default-test-variables')).toBeInTheDocument();
       expect(screen.getByText('Running Your Configuration')).toBeInTheDocument();
     });
 
     it('renders configuration description field', () => {
-      render(<Review />);
+      render(
+        <Review
+          navigateToPlugins={vi.fn()}
+          navigateToStrategies={vi.fn()}
+          navigateToPurpose={vi.fn()}
+        />,
+      );
 
       const descriptionField = screen.getByLabelText('Configuration Description');
       expect(descriptionField).toBeInTheDocument();
@@ -96,7 +108,13 @@ describe('Review Component', () => {
     });
 
     it('renders DefaultTestVariables component inside AccordionDetails', () => {
-      render(<Review />);
+      render(
+        <Review
+          navigateToPlugins={vi.fn()}
+          navigateToStrategies={vi.fn()}
+          navigateToPurpose={vi.fn()}
+        />,
+      );
 
       const defaultTestVariables = screen.getByTestId('default-test-variables');
       const accordionDetails = defaultTestVariables.closest(
@@ -109,7 +127,13 @@ describe('Review Component', () => {
 
   describe('Advanced Configuration Accordion', () => {
     it('should render the accordion collapsed by default when there are no test variables', () => {
-      render(<Review />);
+      render(
+        <Review
+          navigateToPlugins={vi.fn()}
+          navigateToStrategies={vi.fn()}
+          navigateToPurpose={vi.fn()}
+        />,
+      );
 
       const accordionSummary = screen
         .getByText('Advanced Configuration')
@@ -130,7 +154,13 @@ describe('Review Component', () => {
         updateConfig: mockUpdateConfig,
       });
 
-      render(<Review />);
+      render(
+        <Review
+          navigateToPlugins={vi.fn()}
+          navigateToStrategies={vi.fn()}
+          navigateToPurpose={vi.fn()}
+        />,
+      );
 
       const accordionSummary = screen.getByRole('button', {
         name: 'Advanced Configuration Optional',
@@ -139,7 +169,13 @@ describe('Review Component', () => {
     });
 
     it('displays the advanced configuration description text when the accordion is expanded', async () => {
-      render(<Review />);
+      render(
+        <Review
+          navigateToPlugins={vi.fn()}
+          navigateToStrategies={vi.fn()}
+          navigateToPurpose={vi.fn()}
+        />,
+      );
 
       const accordionSummary = screen.getByText('Advanced Configuration').closest('button');
 
@@ -156,7 +192,13 @@ describe('Review Component', () => {
   });
 
   it('renders DefaultTestVariables without Paper wrapper and title when Advanced Configuration is expanded', async () => {
-    render(<Review />);
+    render(
+      <Review
+        navigateToPlugins={vi.fn()}
+        navigateToStrategies={vi.fn()}
+        navigateToPurpose={vi.fn()}
+      />,
+    );
 
     const accordionSummary = screen.getByText('Advanced Configuration');
     fireEvent.click(accordionSummary);
