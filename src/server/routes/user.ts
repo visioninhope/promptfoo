@@ -105,24 +105,20 @@ function isEnterpriseUrl(url: string | null): boolean {
   if (!url) {
     return false;
   }
-  
+
   try {
     const parsedUrl = new URL(url);
-    
+
     // Only allow HTTP/HTTPS protocols
     if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
       return false;
     }
-    
+
     const hostname = parsedUrl.hostname.toLowerCase();
-    
+
     // Standard promptfoo domains are not enterprise
-    const standardDomains = [
-      'promptfoo.app',
-      'www.promptfoo.app',
-      'app.promptfoo.app',
-    ];
-    
+    const standardDomains = ['promptfoo.app', 'www.promptfoo.app', 'app.promptfoo.app'];
+
     return !standardDomains.includes(hostname);
   } catch {
     // Invalid URL format
