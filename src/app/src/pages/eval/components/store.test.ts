@@ -60,6 +60,8 @@ describe('useTableStore', () => {
             strategy: [],
           },
         },
+        shouldHighlightSearchText: false,
+        isStreaming: false,
       });
     });
     vi.clearAllMocks();
@@ -298,6 +300,442 @@ describe('useTableStore', () => {
 
       const state = useTableStore.getState();
       expect(state.filters.options.strategy).toEqual(['basic']);
+    });
+
+    it('should not set isFetching to true when fetchEvalData is called with skipLoadingState=true, and should set isFetching to true when called with skipLoadingState=false (or omitted)', async () => {
+      const mockEvalId = 'test-eval-id';
+      (callApi as Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          table: { head: { prompts: [] }, body: [] },
+          totalCount: 0,
+          filteredCount: 0,
+        }),
+        headers: new Headers(),
+        redirected: false,
+        status: 200,
+        statusText: 'OK',
+        type: 'basic',
+        url: 'http://example.com',
+        body: null,
+        bodyUsed: false,
+        clone: () =>
+          ({
+            json: async () => ({
+              table: { head: { prompts: [] }, body: [] },
+              totalCount: 0,
+              filteredCount: 0,
+            }),
+          }) as any,
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+        blob: () => Promise.resolve(new Blob()),
+        formData: () => Promise.resolve(new FormData()),
+        text: () => Promise.resolve(''),
+        bytes: () => Promise.resolve(new Uint8Array()),
+      } as Response);
+
+      const initialState = useTableStore.getState();
+      expect(initialState.isFetching).toBe(false);
+
+      await act(async () => {
+        await useTableStore.getState().fetchEvalData(mockEvalId, { skipLoadingState: true });
+      });
+
+      let state = useTableStore.getState();
+      expect(state.isFetching).toBe(false);
+
+      const mockCallApi = vi.mocked(callApi);
+      mockCallApi.mockClear();
+      mockCallApi.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          table: { head: { prompts: [] }, body: [] },
+          totalCount: 0,
+          filteredCount: 0,
+        }),
+        headers: new Headers(),
+        redirected: false,
+        status: 200,
+        statusText: 'OK',
+        type: 'basic',
+        url: 'http://example.com',
+        body: null,
+        bodyUsed: false,
+        clone: () =>
+          ({
+            json: async () => ({
+              table: { head: { prompts: [] }, body: [] },
+              totalCount: 0,
+              filteredCount: 0,
+            }),
+          }) as any,
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+        blob: () => Promise.resolve(new Blob()),
+        formData: () => Promise.resolve(new FormData()),
+        text: () => Promise.resolve(''),
+        bytes: () => Promise.resolve(new Uint8Array()),
+      } as Response);
+
+      let isFetchingDuringFetch: boolean = false;
+      mockCallApi.mockImplementation(async () => {
+        isFetchingDuringFetch = useTableStore.getState().isFetching;
+        return {
+          ok: true,
+          json: async () => ({
+            table: { head: { prompts: [] }, body: [] },
+            totalCount: 0,
+            filteredCount: 0,
+          }),
+          headers: new Headers(),
+          redirected: false,
+          status: 200,
+          statusText: 'OK',
+          type: 'basic',
+          url: 'http://example.com',
+          body: null,
+          bodyUsed: false,
+          clone: () =>
+            ({
+              json: async () => ({
+                table: { head: { prompts: [] }, body: [] },
+                totalCount: 0,
+                filteredCount: 0,
+              }),
+            }) as any,
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          blob: () => Promise.resolve(new Blob()),
+          formData: () => Promise.resolve(new FormData()),
+          text: () => Promise.resolve(''),
+          bytes: () => Promise.resolve(new Uint8Array()),
+        } as Response;
+      });
+
+      await act(async () => {
+        await useTableStore.getState().fetchEvalData(mockEvalId);
+      });
+
+      state = useTableStore.getState();
+      expect(isFetchingDuringFetch).toBe(true);
+      expect(state.isFetching).toBe(false);
+    });
+
+    it('should complete successfully without showing loading indicators when skipLoadingState=true and isStreaming=false', async () => {
+      const mockEvalId = 'test-eval-id';
+      (callApi as Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          table: { head: { prompts: [] }, body: [] },
+          totalCount: 0,
+          filteredCount: 0,
+        }),
+      });
+
+      const initialState = useTableStore.getState();
+      expect(initialState.isFetching).toBe(false);
+
+      let result;
+      await act(async () => {
+        result = await useTableStore
+          .getState()
+          .fetchEvalData(mockEvalId, { skipLoadingState: true });
+      });
+
+      const state = useTableStore.getState();
+      expect(state.isFetching).toBe(false);
+      expect(result).not.toBe(null);
+    });
+
+    it('should keep isFetching unchanged when fetchEvalData is called with skipLoadingState=true and the API call fails', async () => {
+      const mockEvalId = 'test-eval-id';
+      (callApi as Mock).mockResolvedValue({
+        ok: false,
+      });
+
+      act(() => {
+        useTableStore.setState({ isFetching: true });
+      });
+
+      const initialState = useTableStore.getState();
+      expect(initialState.isFetching).toBe(true);
+
+      await act(async () => {
+        await useTableStore.getState().fetchEvalData(mockEvalId, { skipLoadingState: true });
+      });
+
+      const state = useTableStore.getState();
+      expect(state.isFetching).toBe(true);
+    });
+
+    describe('shouldHighlightSearchText', () => {
+      it('should keep `shouldHighlightSearchText` as `false` after data is loaded if `searchText` is empty', async () => {
+        const mockEvalId = 'test-eval-id';
+        (callApi as Mock).mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            table: { head: { prompts: [] }, body: [] },
+            totalCount: 0,
+            filteredCount: 0,
+          }),
+        });
+
+        await act(async () => {
+          await useTableStore.getState().fetchEvalData(mockEvalId, { searchText: '' });
+        });
+
+        const state = useTableStore.getState();
+        expect(state.shouldHighlightSearchText).toBe(false);
+      });
+
+      it('should set `shouldHighlightSearchText` to `false` when `fetchEvalData` is called, and then to `true` after data is loaded if `searchText` is non-empty', async () => {
+        const mockEvalId = 'test-eval-id';
+        const mockSearchText = 'test search text';
+        (callApi as Mock).mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            table: { head: { prompts: [] }, body: [] },
+            totalCount: 0,
+            filteredCount: 0,
+            config: {},
+            version: 4,
+            author: 'test',
+          }),
+        } as any);
+
+        const initialState = useTableStore.getState();
+        expect(initialState.shouldHighlightSearchText).toBe(false);
+
+        let stateAfterFetch = initialState;
+        await act(async () => {
+          await useTableStore.getState().fetchEvalData(mockEvalId, { searchText: mockSearchText });
+          stateAfterFetch = useTableStore.getState();
+        });
+
+        expect(stateAfterFetch.shouldHighlightSearchText).toBe(true);
+      });
+
+      it('should update shouldHighlightSearchText based on the most recent completed request when multiple fetchEvalData calls are made in succession', async () => {
+        const mockEvalId = 'test-eval-id';
+        const mockCallApi = vi.mocked(callApi);
+
+        mockCallApi
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              table: { head: { prompts: [] }, body: [] },
+              totalCount: 0,
+              filteredCount: 0,
+              config: {},
+              version: 4,
+            }),
+          } as any)
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              table: { head: { prompts: [] }, body: [] },
+              totalCount: 0,
+              filteredCount: 0,
+              config: {},
+              version: 4,
+            }),
+          } as any)
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              table: { head: { prompts: [] }, body: [] },
+              totalCount: 0,
+              filteredCount: 0,
+              config: {},
+              version: 4,
+            }),
+          } as any);
+
+        await act(async () => {
+          await useTableStore
+            .getState()
+            .fetchEvalData(mockEvalId, { searchText: 'initial search' });
+          await useTableStore
+            .getState()
+            .fetchEvalData(mockEvalId, { searchText: 'another search' });
+          await useTableStore.getState().fetchEvalData(mockEvalId, { searchText: '' });
+        });
+
+        expect(useTableStore.getState().shouldHighlightSearchText).toBe(false);
+      });
+
+      it('should update shouldHighlightSearchText from true to false when fetchEvalData is called with non-empty search text and then with empty search text', async () => {
+        const mockEvalId = 'test-eval-id';
+        (callApi as Mock).mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            table: { head: { prompts: [] }, body: [] },
+            totalCount: 0,
+            filteredCount: 0,
+          }),
+        });
+
+        let state = useTableStore.getState();
+        expect(state.shouldHighlightSearchText).toBe(false);
+
+        await act(async () => {
+          await useTableStore.getState().fetchEvalData(mockEvalId, { searchText: 'test' });
+        });
+
+        state = useTableStore.getState();
+        expect(state.shouldHighlightSearchText).toBe(true);
+
+        await act(async () => {
+          await useTableStore.getState().fetchEvalData(mockEvalId, { searchText: '' });
+        });
+
+        state = useTableStore.getState();
+        expect(state.shouldHighlightSearchText).toBe(false);
+      });
+
+      it('should not show search highlights when isFetching is true, even if shouldHighlightSearchText is true', async () => {
+        const mockEvalId = 'test-eval-id';
+        let resolvePromise: (value: any) => void = () => {};
+        const _mockPromise = new Promise((resolve) => {
+          resolvePromise = resolve;
+        });
+
+        (callApi as Mock).mockReturnValue({
+          ok: true,
+          json: async () => ({
+            table: { head: { prompts: [] }, body: [] },
+            totalCount: 0,
+            filteredCount: 0,
+          }),
+        });
+
+        act(() => {
+          useTableStore.setState({ shouldHighlightSearchText: true });
+        });
+
+        const initialState = useTableStore.getState();
+        expect(initialState.isFetching).toBe(false);
+        expect(initialState.shouldHighlightSearchText).toBe(true);
+
+        let stateDuringFetch: any;
+        act(() => {
+          useTableStore.getState().fetchEvalData(mockEvalId, { searchText: 'test' });
+          stateDuringFetch = useTableStore.getState();
+        });
+
+        expect(stateDuringFetch.isFetching).toBe(true);
+        expect(stateDuringFetch.shouldHighlightSearchText).toBe(false);
+
+        await act(async () => {
+          resolvePromise({
+            table: { head: { prompts: [] }, body: [] },
+            totalCount: 0,
+            filteredCount: 0,
+          });
+        });
+
+        const state = useTableStore.getState();
+        expect(state.isFetching).toBe(false);
+        expect(state.shouldHighlightSearchText).toBe(true);
+      });
+    });
+  });
+
+  it('should set isStreaming to true when setIsStreaming(true) is called, and to false when setIsStreaming(false) is called', () => {
+    const initialState = useTableStore.getState();
+    expect(initialState.isStreaming).toBe(false);
+
+    act(() => {
+      useTableStore.getState().setIsStreaming(true);
+    });
+
+    expect(useTableStore.getState().isStreaming).toBe(true);
+
+    act(() => {
+      useTableStore.getState().setIsStreaming(false);
+    });
+
+    expect(useTableStore.getState().isStreaming).toBe(false);
+  });
+
+  describe('isStreaming and fetchEvalData interaction', () => {
+    it('should set isFetching to false when isStreaming is true and fetchEvalData is called without skipLoadingState', async () => {
+      const mockEvalId = 'test-eval-id';
+      (callApi as Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          table: { head: { prompts: [] }, body: [] },
+          totalCount: 0,
+          filteredCount: 0,
+        }),
+      });
+
+      act(() => {
+        useTableStore.getState().setIsStreaming(true);
+      });
+
+      await act(async () => {
+        await useTableStore.getState().fetchEvalData(mockEvalId);
+      });
+
+      const state = useTableStore.getState();
+      expect(state.isFetching).toBe(false);
+    });
+
+    // [Tusk] FAILING TEST
+    it('should reset isStreaming to false when an error occurs during a streaming update', async () => {
+      const mockEvalId = 'test-eval-id';
+      (callApi as Mock).mockRejectedValue(new Error('API error'));
+
+      act(() => {
+        useTableStore.getState().setIsStreaming(true);
+      });
+
+      expect(useTableStore.getState().isStreaming).toBe(true);
+
+      await act(async () => {
+        try {
+          await useTableStore.getState().fetchEvalData(mockEvalId);
+        } catch (_e) {}
+      });
+
+      expect(useTableStore.getState().isStreaming).toBe(false);
+    });
+
+    // [Tusk] FAILING TEST
+    it('should allow isStreaming and isFetching to be true simultaneously when fetchEvalData is called without skipLoadingState and isStreaming is already true', async () => {
+      const mockEvalId = 'test-eval-id';
+      (callApi as Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          table: { head: { prompts: [] }, body: [] },
+          totalCount: 0,
+          filteredCount: 0,
+        }),
+      });
+
+      act(() => {
+        useTableStore.getState().setIsStreaming(true);
+      });
+
+      let isFetchingDuringFetch = false;
+      let isStreamingDuringFetch = false;
+
+      const originalFetchEvalData = useTableStore.getState().fetchEvalData;
+      const wrappedFetchEvalData = async (id: string, options?: any) => {
+        const result = originalFetchEvalData(id, options);
+        // Check state immediately after fetchEvalData starts (which sets isFetching: true)
+        isFetchingDuringFetch = useTableStore.getState().isFetching;
+        isStreamingDuringFetch = useTableStore.getState().isStreaming;
+        return result;
+      };
+
+      useTableStore.setState({ fetchEvalData: wrappedFetchEvalData });
+
+      await act(async () => {
+        await useTableStore.getState().fetchEvalData(mockEvalId);
+      });
+
+      expect(isFetchingDuringFetch).toBe(true);
+      expect(isStreamingDuringFetch).toBe(true);
     });
   });
 
