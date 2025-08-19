@@ -1368,7 +1368,7 @@ export const PLUGINS = [
     },
     vulnerabilityType: 'misinformation and misuse',
   },
-  { 
+  {
     category: 'Security and Access Control',
     description:
       'Tests for unrestricted access to sensitive business flows (OWASP API Security Top 10 #6)',
