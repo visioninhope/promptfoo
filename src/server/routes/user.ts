@@ -99,7 +99,8 @@ userRouter.get('/email/status', async (req: Request, res: Response): Promise<voi
 
 /**
  * Determines if a URL represents an enterprise deployment by checking
- * if it's a custom domain (not the standard promptfoo.app domain)
+ * if it's a custom domain (not the standard promptfoo.app domain).
+ * This is used as a fallback check when the user is not authenticated.
  */
 function isEnterpriseUrl(url: string | null): boolean {
   if (!url) {
@@ -141,8 +142,8 @@ userRouter.get('/cloud/status', async (req: Request, res: Response): Promise<voi
     const apiKey = cloudConfig.getApiKey();
     const appUrl = cloudConfig.getAppUrl();
 
-    // Determine enterprise status based on URL domain
-    const isEnterprise = isEnterpriseUrl(appUrl);
+    // If authenticated, consider it enterprise. Otherwise, check URL domain.
+    const isEnterprise = isAuthenticated || isEnterpriseUrl(appUrl);
 
     const responseData = {
       isAuthenticated,
