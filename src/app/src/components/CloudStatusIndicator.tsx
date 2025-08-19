@@ -22,7 +22,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 export default function CloudStatusIndicator() {
-  const { isAuthenticated, appUrl, isLoading, error, isEnterprise } = useCloudAuth();
+  const { isAuthenticated, appUrl, isLoading, error } = useCloudAuth();
   const [showDialog, setShowDialog] = useState(false);
   const { recordEvent } = useTelemetry();
 
@@ -63,11 +63,9 @@ export default function CloudStatusIndicator() {
       return 'Unable to check cloud status';
     }
     if (isAuthenticated) {
-      const serviceName = isEnterprise ? 'Promptfoo Enterprise' : 'Promptfoo Cloud';
-      return `Connected to ${serviceName} (click to open dashboard)`;
+      return 'Connected to Promptfoo Cloud (click to open dashboard)';
     }
-    const serviceName = isEnterprise ? 'Promptfoo Enterprise' : 'Promptfoo Cloud';
-    return `Not connected to ${serviceName} (click to learn more)`;
+    return 'Not connected to Promptfoo Cloud (click to learn more)';
   };
 
   const getIcon = () => {
@@ -114,19 +112,17 @@ export default function CloudStatusIndicator() {
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CloudQueueIcon color="primary" />
-            Connect to {isEnterprise ? 'Promptfoo Enterprise' : 'Promptfoo Cloud'}
+            Connect to Promptfoo Cloud
           </Box>
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
-            Connect to unlock powerful {isEnterprise ? 'enterprise' : 'team'} features:
+            Connect to unlock powerful team collaboration features:
           </Typography>
           <Stack spacing={2} sx={{ mb: 3 }}>
             <Stack direction="row" spacing={1} alignItems="center">
               <ShareIcon fontSize="small" color="primary" />
-              <Typography variant="body2">
-                Share evaluation results with your {isEnterprise ? 'organization' : 'team'}
-              </Typography>
+              <Typography variant="body2">Share evaluation results with your team</Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <DashboardIcon fontSize="small" color="primary" />

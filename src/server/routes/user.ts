@@ -112,14 +112,10 @@ userRouter.get('/cloud/status', async (req: Request, res: Response): Promise<voi
     const apiKey = cloudConfig.getApiKey();
     const appUrl = cloudConfig.getAppUrl();
 
-    // Authenticated users are enterprise users
-    const isEnterprise = isAuthenticated;
-
     const responseData = {
       isAuthenticated,
       hasApiKey: !!apiKey,
       appUrl: isAuthenticated ? appUrl : null, // Only expose URL if authenticated
-      isEnterprise,
     };
 
     res.json(ApiSchemas.User.CloudStatus.Response.parse(responseData));

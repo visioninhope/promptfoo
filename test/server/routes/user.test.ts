@@ -44,7 +44,6 @@ describe('userRouter', () => {
         isAuthenticated: true,
         hasApiKey: true,
         appUrl: 'https://app.promptfoo.app',
-        isEnterprise: true, // Authenticated users are always enterprise
       });
     });
 
@@ -59,28 +58,7 @@ describe('userRouter', () => {
         isAuthenticated: false,
         hasApiKey: false,
         appUrl: null,
-        isEnterprise: false, // Unauthenticated users are not enterprise
       });
-    });
-
-    it('should always set isEnterprise equal to isAuthenticated', async () => {
-      // Test authenticated case
-      jest.mocked(cloudConfig.isEnabled).mockReturnValue(true);
-      jest.mocked(cloudConfig.getApiKey).mockReturnValue('test-api-key');
-      jest.mocked(cloudConfig.getAppUrl).mockReturnValue('https://enterprise.company.com');
-
-      let response = await request(app).get('/api/user/cloud/status').expect(200);
-      expect(response.body.isAuthenticated).toBe(true);
-      expect(response.body.isEnterprise).toBe(true);
-
-      // Test unauthenticated case
-      jest.mocked(cloudConfig.isEnabled).mockReturnValue(false);
-      jest.mocked(cloudConfig.getApiKey).mockReturnValue(undefined);
-      jest.mocked(cloudConfig.getAppUrl).mockReturnValue('https://enterprise.company.com');
-
-      response = await request(app).get('/api/user/cloud/status').expect(200);
-      expect(response.body.isAuthenticated).toBe(false);
-      expect(response.body.isEnterprise).toBe(false);
     });
 
     it('should handle errors gracefully', async () => {
@@ -106,10 +84,8 @@ describe('userRouter', () => {
       expect(response.body).toHaveProperty('isAuthenticated');
       expect(response.body).toHaveProperty('hasApiKey');
       expect(response.body).toHaveProperty('appUrl');
-      expect(response.body).toHaveProperty('isEnterprise');
       expect(typeof response.body.isAuthenticated).toBe('boolean');
       expect(typeof response.body.hasApiKey).toBe('boolean');
-      expect(typeof response.body.isEnterprise).toBe('boolean');
       expect(response.body.appUrl === null || typeof response.body.appUrl === 'string').toBe(true);
     });
   });

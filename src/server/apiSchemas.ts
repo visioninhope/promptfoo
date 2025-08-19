@@ -36,7 +36,6 @@ export const ApiSchemas = {
         isAuthenticated: z.boolean(),
         hasApiKey: z.boolean(),
         appUrl: z.string().url().nullable(),
-        isEnterprise: z.boolean(),
       }),
     },
   },

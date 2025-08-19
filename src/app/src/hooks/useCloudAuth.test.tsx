@@ -26,7 +26,6 @@ describe('useCloudAuth', () => {
           isAuthenticated: true,
           hasApiKey: true,
           appUrl: 'https://app.promptfoo.app',
-          isEnterprise: true, // Authenticated users are always enterprise
         }),
     } as Response);
 
@@ -41,7 +40,6 @@ describe('useCloudAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.hasApiKey).toBe(true);
     expect(result.current.appUrl).toBe('https://app.promptfoo.app');
-    expect(result.current.isEnterprise).toBe(true); // Authenticated users are always enterprise
     expect(result.current.error).toBeNull();
   });
 
@@ -53,7 +51,6 @@ describe('useCloudAuth', () => {
           isAuthenticated: false,
           hasApiKey: false,
           appUrl: null,
-          isEnterprise: false,
         }),
     } as Response);
 
@@ -66,7 +63,6 @@ describe('useCloudAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.hasApiKey).toBe(false);
     expect(result.current.appUrl).toBeNull();
-    expect(result.current.isEnterprise).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
@@ -107,7 +103,6 @@ describe('useCloudAuth', () => {
           isAuthenticated: false,
           hasApiKey: false,
           appUrl: null,
-          isEnterprise: false,
         }),
     } as Response);
 
@@ -127,7 +122,6 @@ describe('useCloudAuth', () => {
           isAuthenticated: true,
           hasApiKey: true,
           appUrl: 'https://app.promptfoo.app',
-          isEnterprise: true, // Authenticated users are always enterprise
         }),
     } as Response);
 
@@ -141,15 +135,14 @@ describe('useCloudAuth', () => {
     });
   });
 
-  it('should detect enterprise deployment', async () => {
+  it('should handle custom app URLs', async () => {
     vi.mocked(callApi).mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({
           isAuthenticated: true,
           hasApiKey: true,
-          appUrl: 'https://enterprise.company.com',
-          isEnterprise: true,
+          appUrl: 'https://custom.company.com',
         }),
     } as Response);
 
@@ -160,7 +153,6 @@ describe('useCloudAuth', () => {
     });
 
     expect(result.current.isAuthenticated).toBe(true);
-    expect(result.current.isEnterprise).toBe(true);
-    expect(result.current.appUrl).toBe('https://enterprise.company.com');
+    expect(result.current.appUrl).toBe('https://custom.company.com');
   });
 });
