@@ -18,7 +18,7 @@ describe('useCloudAuth', () => {
     vi.restoreAllMocks();
   });
 
-  it('should return authenticated status when API returns authenticated', async () => {
+  it('should return authenticated status when API returns success', async () => {
     vi.mocked(callApi).mockResolvedValueOnce({
       ok: true,
       json: () =>
@@ -26,7 +26,7 @@ describe('useCloudAuth', () => {
           isAuthenticated: true,
           hasApiKey: true,
           appUrl: 'https://app.promptfoo.app',
-          isEnterprise: false,
+          isEnterprise: true, // Authenticated users are always enterprise
         }),
     } as Response);
 
@@ -41,7 +41,7 @@ describe('useCloudAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.hasApiKey).toBe(true);
     expect(result.current.appUrl).toBe('https://app.promptfoo.app');
-    expect(result.current.isEnterprise).toBe(false);
+    expect(result.current.isEnterprise).toBe(true); // Authenticated users are always enterprise
     expect(result.current.error).toBeNull();
   });
 
@@ -127,7 +127,7 @@ describe('useCloudAuth', () => {
           isAuthenticated: true,
           hasApiKey: true,
           appUrl: 'https://app.promptfoo.app',
-          isEnterprise: false,
+          isEnterprise: true, // Authenticated users are always enterprise
         }),
     } as Response);
 

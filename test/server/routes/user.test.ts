@@ -59,125 +59,28 @@ describe('userRouter', () => {
         isAuthenticated: false,
         hasApiKey: false,
         appUrl: null,
-        isEnterprise: false,
+        isEnterprise: false, // Unauthenticated users are not enterprise
       });
     });
 
-    it('should detect enterprise deployment for authenticated users with custom domains', async () => {
+    it('should always set isEnterprise equal to isAuthenticated', async () => {
+      // Test authenticated case
       jest.mocked(cloudConfig.isEnabled).mockReturnValue(true);
-      jest.mocked(cloudConfig.getApiKey).mockReturnValue('enterprise-api-key');
+      jest.mocked(cloudConfig.getApiKey).mockReturnValue('test-api-key');
       jest.mocked(cloudConfig.getAppUrl).mockReturnValue('https://enterprise.company.com');
 
-      const response = await request(app).get('/api/user/cloud/status').expect(200);
+      let response = await request(app).get('/api/user/cloud/status').expect(200);
+      expect(response.body.isAuthenticated).toBe(true);
+      expect(response.body.isEnterprise).toBe(true);
 
-      expect(response.body).toEqual({
-        isAuthenticated: true,
-        hasApiKey: true,
-        appUrl: 'https://enterprise.company.com',
-        isEnterprise: true,
-      });
-    });
-
-    it('should consider authenticated users as enterprise even on standard promptfoo domains', async () => {
-      const standardUrls = [
-        'https://promptfoo.app',
-        'https://www.promptfoo.app',
-        'https://app.promptfoo.app',
-      ];
-
-      for (const url of standardUrls) {
-        jest.mocked(cloudConfig.isEnabled).mockReturnValue(true);
-        jest.mocked(cloudConfig.getApiKey).mockReturnValue('test-api-key');
-        jest.mocked(cloudConfig.getAppUrl).mockReturnValue(url);
-
-        const response = await request(app).get('/api/user/cloud/status').expect(200);
-
-        expect(response.body.isEnterprise).toBe(true); // Authenticated = enterprise
-      }
-    });
-
-    it('should detect enterprise URLs for unauthenticated custom domains', async () => {
+      // Test unauthenticated case
       jest.mocked(cloudConfig.isEnabled).mockReturnValue(false);
       jest.mocked(cloudConfig.getApiKey).mockReturnValue(undefined);
       jest.mocked(cloudConfig.getAppUrl).mockReturnValue('https://enterprise.company.com');
 
-      const response = await request(app).get('/api/user/cloud/status').expect(200);
-
-      expect(response.body).toEqual({
-        isAuthenticated: false,
-        hasApiKey: false,
-        appUrl: null,
-        isEnterprise: true, // Custom domain is still enterprise even when not authenticated
-      });
-    });
-
-    it('should not detect enterprise for unauthenticated standard domains', async () => {
-      const standardUrls = [
-        'https://promptfoo.app',
-        'https://www.promptfoo.app',
-        'https://app.promptfoo.app',
-      ];
-
-      for (const url of standardUrls) {
-        jest.mocked(cloudConfig.isEnabled).mockReturnValue(false);
-        jest.mocked(cloudConfig.getApiKey).mockReturnValue(undefined);
-        jest.mocked(cloudConfig.getAppUrl).mockReturnValue(url);
-
-        const response = await request(app).get('/api/user/cloud/status').expect(200);
-
-        expect(response.body.isEnterprise).toBe(false); // Unauthenticated + standard domain = not enterprise
-      }
-    });
-
-    it('should handle malicious URLs safely', async () => {
-      const testCases = [
-        {
-          url: 'https://evil.promptfoo.app.attacker.com',
-          expectedEnterprise: true,
-        },
-        {
-          url: 'https://promptfoo.app.evil.com',
-          expectedEnterprise: true,
-        },
-        {
-          url: 'not-a-url',
-          expectedEnterprise: false,
-        },
-        {
-          url: 'javascript:alert(1)',
-          expectedEnterprise: false,
-        },
-      ];
-
-      for (const testCase of testCases) {
-        jest.mocked(cloudConfig.isEnabled).mockReturnValue(false);
-        jest.mocked(cloudConfig.getApiKey).mockReturnValue(undefined);
-        jest.mocked(cloudConfig.getAppUrl).mockReturnValue(testCase.url);
-
-        const response = await request(app).get('/api/user/cloud/status').expect(200);
-
-        expect(response.body).toMatchObject({
-          isAuthenticated: false,
-          hasApiKey: false,
-          appUrl: null, // Should not expose URL when not authenticated
-          isEnterprise: testCase.expectedEnterprise,
-        });
-      }
-    });
-
-    it('should detect enterprise deployment even for unauthenticated users', async () => {
-      jest.mocked(cloudConfig.isEnabled).mockReturnValue(false);
-      jest.mocked(cloudConfig.getApiKey).mockReturnValue(undefined);
-      jest.mocked(cloudConfig.getAppUrl).mockReturnValue('https://enterprise.company.com');
-
-      const response = await request(app).get('/api/user/cloud/status').expect(200);
-
-      expect(response.body).toEqual({
-        isAuthenticated: false,
-        hasApiKey: false,
-        appUrl: null, // Should not expose URL when not authenticated
-        isEnterprise: true, // Should still detect enterprise deployment
-      });
+      response = await request(app).get('/api/user/cloud/status').expect(200);
+      expect(response.body.isAuthenticated).toBe(false);
+      expect(response.body.isEnterprise).toBe(false);
     });
 
     it('should handle errors gracefully', async () => {
