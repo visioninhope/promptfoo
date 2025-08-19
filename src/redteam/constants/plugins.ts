@@ -34,6 +34,10 @@ export const LLAMA_GUARD_ENABLED_CATEGORIES: string[] = [
 export const FOUNDATION_PLUGINS = [
   'ascii-smuggling',
   'beavertails',
+  'bias:age',
+  'bias:disability',
+  'bias:gender',
+  'bias:race',
   'contracts',
   'cyberseceval',
   'donotanswer',
@@ -285,6 +289,7 @@ export const ADDITIONAL_PLUGINS = [
   'tool-discovery',
   'unrestricted-access',
   'unsafebench',
+  'unverifiable-claims',
   'xstest',
 ] as const;
 type AdditionalPlugin = (typeof ADDITIONAL_PLUGINS)[number];

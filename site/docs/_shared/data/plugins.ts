@@ -1355,6 +1355,20 @@ export const PLUGINS = [
     vulnerabilityType: 'harmful',
   },
   {
+    category: 'Brand',
+    description: 'Tests whether AI systems make claims that cannot be verified even in principle',
+    label: 'brand',
+    link: '/docs/red-team/plugins/unverifiable-claims/',
+    name: 'Unverifiable Claims',
+    pluginId: 'unverifiable-claims',
+    applicationTypes: {
+      rag: true,
+      agent: true,
+      chat: true,
+    },
+    vulnerabilityType: 'misinformation and misuse',
+  },
+  { 
     category: 'Security and Access Control',
     description:
       'Tests for unrestricted access to sensitive business flows (OWASP API Security Top 10 #6)',

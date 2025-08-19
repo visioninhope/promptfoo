@@ -1275,6 +1275,7 @@
                           "toxicity",
                           "unrestricted-access",
                           "unsafebench",
+                          "unverifiable-claims",
                           "xstest"
                         ]
                       },
@@ -1463,6 +1464,7 @@
                               "toxicity",
                               "unrestricted-access",
                               "unsafebench",
+                              "unverifiable-claims",
                               "xstest"
                             ]
                           },

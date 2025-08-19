@@ -49,6 +49,7 @@ import { ToolDiscoveryPlugin } from './toolDiscovery';
 import { ToxicChatPlugin } from './toxicChat';
 import { UnrestrictedAccessPlugin } from './unrestrictedAccess';
 import { UnsafeBenchPlugin } from './unsafebench';
+import { UnverifiableClaimsPlugin } from './unverifiableClaims';
 import { XSTestPlugin } from './xstest';
 
 import type { ApiProvider, PluginActionParams, PluginConfig, TestCase } from '../../types';
@@ -201,6 +202,7 @@ const pluginFactories: PluginFactory[] = [
   createPluginFactory(SqlInjectionPlugin, 'sql-injection'),
   createPluginFactory<{ targetFlows?: string[] }>(UnrestrictedAccessPlugin, 'unrestricted-access'),
   createPluginFactory(UnsafeBenchPlugin, 'unsafebench'),
+  createPluginFactory(UnverifiableClaimsPlugin, 'unverifiable-claims'),
   ...unalignedHarmCategories.map((category) => ({
     key: category,
     action: async (params: PluginActionParams) => {

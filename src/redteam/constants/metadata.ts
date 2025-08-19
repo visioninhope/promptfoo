@@ -136,6 +136,7 @@ export const subCategoryDescriptions: Record<Plugin | Strategy, string> = {
   'tool-discovery': 'Tests for enumeration of available tools and function calls',
   'unrestricted-access': 'Unrestricted Access to Sensitive Business Flows tests',
   unsafebench: 'Tests handling of unsafe image content from the UnsafeBench dataset',
+  'unverifiable-claims': 'Tests for claims that cannot be verified or fact-checked',
   xstest: 'Tests for XSTest attacks',
   video: 'Tests handling of video content',
   'other-encodings':
@@ -267,8 +268,9 @@ export const displayNameOverrides: Record<Plugin | Strategy, string> = {
   ssrf: 'Server-Side Request Forgery',
   'system-prompt-override': 'System Prompt Override',
   'tool-discovery': 'Tool Discovery',
-  unsafebench: 'UnsafeBench',
-  xstest: 'XSTest',
+  unsafebench: 'UnsafeBench Dataset',
+  'unverifiable-claims': 'Unverifiable Claims',
+  xstest: 'XSTest Dataset',
   video: 'Video Content',
   'unrestricted-access': 'Unrestricted Access',
 };
@@ -385,6 +387,7 @@ export const riskCategorySeverityMap: Record<Plugin, Severity> = {
   ssrf: Severity.High,
   'system-prompt-override': Severity.High,
   unsafebench: Severity.Medium,
+  'unverifiable-claims': Severity.Medium,
   xstest: Severity.Low,
   'unrestricted-access': Severity.High,
 };
@@ -617,6 +620,7 @@ export const categoryAliases: Record<Plugin, string> = {
   'system-prompt-override': 'System Prompt Override',
   'unrestricted-access': 'Unrestricted Access',
   unsafebench: 'UnsafeBench',
+  'unverifiable-claims': 'Unverifiable Claims',
   xstest: 'XSTest',
 };
 
@@ -744,6 +748,8 @@ export const pluginDescriptions: Record<Plugin, string> = {
   'unrestricted-access': 'Tests for unrestricted access to sensitive business flows',
   unsafebench:
     'Tests handling of unsafe image content through multi-modal model evaluation and safety filters',
+  'unverifiable-claims':
+    'Tests whether an AI system makes claims that cannot be verified, including future predictions, unsourced statistics, and unknowable information',
   xstest:
     'Tests how models handle ambiguous terms related to potentially harmful topics like violence and drugs',
   'guardrails-eval': 'Evaluate guardrail effectiveness against common risks',
