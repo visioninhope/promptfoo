@@ -34,7 +34,7 @@ export default class CustomApiProvider implements ApiProvider {
     };
 
     // Fetch the data from the API using promptfoo's cache. You can use your own fetch implementation if preferred.
-    const { data, cached } = await promptfoo.cache.fetchWithCache(
+    const { data } = await promptfoo.cache.fetchWithCache(
       'https://api.openai.com/v1/chat/completions',
       {
         method: 'POST',
@@ -47,6 +47,16 @@ export default class CustomApiProvider implements ApiProvider {
       10_000 /* 10 second timeout */,
     );
 
+    // Calculate cost based on config
+    let cost = undefined;
+    if (this.config?.cost_per_request) {
+      cost = this.config.cost_per_request;
+    } else if (this.config?.cost_per_input_token && this.config?.cost_per_output_token) {
+      cost =
+        data.usage.prompt_tokens * this.config.cost_per_input_token +
+        data.usage.completion_tokens * this.config.cost_per_output_token;
+    }
+
     const ret: ProviderResponse = {
       output: data.choices[0].message.content,
       tokenUsage: {
@@ -54,6 +64,7 @@ export default class CustomApiProvider implements ApiProvider {
         prompt: data.usage.prompt_tokens,
         completion: data.usage.completion_tokens,
       },
+      cost, // Add cost to the response
     };
     return ret;
   }

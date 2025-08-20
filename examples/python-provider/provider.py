@@ -31,9 +31,19 @@ def call_api(prompt, options, context):
             "completion": chat_completion.usage.completion_tokens,
         }
 
+    # Calculate cost based on config
+    cost = None
+    config = options.get("config", {})
+    if "cost_per_request" in config:
+        cost = config["cost_per_request"]
+    elif "cost_per_input_token" in config and "cost_per_output_token" in config and token_usage:
+        cost = (token_usage["prompt"] * config["cost_per_input_token"] +
+                token_usage["completion"] * config["cost_per_output_token"])
+
     return {
         "output": chat_completion.choices[0].message.content,
         "tokenUsage": token_usage,
+        "cost": cost,  # Add cost to the response
         "metadata": {
             "config": options.get("config", {}),
         },
@@ -68,9 +78,19 @@ async def async_provider(prompt, options, context):
             "completion": chat_completion.usage.completion_tokens,
         }
 
+    # Calculate cost for async provider too
+    cost = None
+    config = options.get("config", {})
+    if "cost_per_request" in config:
+        cost = config["cost_per_request"]
+    elif "cost_per_input_token" in config and "cost_per_output_token" in config and token_usage:
+        cost = (token_usage["prompt"] * config["cost_per_input_token"] +
+                token_usage["completion"] * config["cost_per_output_token"])
+
     return {
         "output": chat_completion.choices[0].message.content,
         "tokenUsage": token_usage,
+        "cost": cost,  # Add cost to the response
     }
 
 

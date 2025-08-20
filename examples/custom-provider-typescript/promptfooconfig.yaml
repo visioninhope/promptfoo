@@ -7,6 +7,13 @@ prompts:
 providers:
   - id: file://customProvider.ts
     label: 'My custom provider'
+    config:
+      # Option 1: Cost per token (most accurate)
+      cost_per_input_token: 0.00001 # $0.01 per 1K input tokens
+      cost_per_output_token: 0.00003 # $0.03 per 1K output tokens
+
+      # Option 2: Flat cost per request (uncomment to use instead)
+      # cost_per_request: 0.05
 
 tests: file://vars.csv
 # To compare two of the same provider, you can do the following:

@@ -15,7 +15,8 @@ The Python provider allows you to use Python code as a provider in promptfoo eva
 1. Call APIs from Python libraries
 2. Implement custom logic before or after calling LLMs
 3. Process responses in specific ways
-4. Track token usage and other metrics
+4. **Track token usage and costs**
+5. Implement complex pricing models
 
 ## Environment Variables
 
@@ -44,9 +45,54 @@ The Python provider is defined in `provider.py` and includes:
 
 1. A `call_api` function that makes API calls to OpenAI
 2. Token usage extraction from the API response
-3. Multiple sample functions showing different ways to call the API
+3. **Cost calculation based on configuration**
+4. Multiple sample functions showing different ways to call the API
 
 By default, the example is configured to use `gpt-4.1-mini` model, but you can modify it to use other models as needed.
+
+## Cost Tracking
+
+This example demonstrates how to implement cost tracking in Python providers. The provider supports two pricing models:
+
+### Option 1: Per-token pricing (most accurate)
+
+```yaml
+providers:
+  - id: file://provider.py
+    config:
+      cost_per_input_token: 0.00001 # $0.01 per 1K input tokens
+      cost_per_output_token: 0.00003 # $0.03 per 1K output tokens
+```
+
+### Option 2: Flat rate per request
+
+```yaml
+providers:
+  - id: file://provider.py
+    config:
+      cost_per_request: 0.05 # $0.05 per API call
+```
+
+The provider calculates costs automatically and includes them in the response:
+
+```python
+def call_api(prompt, options, context):
+    # ... make API call ...
+
+    # Calculate cost based on config
+    config = options.get("config", {})
+    if "cost_per_request" in config:
+        cost = config["cost_per_request"]
+    elif "cost_per_input_token" in config and token_usage:
+        cost = (token_usage["prompt"] * config["cost_per_input_token"] +
+                token_usage["completion"] * config["cost_per_output_token"])
+
+    return {
+        "output": response_text,
+        "tokenUsage": token_usage,
+        "cost": cost  # promptfoo will track this
+    }
+```
 
 ## Expected Output
 

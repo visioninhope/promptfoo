@@ -8,11 +8,21 @@ providers:
   - id: file://provider.py # defaults to call_api function
     config:
       someOption: foobar
+      # Option 1: Cost per token (most accurate)
+      cost_per_input_token: 0.00001 # $0.01 per 1K input tokens
+      cost_per_output_token: 0.00003 # $0.03 per 1K output tokens
 
   - id: file://provider.py:some_other_function
+    config:
+      # Option 2: Flat cost per request
+      cost_per_request: 0.05
 
   - id: file://provider.py:async_provider
     label: async provider
+    config:
+      # Using different pricing for the async provider
+      cost_per_input_token: 0.00003 # GPT-4o pricing
+      cost_per_output_token: 0.00006
 
   # Demonstrates how to load configuration from various file formats
   - id: 'file://provider.py:call_api'
