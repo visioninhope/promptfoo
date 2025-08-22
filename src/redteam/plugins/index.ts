@@ -16,6 +16,7 @@ import {
   neverGenerateRemote,
   shouldGenerateRemote,
 } from '../remoteGeneration';
+import { withCircuitBreaker } from '../apiConnectivity';
 import { getShortPluginId } from '../util';
 import { AegisPlugin } from './aegis';
 import { type RedteamPluginBase } from './base';
@@ -86,7 +87,8 @@ async function fetchRemoteTestCases(
     version: VERSION,
     email: getUserEmail(),
   });
-  try {
+  // Use circuit breaker to check if we should attempt the request
+  const result = await withCircuitBreaker(async () => {
     const { data, status, statusText } = await fetchWithCache(
       getRemoteGenerationUrl(),
       {
@@ -100,16 +102,15 @@ async function fetchRemoteTestCases(
     );
 
     if (status !== 200 || !data || !data.result || !Array.isArray(data.result)) {
-      logger.error(`Error generating test cases for ${key}: ${statusText} ${JSON.stringify(data)}`);
-      return [];
+      throw new Error(`HTTP ${status} ${statusText}: ${JSON.stringify(data)}`);
     }
+    
     const ret = (data as { result: TestCase[] }).result;
     logger.debug(`Received remote generation for ${key}:\n${JSON.stringify(ret)}`);
     return ret;
-  } catch (err) {
-    logger.error(`Error generating test cases for ${key}: ${err}`);
-    return [];
-  }
+  }, `Generating tests for ${key}`);
+
+  return result || [];
 }
 
 function createPluginFactory<T extends PluginConfig>(

@@ -9,9 +9,9 @@ import cliState from '../cliState';
 import { getEnvString } from '../envars';
 import logger, { getLogLevel } from '../logger';
 import { isProviderOptions, type TestCase, type TestCaseWithPlugin } from '../types';
-import { checkRemoteHealth } from '../util/apiHealth';
 import invariant from '../util/invariant';
 import { extractVariablesFromTemplates } from '../util/templates';
+import { apiConnectivity, getApiGuidance } from './apiConnectivity';
 import {
   ALIASED_PLUGIN_MAPPINGS,
   BIAS_PLUGINS,
@@ -29,7 +29,7 @@ import { extractSystemPurpose } from './extraction/purpose';
 import { Plugins } from './plugins';
 import { CustomPlugin } from './plugins/custom';
 import { redteamProviderManager } from './providers/shared';
-import { getRemoteHealthUrl, shouldGenerateRemote } from './remoteGeneration';
+import { shouldGenerateRemote } from './remoteGeneration';
 import { loadStrategy, Strategies, validateStrategies } from './strategies';
 import { DEFAULT_LANGUAGES } from './strategies/multilingual';
 import { extractGoalFromPrompt, getShortPluginId } from './util';
@@ -113,7 +113,39 @@ function generateReport(
       ]);
     });
 
-  return `\nTest Generation Report:\n${table.toString()}`;
+  let report = `\nTest Generation Report:\n${table.toString()}`;
+
+  // Add summary of failures
+  const failedPlugins = Object.entries(pluginResults).filter(([_, { generated }]) => generated === 0);
+  const failedStrategies = Object.entries(strategyResults).filter(([_, { generated }]) => generated === 0);
+  const partialPlugins = Object.entries(pluginResults).filter(([_, { requested, generated }]) => 
+    generated > 0 && generated < requested
+  );
+  const partialStrategies = Object.entries(strategyResults).filter(([_, { requested, generated }]) => 
+    generated > 0 && generated < requested
+  );
+
+  if (failedPlugins.length > 0 || failedStrategies.length > 0 || partialPlugins.length > 0 || partialStrategies.length > 0) {
+    report += '\n\n📊 Summary:';
+    
+    if (failedPlugins.length > 0) {
+      report += `\n${chalk.red('•')} ${failedPlugins.length} plugin(s) failed completely: ${failedPlugins.map(([id]) => id).join(', ')}`;
+    }
+    
+    if (failedStrategies.length > 0) {
+      report += `\n${chalk.red('•')} ${failedStrategies.length} strategy(ies) failed completely: ${failedStrategies.map(([id]) => id).join(', ')}`;
+    }
+    
+    if (partialPlugins.length > 0) {
+      report += `\n${chalk.yellow('•')} ${partialPlugins.length} plugin(s) had partial failures: ${partialPlugins.map(([id]) => id).join(', ')}`;
+    }
+    
+    if (partialStrategies.length > 0) {
+      report += `\n${chalk.yellow('•')} ${partialStrategies.length} strategy(ies) had partial failures: ${partialStrategies.map(([id]) => id).join(', ')}`;
+    }
+  }
+
+  return report;
 }
 
 /**
@@ -681,18 +713,15 @@ export async function synthesize({
 
   // Check API health before proceeding
   if (shouldGenerateRemote()) {
-    const healthUrl = getRemoteHealthUrl();
-    if (healthUrl) {
-      logger.debug(`Checking Promptfoo API health at ${healthUrl}...`);
-      const healthResult = await checkRemoteHealth(healthUrl);
-      if (healthResult.status !== 'OK') {
-        throw new Error(
-          `Unable to proceed with test generation: ${healthResult.message}\n` +
-            'Please check your API configuration or try again later.',
-        );
-      }
-      logger.debug('API health check passed');
+    logger.debug('Checking API connectivity...');
+    const isHealthy = await apiConnectivity.performHealthCheck();
+    if (!isHealthy) {
+      const guidance = getApiGuidance();
+      throw new Error(
+        `Unable to proceed with test generation due to API connectivity issues.\n\n${guidance}`
+      );
     }
+    logger.debug('API connectivity verified');
   }
 
   // Start the progress bar
@@ -749,21 +778,29 @@ export async function synthesize({
 
     if (action) {
       logger.debug(`Generating tests for ${plugin.id}...`);
-      let pluginTests = await action({
-        provider: redteamProvider,
-        purpose,
-        injectVar,
-        n: plugin.numTests,
-        delayMs: delay || 0,
-        config: {
-          language,
-          modifiers: {
-            ...(testGenerationInstructions ? { testGenerationInstructions } : {}),
-            ...(plugin.config?.modifiers || {}),
+      let pluginTests: any[] = [];
+      try {
+        pluginTests = await action({
+          provider: redteamProvider,
+          purpose,
+          injectVar,
+          n: plugin.numTests,
+          delayMs: delay || 0,
+          config: {
+            language,
+            modifiers: {
+              ...(testGenerationInstructions ? { testGenerationInstructions } : {}),
+              ...(plugin.config?.modifiers || {}),
+            },
+            ...resolvePluginConfig(plugin.config),
           },
-          ...resolvePluginConfig(plugin.config),
-        },
-      });
+        });
+      } catch (error) {
+        const { createNetworkErrorMessage } = await import('../fetch');
+        const friendlyError = createNetworkErrorMessage(error, `Failed to generate tests for ${plugin.id}`);
+        logger.error(friendlyError);
+        pluginTests = [];
+      }
 
       if (!Array.isArray(pluginTests) || pluginTests.length === 0) {
         logger.warn(`Failed to generate tests for ${plugin.id}`);
@@ -855,7 +892,9 @@ export async function synthesize({
         logger.debug(`Added ${customTests.length} custom test cases from ${plugin.id}`);
         pluginResults[plugin.id] = { requested: plugin.numTests, generated: customTests.length };
       } catch (e) {
-        logger.error(`Error generating tests for custom plugin ${plugin.id}: ${e}`);
+        const { createNetworkErrorMessage } = await import('../fetch');
+        const friendlyError = createNetworkErrorMessage(e, `Error generating tests for custom plugin ${plugin.id}`);
+        logger.error(friendlyError);
         pluginResults[plugin.id] = { requested: plugin.numTests, generated: 0 };
       }
     } else {
@@ -920,6 +959,15 @@ export async function synthesize({
   }
 
   logger.info(generateReport(pluginResults, strategyResults));
+
+  // Check if there were API connectivity issues and provide guidance
+  if (shouldGenerateRemote()) {
+    const status = apiConnectivity.getStatus();
+    if (status.state !== 'CLOSED') {
+      logger.warn('\n⚠️  API Connectivity Notice:');
+      logger.warn(getApiGuidance());
+    }
+  }
 
   return { purpose, entities, testCases: finalTestCases, injectVar };
 }

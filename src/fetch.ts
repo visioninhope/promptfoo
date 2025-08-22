@@ -38,6 +38,40 @@ interface SystemError extends Error {
   cause?: unknown;
 }
 
+/**
+ * Creates a user-friendly error message for network failures
+ */
+export function createNetworkErrorMessage(error: Error | unknown, context?: string): string {
+  const contextPrefix = context ? `${context}: ` : '';
+  
+  if (error instanceof Error) {
+    const typedError = error as SystemError;
+    
+    // Handle specific network error types
+    if (typedError.message.includes('fetch failed')) {
+      if (typedError.cause?.toString().includes('AggregateError')) {
+        return `${contextPrefix}Network connection failed - please check your internet connection and try again. If the issue persists, the remote service may be temporarily unavailable.`;
+      }
+      return `${contextPrefix}Network request failed - please check your internet connection and try again.`;
+    }
+    
+    if (typedError.message.includes('Request timed out')) {
+      return `${contextPrefix}Request timed out - the remote service is taking too long to respond. Please try again or check your connection.`;
+    }
+    
+    if (typedError.code === 'ENOTFOUND' || typedError.code === 'ECONNREFUSED') {
+      return `${contextPrefix}Unable to connect to the remote service. Please check your internet connection and try again.`;
+    }
+    
+    if (typedError.code === 'ECONNRESET') {
+      return `${contextPrefix}Connection was reset by the remote service. Please try again.`;
+    }
+  }
+  
+  // Fallback to original error message
+  return `${contextPrefix}${error}`;
+}
+
 export function sanitizeUrl(url: string): string {
   try {
     const parsedUrl = new URL(url);

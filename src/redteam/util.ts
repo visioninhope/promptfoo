@@ -4,6 +4,7 @@ import { REQUEST_TIMEOUT_MS } from '../providers/shared';
 import { pluginDescriptions } from './constants';
 import { DATASET_PLUGINS } from './constants/strategies';
 import { getRemoteGenerationUrl, neverGenerateRemote } from './remoteGeneration';
+import { withCircuitBreaker } from './apiConnectivity';
 
 /**
  * Normalizes different types of apostrophes to a standard single quote
@@ -246,7 +247,8 @@ export async function extractGoalFromPrompt(
 
   logger.debug(`Extracting goal from prompt. Request URL: ${getRemoteGenerationUrl()}`);
   logger.debug(`Request body: ${JSON.stringify(requestBody, null, 2)}`);
-  try {
+  
+  const result = await withCircuitBreaker(async () => {
     const { data, status, statusText } = await fetchWithCache(
       getRemoteGenerationUrl(),
       {
@@ -264,10 +266,9 @@ export async function extractGoalFromPrompt(
     );
 
     if (status !== 200) {
-      logger.warn(
+      throw new Error(
         `Failed to extract goal from prompt: HTTP ${status} ${statusText || ''}, Response Data: ${JSON.stringify(data)}`,
       );
-      return null;
     }
 
     if (!data?.intent) {
@@ -276,8 +277,7 @@ export async function extractGoalFromPrompt(
     }
 
     return data.intent;
-  } catch (error) {
-    logger.warn(`Error extracting goal: ${error}`);
-    return null;
-  }
+  }, 'Extracting goal from prompt');
+
+  return result;
 }
