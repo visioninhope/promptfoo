@@ -435,6 +435,8 @@ const App: React.FC = () => {
           evalId={evalId}
           categoryStats={categoryStats}
           plugins={evalData.config.redteam.plugins || []}
+          failuresByPlugin={failuresByPlugin}
+          passesByPlugin={passesByPlugin}
         />
         <FrameworkCompliance categoryStats={categoryStats} strategyStats={strategyStats} />
       </Stack>
