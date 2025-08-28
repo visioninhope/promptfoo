@@ -131,7 +131,7 @@ export default function EvalsDataGrid({
   const [error, setError] = useState<Error | null>(null);
 
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>(
-    focusedEvalId ? [focusedEvalId] : [],
+    focusedEvalId ? { type: 'include', ids: new Set([focusedEvalId]) } : { type: 'include', ids: new Set() },
   );
 
   /**

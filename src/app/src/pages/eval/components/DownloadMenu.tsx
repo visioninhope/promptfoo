@@ -14,7 +14,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
-import useTheme from '@mui/material/styles/useTheme';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { type EvaluateTableOutput, ResultFailureReason } from '@promptfoo/types';
 import { removeEmpty } from '@promptfoo/util/objectUtils';

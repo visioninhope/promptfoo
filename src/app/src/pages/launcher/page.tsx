@@ -46,7 +46,7 @@ const createAppTheme = (darkMode: boolean) =>
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
-  borderRadius: theme.shape.borderRadius * 2,
+  borderRadius: Number(theme.shape.borderRadius) * 2,
   border: `1px solid ${theme.palette.divider}`,
   backgroundColor: 'transparent',
 }));
