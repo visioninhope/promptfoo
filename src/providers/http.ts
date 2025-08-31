@@ -1453,24 +1453,28 @@ export class HttpProvider implements ApiProvider {
       `[HTTP Provider]: Calling ${sanitizeUrl(url)} with config: ${safeJsonStringify(sanitizeConfigForLogging(renderedConfig))}`,
     );
 
+    const requestStart = Date.now();
+    const requestOptions = {
+      method: renderedConfig.method,
+      headers: renderedConfig.headers,
+      ...(method !== 'GET' && {
+        body: contentTypeIsJson(headers)
+          ? typeof renderedConfig.body === 'string'
+            ? renderedConfig.body // Already a JSON string, use as-is
+            : JSON.stringify(renderedConfig.body) // Object, needs stringifying
+          : String(renderedConfig.body)?.trim(),
+      }),
+    };
+
     const response = await fetchWithCache(
       url,
-      {
-        method: renderedConfig.method,
-        headers: renderedConfig.headers,
-        ...(method !== 'GET' && {
-          body: contentTypeIsJson(headers)
-            ? typeof renderedConfig.body === 'string'
-              ? renderedConfig.body // Already a JSON string, use as-is
-              : JSON.stringify(renderedConfig.body) // Object, needs stringifying
-            : String(renderedConfig.body)?.trim(),
-        }),
-      },
+      requestOptions,
       REQUEST_TIMEOUT_MS,
       'text',
       context?.bustCache ?? context?.debug,
       this.config.maxRetries,
     );
+    const requestEnd = Date.now();
 
     logger.debug(`[HTTP Provider]: Response: ${safeJsonStringify(response.data)}`);
 
@@ -1490,6 +1494,18 @@ export class HttpProvider implements ApiProvider {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers || {},
+        // Complete HTTP transaction details for debugging
+        request: {
+          method: renderedConfig.method || 'GET',
+          url: this.url,
+          headers: renderedConfig.headers || {},
+          body: requestOptions.body,
+        },
+        timing: {
+          start: requestStart,
+          end: requestEnd,
+          duration: requestEnd - requestStart,
+        },
       },
     };
 
@@ -1558,18 +1574,21 @@ export class HttpProvider implements ApiProvider {
     logger.debug(
       `[HTTP Provider]: Calling ${sanitizeUrl(url)} with raw request: ${parsedRequest.method}  ${safeJsonStringify(parsedRequest.body)} \n headers: ${safeJsonStringify(sanitizeConfigForLogging({ headers: parsedRequest.headers }).headers)}`,
     );
+    const requestStart = Date.now();
+    const requestOptions = {
+      method: parsedRequest.method,
+      headers: parsedRequest.headers,
+      ...(parsedRequest.body && { body: parsedRequest.body.text.trim() }),
+    };
     const response = await fetchWithCache(
       url,
-      {
-        method: parsedRequest.method,
-        headers: parsedRequest.headers,
-        ...(parsedRequest.body && { body: parsedRequest.body.text.trim() }),
-      },
+      requestOptions,
       REQUEST_TIMEOUT_MS,
       'text',
       context?.debug,
       this.config.maxRetries,
     );
+    const requestEnd = Date.now();
 
     logger.debug(`[HTTP Provider]: Response: ${safeJsonStringify(response.data)}`);
 
@@ -1587,12 +1606,26 @@ export class HttpProvider implements ApiProvider {
       parsedData = null;
     }
     const ret: ProviderResponse = {};
-    if (context?.debug) {
-      ret.raw = response.data;
-      ret.metadata = {
-        headers: response.headers,
-      };
-    }
+    ret.raw = response.data;
+    ret.metadata = {
+      http: {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers || {},
+        // Complete HTTP transaction details for debugging
+        request: {
+          method: parsedRequest.method,
+          url: url,
+          headers: parsedRequest.headers || {},
+          body: requestOptions.body,
+        },
+        timing: {
+          start: requestStart,
+          end: requestEnd,
+          duration: requestEnd - requestStart,
+        },
+      },
+    };
 
     const parsedOutput = (await this.transformResponse)(parsedData, rawText, { response });
 

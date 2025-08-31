@@ -129,6 +129,18 @@ export interface ProviderResponse {
       status: number;
       statusText: string;
       headers: Record<string, string>;
+      // Complete HTTP transaction details for debugging
+      request?: {
+        method: string;
+        url: string;
+        headers: Record<string, string>;
+        body?: string;
+      };
+      timing?: {
+        start: number;
+        end: number;
+        duration: number;
+      };
     };
     [key: string]: any;
   };

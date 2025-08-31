@@ -10,11 +10,89 @@ import Typography from '@mui/material/Typography';
 
 export default function ProviderResponse({ providerResponse }: { providerResponse: any }) {
   const hasHeaders = Object.keys(providerResponse?.metadata?.headers || {}).length > 0;
+  const hasHttpDetails = !!providerResponse?.metadata?.http;
+  const httpDetails = providerResponse?.metadata?.http;
+
   return (
     <Box>
       {providerResponse && providerResponse.raw !== undefined ? (
         <>
-          {hasHeaders ? (
+          {/* Complete HTTP Transaction Details */}
+          {hasHttpDetails && (
+            <>
+              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                HTTP Transaction
+              </Typography>
+
+              {/* Request Details */}
+              {httpDetails.request && (
+                <>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Request:
+                  </Typography>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100'),
+                      mb: 2,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      {httpDetails.request.method} {httpDetails.request.url}
+                    </Typography>
+                    {Object.entries(httpDetails.request.headers || {}).map(([key, value]) => (
+                      <Typography key={key} variant="body2" sx={{ fontSize: '0.8rem' }}>
+                        {key}: {value as string}
+                      </Typography>
+                    ))}
+                    {httpDetails.request.body && (
+                      <>
+                        <Typography variant="body2" sx={{ mt: 1, mb: 0.5 }}>
+                          Body:
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>
+                          {httpDetails.request.body}
+                        </Typography>
+                      </>
+                    )}
+                  </Paper>
+                </>
+              )}
+
+              {/* Response Details */}
+              <Typography variant="subtitle2" gutterBottom>
+                Response:
+              </Typography>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100'),
+                  mb: 2,
+                  fontFamily: 'monospace',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  HTTP {httpDetails.status} {httpDetails.statusText}
+                  {httpDetails.timing && (
+                    <span style={{ fontWeight: 'normal', marginLeft: '1rem' }}>
+                      ({httpDetails.timing.duration}ms)
+                    </span>
+                  )}
+                </Typography>
+                {Object.entries(httpDetails.headers || {}).map(([key, value]) => (
+                  <Typography key={key} variant="body2" sx={{ fontSize: '0.8rem' }}>
+                    {key}: {value as string}
+                  </Typography>
+                ))}
+              </Paper>
+            </>
+          )}
+
+          {/* Legacy Headers Display (for backward compatibility) */}
+          {hasHeaders && !hasHttpDetails ? (
             <>
               <Typography variant="subtitle2" gutterBottom>
                 Headers:
@@ -88,8 +166,10 @@ export default function ProviderResponse({ providerResponse }: { providerRespons
               </Paper>
             </>
           ) : null}
+
+          {/* Response Body */}
           <Typography variant="subtitle2" gutterBottom>
-            Raw Result:
+            Response Body:
           </Typography>
 
           <Paper
@@ -114,7 +194,7 @@ export default function ProviderResponse({ providerResponse }: { providerRespons
             </pre>
           </Paper>
           <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>
-            Parsed Result:
+            Transformed Output:
           </Typography>
           <Paper
             elevation={0}
