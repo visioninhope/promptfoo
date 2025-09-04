@@ -87,15 +87,21 @@ export async function validatePythonPath(pythonPath: string, isExplicit: boolean
         );
       }
 
-      const alternativePath = process.platform === 'win32' ? 'py -3' : 'python3';
-      const secondaryPath = await tryPath(alternativePath);
-      if (secondaryPath) {
-        state.cachedPythonPath = secondaryPath;
-        return secondaryPath;
+      // Try multiple fallback commands
+      const alternativePaths =
+        process.platform === 'win32' ? ['python', 'python3', 'py -3', 'py'] : ['python3'];
+
+      for (const altPath of alternativePaths) {
+        const secondaryPath = await tryPath(altPath);
+        if (secondaryPath) {
+          state.cachedPythonPath = secondaryPath;
+          return secondaryPath;
+        }
       }
 
+      const triedPaths = [pythonPath, ...alternativePaths].join('", "');
       throw new Error(
-        `Python 3 not found. Tried "${pythonPath}" and "${alternativePath}". ` +
+        `Python 3 not found. Tried "${triedPaths}". ` +
           `Please ensure Python 3 is installed and set the PROMPTFOO_PYTHON environment variable ` +
           `to your Python 3 executable path (e.g., '${process.platform === 'win32' ? 'C:\\Python39\\python.exe' : '/usr/bin/python3'}').`,
       );
@@ -151,7 +157,7 @@ export async function runPython(
   };
 
   try {
-    await fs.writeFileSync(tempJsonPath, safeJsonStringify(args) as string, 'utf-8');
+    fs.writeFileSync(tempJsonPath, safeJsonStringify(args) as string, 'utf-8');
     logger.debug(`Running Python wrapper with args: ${safeJsonStringify(args)}`);
 
     await new Promise<void>((resolve, reject) => {
@@ -178,7 +184,7 @@ export async function runPython(
       }
     });
 
-    const output = await fs.readFileSync(outputPath, 'utf-8');
+    const output = fs.readFileSync(outputPath, 'utf-8');
     logger.debug(`Python script ${absPath} returned: ${output}`);
 
     let result: { type: 'final_result'; data: any } | undefined;

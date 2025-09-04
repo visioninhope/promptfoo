@@ -175,7 +175,7 @@ describe('Python Utils', () => {
 
         const result = await pythonUtils.validatePythonPath('non_existent_program', false);
 
-        expect(result).toBe(process.platform === 'win32' ? 'py -3' : 'python3');
+        expect(result).toBe(process.platform === 'win32' ? 'python' : 'python3');
         expect(execAsync).toHaveBeenCalledTimes(2);
       });
 
@@ -193,9 +193,12 @@ describe('Python Utils', () => {
         jest.mocked(execAsync).mockRejectedValue(new Error('Command failed'));
 
         await expect(pythonUtils.validatePythonPath('python', false)).rejects.toThrow(
-          'Python 3 not found. Tried "python" and',
+          'Python 3 not found. Tried "python"',
         );
-        expect(execAsync).toHaveBeenCalledTimes(2);
+        // On Windows: python, python3, py -3, py = 5 calls total
+        // On Unix: python, python3 = 2 calls total
+        const expectedCalls = process.platform === 'win32' ? 5 : 2;
+        expect(execAsync).toHaveBeenCalledTimes(expectedCalls);
       });
     });
 
